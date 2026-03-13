@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_PROGRAM_CHECK</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Analyzing naming and clean code</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CMPNAME>ADD_ERROR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Add an error message to the error list</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>ANALYZE_CLEAN_CODE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Clean code</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>ANALYZE_HARDCODE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Hardcode</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>ANALYZE_NAMING</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Naming check</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>ANALYZE_OBSOLETE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Obsolete</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>IT_SOURCE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Table of Strings</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>ANALYZE_CLEAN_CODE</CMPNAME>
+     <SCONAME>RT_ERRORS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Result Table</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ANALYZE_HARDCODE</CMPNAME>
+     <SCONAME>IT_SOURCE</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Table of Strings</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ANALYZE_HARDCODE</CMPNAME>
+     <SCONAME>RT_ERRORS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Result Table</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ANALYZE_OBSOLETE</CMPNAME>
+     <SCONAME>ET_ERRORS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Result Table</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ANALYZE_OBSOLETE</CMPNAME>
+     <SCONAME>IT_SOURCE</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Table of Strings</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
+  </asx:values>
+ </asx:abap>
+</abapGit>

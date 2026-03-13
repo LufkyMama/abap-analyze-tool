@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_DEMO_FULL</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Demo Code</DESCRIPT>
+    <CATEGORY>05</CATEGORY>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CMPNAME>ADD_PERSON_INTERNAL</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Append person to internal table</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Initialize counter with optional start value</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>CREATE_PERSON</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Create a person structure, raise event, store internally</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_COUNTER</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Return current instance counter</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_TOTAL_CREATED</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Return total created count across all instances</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>OBSOLETE_EXAMPLE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Contains obsolete syntax for analyzer testing</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>
