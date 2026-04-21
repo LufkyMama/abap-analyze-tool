@@ -47,7 +47,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>007</MSGNR>
-     <TEXT>Variable &amp;1 does not follow local prefix rule (lv_/ls_/lt_/lo_/lr_).</TEXT>
+     <TEXT>Function Group &amp;1 does not exist</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -84,6 +84,405 @@
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>013</MSGNR>
      <TEXT>Scanner detects error in source</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>014</MSGNR>
+     <TEXT>Program &amp;1 exists but source cannot be read or is empty.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>015</MSGNR>
+     <TEXT>Possible hardcoded text literal found: &amp;.Using constants or text element.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>016</MSGNR>
+     <TEXT>Possible user-facing text found in string template: &amp;.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>017</MSGNR>
+     <TEXT>Hardcode founds:&amp;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>018</MSGNR>
+     <TEXT>No errors found.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>019</MSGNR>
+     <TEXT>Class &amp;1 does not exist</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>020</MSGNR>
+     <TEXT>Structure type &amp;1 should be &amp;2.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>021</MSGNR>
+     <TEXT>Global variable &amp;1 is used only inside 1 routine.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>022</MSGNR>
+     <TEXT>More than 3 consecutive blank lines. Consider removing extra empty lines.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>023</MSGNR>
+     <TEXT>Declared but not used: &amp;1. Remove if truly unsused.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>024</MSGNR>
+     <TEXT>Text symbol TEXT-&amp;1 (&apos;&amp;2&apos;) is maintained but not used in source.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>025</MSGNR>
+     <TEXT>Subroutine FORM &amp;1 is declared but not used in this program source.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>026</MSGNR>
+     <TEXT>Where-used not available for this object class (subrc &amp;1).</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>027</MSGNR>
+     <TEXT>Comment-out scan skipped (no safe package/seed scope).</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>028</MSGNR>
+     <TEXT>Warning: where-used index may be outdated/incomplete (EU_* jobs), results</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>029</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>030</MSGNR>
+     <TEXT>No Where-used data found</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>031</MSGNR>
+     <TEXT>Error displaying Where-Used ALV</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>032</MSGNR>
+     <TEXT>Cannot display ALV</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>033</MSGNR>
+     <TEXT>Cannot navigate to selected object</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>034</MSGNR>
+     <TEXT>Cannot read source for FM &amp;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>035</MSGNR>
+     <TEXT>Cannot resolve include source for FM &amp;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>036</MSGNR>
+     <TEXT>Avoid SELECT * FROM.Use SELECT SINGLE if only one row is needed</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>037</MSGNR>
+     <TEXT>Nested LOOP detected on &amp;1. Try hashed/sorted tables</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>038</MSGNR>
+     <TEXT>SELECT inside LOOP detected</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>039</MSGNR>
+     <TEXT>READ TABLE ... WITH KEY without BINARY SEARCH may impact performance</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>040</MSGNR>
+     <TEXT>Obsolete keyword found: &amp;1</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>041</MSGNR>
+     <TEXT>Obsolete syntax found: &amp;1</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>042</MSGNR>
+     <TEXT>Function Module &amp;1 does not exist.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>043</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>044</MSGNR>
+     <TEXT>FORM &amp;1 &amp;2 parameter &amp;3 must start with &amp;4.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>045</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>046</MSGNR>
+     <TEXT>METHOD &amp;1 &amp;2 parameter &amp;3 must start with &amp;4.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>047</MSGNR>
+     <TEXT>FM &amp;1 &amp;2 parameter &amp;3 must start with &amp;4.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>048</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>049</MSGNR>
+     <TEXT>reference variable &amp;2 should start with &amp;3.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>050</MSGNR>
+     <TEXT>Structured constant &amp;1 should follow global constant prefix GC_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>051</MSGNR>
+     <TEXT>Constant &amp;1 should follow local constant prefix LC_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>052</MSGNR>
+     <TEXT>Constant &amp;1 should follow local constant prefix GC_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>053</MSGNR>
+     <TEXT>STATICS variable &amp;1 should follow prefix ST_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>054</MSGNR>
+     <TEXT>Field-symbol &amp;1 should follow local prefix &lt;LFS_*&gt;.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>055</MSGNR>
+     <TEXT>Field-symbol &amp;1 should follow global prefix &lt;GFS_*&gt;.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>056</MSGNR>
+     <TEXT>Type &amp;1 should follow local table-type prefix LTY_T_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>057</MSGNR>
+     <TEXT>Type &amp;1 should follow local type prefix LTY_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>058</MSGNR>
+     <TEXT>Type &amp;1 should follow global table-type prefix GTY_T_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>059</MSGNR>
+     <TEXT>Type &amp;1 should follow global type prefix GTY_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>060</MSGNR>
+     <TEXT>Selection-screen parameter &amp;1 should follow prefix &amp;2 and be &lt;= 8 chars.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>061</MSGNR>
+     <TEXT>Radio button group &amp;1 should follow prefix RG* and be &lt;= 4 chars.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>062</MSGNR>
+     <TEXT>Select-option &amp;1 should follow prefix S_* and be &lt;= 8 chars.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>063</MSGNR>
+     <TEXT>Selection-screen block &amp;1 should follow prefix BL_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>064</MSGNR>
+     <TEXT>FORM name &amp;1 should follow prefix F_*.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>065</MSGNR>
+     <TEXT>&amp;1 range variable &amp;2 should start with &amp;3.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>066</MSGNR>
+     <TEXT>&amp;1 internal table variable &amp;2 should start with &amp;3.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>067</MSGNR>
+     <TEXT>&amp;1 structure variable &amp;2 should start with &amp;3.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>068</MSGNR>
+     <TEXT>&amp;1 value variable &amp;2 should start with &amp;3.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>069</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>070</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>071</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>072</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>073</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>074</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>075</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>076</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>077</MSGNR>
+     <TEXT>Export by Transport Request is not supported.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>078</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>079</MSGNR>
+     <TEXT>For Excel export, please enter one object: Program, FG, FM,Class.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>080</MSGNR>
+     <TEXT>For Excel export, only one object is allowed:Program, FG, FM,Class.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>081</MSGNR>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>082</MSGNR>
     </T100>
    </T100>
   </asx:values>
