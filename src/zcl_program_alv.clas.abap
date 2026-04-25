@@ -179,7 +179,7 @@ PRIVATE SECTION.
       hardcode    TYPE string VALUE 'HARDCODE',
       naming      TYPE string VALUE 'NAMING',
       clean_code  TYPE string VALUE 'CLEAN_CODE',
-      performance TYPE string VALUE 'PERFORMACNE',
+      performance TYPE string VALUE 'PERFORMANCE',
       obsolete    TYPE string VALUE 'OBSOLETE',
     END OF gc_category.
 
@@ -565,12 +565,6 @@ METHOD display_analysis_alv.
         CATCH cx_salv_not_found.
       ENDTRY.
 
-      TRY.
-          lo_column ?= lo_columns->get_column( 'RULE' ).
-          lo_column->set_alignment( if_salv_c_alignment=>centered ).
-        CATCH cx_salv_not_found.
-      ENDTRY.
-
       "Header
       DATA(o_grid_header) = NEW cl_salv_form_layout_grid( ).
       " Info box bên trái
@@ -586,7 +580,7 @@ METHOD display_analysis_alv.
       o_info_grid->create_label(
         row    = 1
         column = 1
-        text   = 'Program:' ).
+        text   = TEXT-C20 ).
 
       o_info_grid->create_text(
         row    = 1
@@ -678,7 +672,7 @@ METHOD display_analysis_alv.
       mo_alv->display( ).
 
     CATCH cx_salv_msg.
-      MESSAGE e032(zgsp04_analyzetool) DISPLAY LIKE 'E'.
+      MESSAGE e032(zgsp04_analyzetool).
       RETURN.
   ENDTRY.
 
@@ -914,7 +908,6 @@ METHOD display_where_used_alv.
           lo_column->set_short_text( lv_short_text ).
           lo_column->set_medium_text( lv_medium_text ).
           lo_column->set_long_text( lv_long_text ).
-          lo_column->set_cell_type( if_salv_c_cell_type=>hotspot ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
@@ -971,25 +964,24 @@ METHOD display_where_used_alv.
           lo_column->set_technical( abap_true ).
         CATCH cx_salv_not_found.
       ENDTRY.
-*
-*      TRY.
-*          lo_column ?= lo_columns->get_column( gc_col-nav_kind_raw ).
-*          lo_column->set_technical( abap_true ).
-*        CATCH cx_salv_not_found.
-*      ENDTRY.
-*
-*      TRY.
-*          lo_column ?= lo_columns->get_column( gc_col-used_cls_raw ).
-*          lo_column->set_technical( abap_true ).
-*        CATCH cx_salv_not_found.
-*      ENDTRY.
-*
-*      TRY.
-*          lo_column ?= lo_columns->get_column( gc_col-used_obj_raw ).
-*          lo_column->set_technical( abap_true ).
-*        CATCH cx_salv_not_found.
-*      ENDTRY.
 
+      TRY.
+          lo_column ?= lo_columns->get_column( 'NAV_KIND_RAW' ).
+          lo_column->set_technical( abap_true ).
+        CATCH cx_salv_not_found.
+      ENDTRY.
+
+      TRY.
+          lo_column ?= lo_columns->get_column( 'USED_CLS_RAW' ).
+          lo_column->set_technical( abap_true ).
+        CATCH cx_salv_not_found.
+      ENDTRY.
+
+      TRY.
+          lo_column ?= lo_columns->get_column( 'USED_OBJ_RAW' ).
+          lo_column->set_technical( abap_true ).
+        CATCH cx_salv_not_found.
+      ENDTRY.
       TRY.
           lo_columns->set_column_position(
             columnname = gc_col-object_name

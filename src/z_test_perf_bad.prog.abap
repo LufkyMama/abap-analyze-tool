@@ -18,25 +18,25 @@ REPORT z_test_perf_bad.
 *DATA lt_head TYPE STANDARD TABLE OF mara WITH HEADER LINE.
 *DATA ls_like LIKE LINE OF lt_mara.
 *
-*"--- analyze_chained_data: SHOULD trigger
+*--- analyze_chained_data: SHOULD trigger
 *DATA: gv_chain_a TYPE i,
 *      gv_chain_b TYPE i.
 *
-*"--- analyze_chained_data: SHOULD NOT trigger
+*--- analyze_chained_data: SHOULD NOT trigger
 *DATA gv_single_ok TYPE i.
 *
-*"--- analyze_chained_data: SHOULD NOT trigger if BEGIN OF is excluded correctly
+*--- analyze_chained_data: SHOULD NOT trigger if BEGIN OF is excluded correctly
 *DATA: BEGIN OF gs_ok_struct,
 *        matnr TYPE matnr,
 *        mtart TYPE mtart,
 *      END OF gs_ok_struct.
 *
 *START-OF-SELECTION.
-* data: test type string value 'abcd'.
+*  DATA: test TYPE string VALUE 'abcd'.
 *
-*  "========================
-*  " OBSOLETE
-*  "========================
+*  ========================
+*   OBSOLETE
+*  ========================
 *  MOVE 'MAT001' TO lv_matnr.
 *  COMPUTE lv_sum = 1 + 2.
 *
@@ -48,21 +48,21 @@ REPORT z_test_perf_bad.
 *    EXCEPTIONS
 *      OTHERS   = 1.
 *
-*  "========================
-*  " SQL
-*  "========================
+*  ========================
+*   SQL
+*  ========================
 *  DATA: lt_matnr TYPE TABLE OF mara-matnr.
 *
-*SELECT matnr
-*  FROM mara
-*  INTO TABLE lt_matnr
-*  UP TO 10 ROWS.
+*  SELECT matnr
+*    FROM mara
+*    INTO TABLE lt_matnr
+*    UP TO 10 ROWS.
 *
-*SELECT *
-*  FROM mara
-*  INTO TABLE lt_mara
-*  FOR ALL ENTRIES IN lt_matnr
-*  WHERE matnr = lt_matnr-table_line.
+*  SELECT *
+*    FROM mara
+*    INTO TABLE lt_mara
+*    FOR ALL ENTRIES IN lt_matnr
+*    WHERE matnr = lt_matnr-table_line.
 *  SELECT * FROM mara
 *    INTO TABLE lt_mara
 *    UP TO 20 ROWS.
@@ -95,60 +95,60 @@ REPORT z_test_perf_bad.
 *      WHERE matnr = ls_mara-matnr.
 *  ENDLOOP.
 *
-*  "========================================================
-*  " TEST FOR ANALYZE_UNUSED_TEXT_SYMBOLS
-*  "========================================================
-*  "Bạn phải tạo text symbols trong Text Elements:
-*  "001 = Used text 001
-*  "002 = Used text 002
-*  "003 = Unused text 003
-*  "004 = Comment only
-*  "005 = String only
-*  "006 = Unused text 006
+*  ========================================================
+*   TEST FOR ANALYZE_UNUSED_TEXT_SYMBOLS
+*  ========================================================
+*  Bạn phải tạo text symbols trong Text Elements:
+*  001 = Used text 001
+*  002 = Used text 002
+*  003 = Unused text 003
+*  004 = Comment only
+*  005 = String only
+*  006 = Unused text 006
 *
 *  WRITE: / TEXT-001.
 *  WRITE: / TEXT-002.
 *
-*  " text-004   " chỉ nằm trong comment -> SHOULD remain unused
+*   text-004   " chỉ nằm trong comment -> SHOULD remain unused
 *  DATA(lv_text_probe) = `text-005`. " chỉ nằm trong string
 *
 *  IF lv_text_probe = `X`.
 *    WRITE: / lv_text_probe.
 *  ENDIF.
 *
-*  "========================================================
-*  " TEST FOR ANALYZE_CHAINED_DATA
-*  "========================================================
+*  ========================================================
+*   TEST FOR ANALYZE_CHAINED_DATA
+*  ========================================================
 *  DATA: lv_local_chain_a TYPE i,
 *        lv_local_chain_b TYPE i.
 *
 *  DATA lv_local_ok TYPE i.
 *
-*  "========================================================
-*  " TEST FOR ANALYZE_SUBROUTINE_ISSUES
-*  "========================================================
+*  ========================================================
+*   TEST FOR ANALYZE_SUBROUTINE_ISSUES
+*  ========================================================
 *  PERFORM normalize USING lv_matnr CHANGING lv_matnr.
 *  PERFORM helper_ok.
 *
-*  "========================================================
-*  " FORM
-*  "========================================================
-*  FORM normalize USING    iv_matnr TYPE matnr
-*               CHANGING cv_matnr TYPE matnr.
+*  ========================================================
+*   FORM
+*  ========================================================
+*FORM normalize USING    iv_matnr TYPE matnr
+*             CHANGING cv_matnr TYPE matnr.
 *
-*  "--- analyze_chained_data: SHOULD trigger inside FORM too
+*  --- analyze_chained_data: SHOULD trigger inside FORM too
 *  DATA: lv_form_chain_a TYPE i,
 *        lv_form_chain_b TYPE i.
 *
 *  cv_matnr = iv_matnr.
-*  ENDFORM.
+*ENDFORM.
 *
-*  FORM helper_ok.
-*    DATA lv_dummy TYPE i.
-*    lv_dummy = 1.
-*  ENDFORM.
+*FORM helper_ok.
+*  DATA lv_dummy TYPE i.
+*  lv_dummy = 1.
+*ENDFORM.
 *
-*  FORM helper_never_called.
-*    DATA lv_never_called TYPE i.
-*    lv_never_called = 2.
-*  ENDFORM.
+*FORM helper_never_called.
+*  DATA lv_never_called TYPE i.
+*  lv_never_called = 2.
+*ENDFORM.

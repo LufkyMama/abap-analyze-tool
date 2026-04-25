@@ -8,11 +8,22 @@
 FORM modify_selection_screen.
 
   LOOP AT SCREEN.
-    IF screen-name = 'P_TR'.
-      IF rb_exp = abap_true.
-        screen-input = 0.
+    " Logic cho p_err (Nhóm M1)
+    IF screen-group1 = 'M1'.
+      IF rb_check = 'X'.
+        screen-active = '1'.
       ELSE.
-        screen-input = 1.
+        screen-active = '0'.
+      ENDIF.
+      MODIFY SCREEN.
+    ENDIF.
+
+    " Logic cho p_tr (Nhóm M2) - Ẩn khi chọn rb_exp
+    IF screen-group1 = 'M2'.
+      IF rb_exp = 'X'.
+        screen-active = '0'. " Ẩn khi rb_exp được chọn
+      ELSE.
+        screen-active = '1'. " Hiện trong các trường hợp còn lại
       ENDIF.
       MODIFY SCREEN.
     ENDIF.
@@ -27,7 +38,7 @@ FORM validate_selection_screen.
 
   DATA: lv_cnt_all    TYPE i,
         lv_cnt_export TYPE i.
-
+  CHECK sy-ucomm = 'ONLI'.
   PERFORM normalize_inputs.
 
   CLEAR: lv_cnt_all, lv_cnt_export.
@@ -146,7 +157,13 @@ ENDFORM.
 FORM start_of_selection_main.
 
   DATA: lo_report      TYPE REF TO zcl_program_report,
-        lt_errors_disp TYPE ztt_error.
+        lt_errors_disp TYPE ztt_error,
+        lv_obj_label   TYPE string,
+        lv_obj_name    TYPE string.
+
+  "--------------------------------------------------
+  " Export Technical Spec
+  "--------------------------------------------------
   IF rb_exp = abap_true.
 
     CREATE OBJECT lo_report.
@@ -168,10 +185,17 @@ FORM start_of_selection_main.
         im_class_name = p_class ).
     ENDIF.
 
+    RETURN.
   ENDIF.
 
+  "--------------------------------------------------
+  " Create controller
+  "--------------------------------------------------
   lo_controller = NEW zcl_program_controller( ).
 
+  "--------------------------------------------------
+  " Analyze Check
+  "--------------------------------------------------
   IF rb_check = abap_true.
     lt_errors = lo_controller->run_process(
       iv_tr    = p_tr
@@ -183,6 +207,9 @@ FORM start_of_selection_main.
     ).
   ENDIF.
 
+  "--------------------------------------------------
+  " Where-Used List
+  "--------------------------------------------------
   IF rb_used = abap_true.
     lt_founds = lo_controller->run_where_used(
       iv_tr               = p_tr
@@ -198,34 +225,67 @@ FORM start_of_selection_main.
     ).
   ENDIF.
 
+  "--------------------------------------------------
+  " Create ALV object
+  "--------------------------------------------------
   IF go_alv IS INITIAL.
     CREATE OBJECT go_alv.
   ENDIF.
 
-*  IF rb_check = abap_true AND lt_errors IS NOT INITIAL.
-*    go_alv->display_analysis_alv(
-*      it_data = lt_errors ).
-*  ENDIF.
+  "--------------------------------------------------
+  " Filter Error only if checkbox is selected
+  "--------------------------------------------------
+  CLEAR lt_errors_disp.
+
   IF p_err = abap_true.
-    LOOP AT lt_errors INTO DATA(ls_err) WHERE sev = 'E'.
+    LOOP AT lt_errors INTO DATA(ls_err) WHERE sev = gc_sev_error.
       APPEND ls_err TO lt_errors_disp.
     ENDLOOP.
   ELSE.
     lt_errors_disp = lt_errors.
   ENDIF.
 
-  IF lt_errors_disp IS NOT INITIAL.
-    go_alv->display_analysis_alv(
-      it_data = lt_errors_disp ).
-  ELSE.
-    MESSAGE 'No error entries found.' TYPE 'S'.
+  "--------------------------------------------------
+  " Build object label / name for success message
+  "--------------------------------------------------
+  CLEAR: lv_obj_label, lv_obj_name.
+
+  IF p_tr IS NOT INITIAL.
+    lv_obj_label = 'Transport Request'.
+    lv_obj_name  = p_tr.
+  ELSEIF p_fugr IS NOT INITIAL.
+    lv_obj_label = 'Function Group'.
+    lv_obj_name  = p_fugr.
+  ELSEIF p_prog IS NOT INITIAL.
+    lv_obj_label = 'Program'.
+    lv_obj_name  = p_prog.
+  ELSEIF p_func IS NOT INITIAL.
+    lv_obj_label = 'Function Module'.
+    lv_obj_name  = p_func.
+  ELSEIF p_class IS NOT INITIAL.
+    lv_obj_label = 'Class'.
+    lv_obj_name  = p_class.
   ENDIF.
 
+  "--------------------------------------------------
+  " Display Analyze result
+  "--------------------------------------------------
+  IF rb_check = abap_true.
+    IF lt_errors_disp IS NOT INITIAL.
+      go_alv->display_analysis_alv(
+        it_data = lt_errors_disp ).
+    ELSE.
+      MESSAGE s021(z_gsp04_message) WITH lv_obj_label lv_obj_name.
+    ENDIF.
+  ENDIF.
 
-IF rb_used = abap_true.
-  go_alv->display_where_used_alv(
-    it_data = lt_founds ).
-ENDIF.
+  "--------------------------------------------------
+  " Display Where-Used result
+  "--------------------------------------------------
+  IF rb_used = abap_true AND lt_founds IS NOT INITIAL.
+    go_alv->display_where_used_alv(
+      it_data = lt_founds ).
+  ENDIF.
 
 ENDFORM.
 

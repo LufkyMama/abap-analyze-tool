@@ -4,14 +4,6 @@
 " Note   : Not intended to be executed
 "------------------------------------------------------------
 
-CONSTANTS:
-  gc_txt_move        TYPE string VALUE 'MOVE',
-  gc_txt_occurs      TYPE string VALUE 'OCCURS',
-  gc_txt_header      TYPE string VALUE `WITH HEADER LINE`,
-  gc_txt_like        TYPE string VALUE 'LIKE LINE OF',
-  gc_txt_translate   TYPE string VALUE 'TRANSLATE',
-  gc_txt_call_method TYPE string VALUE 'CALL METHOD',
-  gc_txt_call_dialog TYPE string VALUE 'CALL DIALOG'.
 
 DATA:
   lv_a    TYPE i VALUE 1,
@@ -38,15 +30,31 @@ FORM test_analyze_obsolete_all.
 
 * LIKE LINE OF
 
-* CALL DIALOG
 
-* CATCH SYSTEM-EXCEPTIONS
 
   lv_c = lv_a. " MOVE in inline comment
-  lv_c = lv_b. " OCCURS in inline comment
+
   lv_text = 'CALL METHOD'.
+
   lv_text = `WITH HEADER LINE`.
+
   lv_text = 'LIKE LINE OF'.
+
+CONSTANTS:
+  gc_txt_move        TYPE string VALUE 'MOVE',
+
+  gc_txt_occurs      TYPE string VALUE 'OCCURS',
+
+  gc_txt_header      TYPE string VALUE `WITH HEADER LINE`,
+
+  gc_txt_like        TYPE string VALUE 'LIKE LINE OF',
+
+  gc_txt_translate   TYPE string VALUE 'TRANSLATE',
+
+  gc_txt_call_method TYPE string VALUE 'CALL METHOD',
+
+  gc_txt_call_dialog TYPE string VALUE 'CALL DIALOG'.
+
 
   CALL TRANSACTION 'VA02' WITH AUTHORITY-CHECK.
 
@@ -77,6 +85,9 @@ FORM test_analyze_obsolete_all.
   REFRESH lt_std.
 
   LEAVE.
+
+DATA: lv_tcode TYPE tcode VALUE 'SE38'.
+LEAVE TO TRANSACTION lv_tcode.
 
   DATA: BEGIN OF gt_occurs OCCURS 0,
           col1 TYPE i,

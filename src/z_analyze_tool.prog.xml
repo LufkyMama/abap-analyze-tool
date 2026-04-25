@@ -1976,7 +1976,7 @@
     <item>
      <ID>S</ID>
      <KEY>P_TR</KEY>
-     <ENTRY>Transaction Request</ENTRY>
+     <ENTRY>Transport Request</ENTRY>
      <LENGTH>27</LENGTH>
     </item>
     <item>

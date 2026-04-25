@@ -3,7 +3,7 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <PROGDIR>
-    <NAME>ZTEST_CALL_FM_CONST</NAME>
+    <NAME>ZTEST_NAMING</NAME>
     <SUBC>1</SUBC>
     <RSTAT>T</RSTAT>
     <RLOAD>E</RLOAD>
@@ -12,21 +12,9 @@
    </PROGDIR>
    <TPOOL>
     <item>
-     <ID>I</ID>
-     <KEY>001</KEY>
-     <ENTRY>Hello!!</ENTRY>
-     <LENGTH>17</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>002</KEY>
-     <ENTRY>Good night</ENTRY>
-     <LENGTH>20</LENGTH>
-    </item>
-    <item>
      <ID>R</ID>
-     <ENTRY>Program ZTEST_CALL_FM_CONST</ENTRY>
-     <LENGTH>27</LENGTH>
+     <ENTRY>Program ZTEST_NAMING</ENTRY>
+     <LENGTH>20</LENGTH>
     </item>
    </TPOOL>
   </asx:values>

@@ -131,7 +131,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>021</MSGNR>
-     <TEXT>Global variable &amp;1 is used only inside 1 routine.</TEXT>
+     <TEXT>No issues found for &amp;1 &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -262,6 +262,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>043</MSGNR>
+     <TEXT>FOR ALL ENTRIES in &amp;1 should be protected by IS NOT INITIAL check.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -295,7 +296,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>049</MSGNR>
-     <TEXT>reference variable &amp;2 should start with &amp;3.</TEXT>
+     <TEXT>Reference variable &amp;2 should start with &amp;3.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -361,19 +362,19 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>060</MSGNR>
-     <TEXT>Selection-screen parameter &amp;1 should follow prefix &amp;2 and be &lt;= 8 chars.</TEXT>
+     <TEXT>Selection-screen parameter &amp;1 should follow prefix &amp;2</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>061</MSGNR>
-     <TEXT>Radio button group &amp;1 should follow prefix RG* and be &lt;= 4 chars.</TEXT>
+     <TEXT>Radio button group &amp;1 should follow prefix RG*</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>062</MSGNR>
-     <TEXT>Select-option &amp;1 should follow prefix S_* and be &lt;= 8 chars.</TEXT>
+     <TEXT>Select-option &amp;1 should follow prefix S_*</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -391,7 +392,6 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>065</MSGNR>
-     <TEXT>&amp;1 range variable &amp;2 should start with &amp;3.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -415,36 +415,43 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>069</MSGNR>
+     <TEXT>Transport Request &amp;1 has no objects.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>070</MSGNR>
+     <TEXT>Transport Request &amp;1 has no analyzable objects.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>071</MSGNR>
+     <TEXT>No where-used entries found for Program &amp;1.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>072</MSGNR>
+     <TEXT>No where-used entries found for Function Group &amp;1.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>073</MSGNR>
+     <TEXT>No where-used entries found for Function Module &amp;1.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>074</MSGNR>
+     <TEXT>No where-used entries found for Class &amp;1.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>075</MSGNR>
+     <TEXT>No where-used entries found for Transport Request &amp;1.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>

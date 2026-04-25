@@ -649,7 +649,7 @@ METHOD run_check_program.
 ENDMETHOD.
 
 
-METHOD run_check_tr.
+ METHOD run_check_tr.
   ensure_objects( ).
   CLEAR rt_errors.
 
@@ -674,17 +674,10 @@ METHOD run_check_tr.
 
   IF lt_e071 IS INITIAL.
     MESSAGE e036(z_gsp04_message) WITH iv_tr INTO lv_msg.
-
-    CLEAR ls_err.
-    ls_err-line    = 0.
-    ls_err-sev     = gc_sev_error.
-    ls_err-msg     = lv_msg.
-    ls_err-objname = iv_tr.
-    APPEND ls_err TO rt_errors.
     RETURN.
   ENDIF.
 
-  " 2) Tránh trùng
+  " 2) Tránh trùngx
   SORT lt_e071 BY object obj_name.
   DELETE ADJACENT DUPLICATES FROM lt_e071 COMPARING object obj_name.
 
@@ -837,6 +830,301 @@ ENDMETHOD.
 
 
 METHOD run_where_used.
+*METHOD run_where_used.
+*  ensure_objects( ).
+*  CLEAR: rt_founds, ev_has_more, ev_next_offset, ev_index_suspect, gt_visited.
+*
+*  TYPES: BEGIN OF gty_trdir_meta,
+*           name TYPE trdir-name,
+*           subc TYPE trdir-subc,
+*         END OF gty_trdir_meta,
+*         gty_t_trdir_meta TYPE HASHED TABLE OF gty_trdir_meta WITH UNIQUE KEY name.
+*
+*  TYPES: BEGIN OF gty_enlfdir_map,
+*           area     TYPE enlfdir-area,
+*           funcname TYPE enlfdir-funcname,
+*         END OF gty_enlfdir_map,
+*         gty_t_enlfdir_map TYPE STANDARD TABLE OF gty_enlfdir_map WITH EMPTY KEY.
+*
+*  DATA: lt_keys  TYPE gty_t_obj_keys,
+*        ls_key   TYPE gty_obj_key,
+*        lt_all   TYPE zcl_program_whereused=>ty_founds,
+*        lt_found TYPE zcl_program_whereused=>ty_founds,
+*        lt_e071  TYPE STANDARD TABLE OF gty_e071 WITH EMPTY KEY,
+*        ls_e071  TYPE gty_e071,
+*        lv_subc  TYPE trdir-subc,
+*        lv_subrc TYPE sy-subrc,
+*        lv_sus   TYPE abap_bool,
+*        lv_total TYPE i,
+*        lv_off   TYPE i,
+*        lv_end   TYPE i,
+*        lv_livit TYPE i.
+*
+*  DATA: lt_prog_keys   TYPE SORTED TABLE OF trdir-name WITH UNIQUE KEY table_line,
+*        lt_fugr_keys   TYPE SORTED TABLE OF enlfdir-area WITH UNIQUE KEY table_line,
+*        lt_trdir_meta  TYPE gty_t_trdir_meta,
+*        lt_enlfdir_map TYPE gty_t_enlfdir_map.
+*
+*  CLEAR lt_keys.
+*
+*  "------------------------------------------------------------
+*  " 1) Build start key(s)
+*  "------------------------------------------------------------
+*  IF iv_tr IS NOT INITIAL.
+*
+*    SELECT pgmid, object, obj_name
+*      FROM e071
+*      INTO TABLE @lt_e071
+*      WHERE trkorr = @iv_tr.
+*
+*    " 1a) Gom key trước để tránh SELECT trong loop
+*    LOOP AT lt_e071 INTO ls_e071.
+*      IF ls_e071-pgmid <> gc_pgmid_r3tr.
+*        CONTINUE.
+*      ENDIF.
+*
+*      CASE ls_e071-object.
+*        WHEN gc_objtype_prog.
+*          INSERT CONV trdir-name( ls_e071-obj_name ) INTO TABLE lt_prog_keys.
+*
+*        WHEN gc_objtype_fugr.
+*          INSERT CONV enlfdir-area( ls_e071-obj_name ) INTO TABLE lt_fugr_keys.
+*
+*        WHEN OTHERS.
+*          CONTINUE.
+*      ENDCASE.
+*    ENDLOOP.
+*
+*    " 1b) Load TRDIR một lần
+*    IF lt_prog_keys IS NOT INITIAL.
+*      SELECT name, subc
+*        FROM trdir
+*        INTO TABLE @DATA(lt_trdir_raw)
+*        FOR ALL ENTRIES IN @lt_prog_keys
+*        WHERE name = @lt_prog_keys-table_line.
+*
+*      IF sy-subrc = 0.
+*        lt_trdir_meta = CORRESPONDING #( lt_trdir_raw ).
+*      ENDIF.
+*    ENDIF.
+*
+*    " 1c) Load ENLFDIR một lần
+*    IF lt_fugr_keys IS NOT INITIAL.
+*      SELECT area, funcname
+*        FROM enlfdir
+*        INTO TABLE @lt_enlfdir_map
+*        FOR ALL ENTRIES IN @lt_fugr_keys
+*        WHERE area = @lt_fugr_keys-table_line.
+*    ENDIF.
+*
+*    " 1d) Build key từ E071 cho CLAS / PROG / FUNC
+*    LOOP AT lt_e071 INTO ls_e071.
+*
+*      IF ls_e071-pgmid <> gc_pgmid_r3tr.
+*        CONTINUE.
+*      ENDIF.
+*
+*      CASE ls_e071-object.
+*
+*        WHEN gc_objtype_clas.
+*          APPEND VALUE gty_obj_key(
+*            find_obj_cls = gc_objtype_clas
+*            repo_object  = gc_objtype_clas
+*            obj_name     = ls_e071-obj_name ) TO lt_keys.
+*
+*        WHEN gc_objtype_prog.
+*          CLEAR lv_subc.
+*
+*          READ TABLE lt_trdir_meta
+*            WITH TABLE KEY name = CONV trdir-name( ls_e071-obj_name )
+*            INTO DATA(ls_trdir_meta).
+*
+*          IF sy-subrc = 0.
+*            lv_subc = ls_trdir_meta-subc.
+*          ENDIF.
+*
+*          IF lv_subc = gc_subc_include.
+*            APPEND VALUE gty_obj_key(
+*              find_obj_cls = gc_objtype_incl
+*              repo_object  = gc_objtype_prog
+*              obj_name     = ls_e071-obj_name ) TO lt_keys.
+*          ELSE.
+*            APPEND VALUE gty_obj_key(
+*              find_obj_cls = gc_objtype_prog
+*              repo_object  = gc_objtype_prog
+*              obj_name     = ls_e071-obj_name ) TO lt_keys.
+*          ENDIF.
+*
+*        WHEN gc_objtype_func.
+*          APPEND VALUE gty_obj_key(
+*            find_obj_cls = gc_objtype_func
+*            repo_object  = gc_objtype_func
+*            obj_name     = ls_e071-obj_name ) TO lt_keys.
+*
+*        WHEN gc_objtype_fugr.
+*          CONTINUE.
+*
+*        WHEN OTHERS.
+*          CONTINUE.
+*
+*      ENDCASE.
+*
+*    ENDLOOP.
+*
+*    " 1e) Build key FUNC từ toàn bộ FUGR đã load sẵn
+*    LOOP AT lt_enlfdir_map INTO DATA(ls_enlfdir).
+*      APPEND VALUE gty_obj_key(
+*        find_obj_cls = gc_objtype_func
+*        repo_object  = gc_objtype_func
+*        obj_name     = ls_enlfdir-funcname ) TO lt_keys.
+*    ENDLOOP.
+*
+*  ELSEIF iv_fugr IS NOT INITIAL.
+*
+*    CLEAR lt_keys.
+*
+*    DATA lt_funcs TYPE STANDARD TABLE OF rs38l-name WITH EMPTY KEY.
+*    SELECT funcname
+*      FROM enlfdir
+*      INTO TABLE @lt_funcs
+*      WHERE area = @iv_fugr.
+*
+*    LOOP AT lt_funcs INTO DATA(lv_func).
+*      APPEND VALUE gty_obj_key(
+*        find_obj_cls = gc_objtype_func
+*        repo_object  = gc_objtype_func
+*        obj_name     = lv_func ) TO lt_keys.
+*    ENDLOOP.
+*
+*    IF lt_keys IS INITIAL.
+*      RETURN.
+*    ENDIF.
+*
+*  ELSEIF iv_clas IS NOT INITIAL.
+*
+*    APPEND VALUE gty_obj_key(
+*      find_obj_cls = gc_objtype_clas
+*      repo_object  = gc_objtype_clas
+*      obj_name     = iv_clas ) TO lt_keys.
+*
+*  ELSEIF iv_prog IS NOT INITIAL.
+*
+*    CLEAR lv_subc.
+*    SELECT SINGLE subc
+*      FROM trdir
+*      INTO @lv_subc
+*      WHERE name = @iv_prog.
+*
+*    IF sy-subrc = 0 AND lv_subc = gc_subc_include.
+*      APPEND VALUE gty_obj_key(
+*        find_obj_cls = gc_objtype_incl
+*        repo_object  = gc_objtype_prog
+*        obj_name     = iv_prog ) TO lt_keys.
+*    ELSE.
+*      APPEND VALUE gty_obj_key(
+*        find_obj_cls = gc_objtype_prog
+*        repo_object  = gc_objtype_prog
+*        obj_name     = iv_prog ) TO lt_keys.
+*    ENDIF.
+*
+*  ELSEIF iv_func IS NOT INITIAL.
+*
+*    APPEND VALUE gty_obj_key(
+*      find_obj_cls = gc_objtype_func
+*      repo_object  = gc_objtype_func
+*      obj_name     = iv_func ) TO lt_keys.
+*
+*  ELSE.
+*    RETURN.
+*  ENDIF.
+*
+*  SORT lt_keys BY find_obj_cls repo_object obj_name.
+*  DELETE ADJACENT DUPLICATES FROM lt_keys
+*    COMPARING find_obj_cls repo_object obj_name.
+*
+*  "------------------------------------------------------------
+*  " 2) Collect where-used
+*  "------------------------------------------------------------
+*  CLEAR lt_all.
+*
+*  LOOP AT lt_keys INTO ls_key.
+*
+*    READ TABLE gt_visited
+*      WITH TABLE KEY
+*        find_obj_cls = ls_key-find_obj_cls
+*        repo_object  = ls_key-repo_object
+*        obj_name     = ls_key-obj_name
+*      TRANSPORTING NO FIELDS.
+*    IF sy-subrc = 0.
+*      CONTINUE.
+*    ENDIF.
+*
+*    INSERT ls_key INTO TABLE gt_visited.
+*
+*    CLEAR: lv_subrc, lv_sus, lt_found.
+*
+*    lt_found = go_whereused->get_where_used(
+*      EXPORTING
+*        im_find_obj_cls     = ls_key-find_obj_cls
+*        im_object           = CONV rsobject( ls_key-obj_name )
+*        im_tadir_object     = ls_key-repo_object
+*        im_comment_scope    = iv_comment_scope
+*        im_advanced_wide    = iv_advanced_wide
+*        im_recursive        = iv_recursive
+*        im_include_comments = iv_include_comments
+*      IMPORTING
+*        ex_last_subrc       = lv_subrc
+*        ex_index_suspect    = lv_sus ).
+*
+*    IF lv_sus = abap_true.
+*      ev_index_suspect = abap_true.
+*    ENDIF.
+*
+*    IF lt_found IS NOT INITIAL.
+*      APPEND LINES OF lt_found TO lt_all.
+*    ENDIF.
+*
+*  ENDLOOP.
+*
+*  SORT lt_all BY used_cls used_obj program object_row.
+*  DELETE ADJACENT DUPLICATES FROM lt_all
+*    COMPARING used_cls used_obj program object_row.
+*
+*  "------------------------------------------------------------
+*  " 3) Paging
+*  "------------------------------------------------------------
+*  DESCRIBE TABLE lt_all LINES lv_total.
+*
+*  lv_off = iv_offset.
+*  IF lv_off < 0.
+*    lv_off = 0.
+*  ENDIF.
+*  IF lv_off > lv_total.
+*    lv_off = lv_total.
+*  ENDIF.
+*
+*  lv_livit = iv_max_hits.
+*  IF lv_livit IS INITIAL OR lv_livit < 0.
+*    lv_livit = lv_total.
+*  ENDIF.
+*
+*  lv_end = lv_off + lv_livit.
+*  IF lv_end > lv_total.
+*    lv_end = lv_total.
+*  ENDIF.
+*
+*  CLEAR rt_founds.
+*  IF lv_total > 0 AND lv_off < lv_total.
+*    LOOP AT lt_all INTO DATA(ls_row) FROM lv_off + 1 TO lv_end.
+*      APPEND ls_row TO rt_founds.
+*    ENDLOOP.
+*  ENDIF.
+*
+*  ev_has_more    = xsdbool( lv_end < lv_total ).
+*  ev_next_offset = COND i( WHEN ev_has_more = abap_true THEN lv_end ELSE 0 ).
+*
+*ENDMETHOD.
+
   ensure_objects( ).
   CLEAR: rt_founds, ev_has_more, ev_next_offset, ev_index_suspect, gt_visited.
 
@@ -874,14 +1162,31 @@ METHOD run_where_used.
   CLEAR lt_keys.
 
   "------------------------------------------------------------
-  " 1) Build start key(s)
+  " 1) Build start key(s) + validate existence
   "------------------------------------------------------------
   IF iv_tr IS NOT INITIAL.
+
+    " TR tồn tại?
+    SELECT SINGLE trkorr
+      FROM e070
+      INTO @DATA(lv_trkorr_chk)
+      WHERE trkorr = @iv_tr.
+
+    IF sy-subrc <> 0.
+      MESSAGE s003(z_gsp04_message) WITH iv_tr DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
 
     SELECT pgmid, object, obj_name
       FROM e071
       INTO TABLE @lt_e071
       WHERE trkorr = @iv_tr.
+
+    " TR có tồn tại nhưng không có object
+    IF lt_e071 IS INITIAL.
+      MESSAGE s069(z_gsp04_message) WITH iv_tr DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
 
     " 1a) Gom key trước để tránh SELECT trong loop
     LOOP AT lt_e071 INTO ls_e071.
@@ -985,7 +1290,24 @@ METHOD run_where_used.
         obj_name     = ls_enlfdir-funcname ) TO lt_keys.
     ENDLOOP.
 
+    " TR có object nhưng không có object analyzable
+    IF lt_keys IS INITIAL.
+      MESSAGE s070(z_gsp04_message) WITH iv_tr DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
+
   ELSEIF iv_fugr IS NOT INITIAL.
+
+    " FUGR tồn tại?
+    SELECT SINGLE area
+      FROM tlibg
+      INTO @DATA(lv_area_chk)
+      WHERE area = @iv_fugr.
+
+    IF sy-subrc <> 0.
+      MESSAGE s007(z_gsp04_message) WITH iv_fugr DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
 
     CLEAR lt_keys.
 
@@ -1003,10 +1325,21 @@ METHOD run_where_used.
     ENDLOOP.
 
     IF lt_keys IS INITIAL.
+      MESSAGE s072(z_gsp04_message) WITH iv_fugr.
       RETURN.
     ENDIF.
 
   ELSEIF iv_clas IS NOT INITIAL.
+
+    SELECT SINGLE clsname
+      FROM seoclass
+      INTO @DATA(lv_clsname_chk)
+      WHERE clsname = @iv_clas.
+
+    IF sy-subrc <> 0.
+      MESSAGE s019(z_gsp04_message) WITH iv_clas DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
 
     APPEND VALUE gty_obj_key(
       find_obj_cls = gc_objtype_clas
@@ -1021,7 +1354,12 @@ METHOD run_where_used.
       INTO @lv_subc
       WHERE name = @iv_prog.
 
-    IF sy-subrc = 0 AND lv_subc = gc_subc_include.
+    IF sy-subrc <> 0.
+      MESSAGE s002(z_gsp04_message) WITH iv_prog DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
+
+    IF lv_subc = gc_subc_include.
       APPEND VALUE gty_obj_key(
         find_obj_cls = gc_objtype_incl
         repo_object  = gc_objtype_prog
@@ -1034,6 +1372,16 @@ METHOD run_where_used.
     ENDIF.
 
   ELSEIF iv_func IS NOT INITIAL.
+
+    SELECT SINGLE funcname
+      FROM tfdir
+      INTO @DATA(lv_func_chk)
+      WHERE funcname = @iv_func.
+
+    IF sy-subrc <> 0.
+      MESSAGE s042(z_gsp04_message) WITH iv_func DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
 
     APPEND VALUE gty_obj_key(
       find_obj_cls = gc_objtype_func
@@ -1128,6 +1476,23 @@ METHOD run_where_used.
 
   ev_has_more    = xsdbool( lv_end < lv_total ).
   ev_next_offset = COND i( WHEN ev_has_more = abap_true THEN lv_end ELSE 0 ).
+
+  "------------------------------------------------------------
+  " 4) No where-used found
+  "------------------------------------------------------------
+  IF rt_founds IS INITIAL.
+    IF iv_prog IS NOT INITIAL.
+      MESSAGE s071(z_gsp04_message) WITH iv_prog.
+    ELSEIF iv_fugr IS NOT INITIAL.
+      MESSAGE s072(z_gsp04_message) WITH iv_fugr.
+    ELSEIF iv_func IS NOT INITIAL.
+      MESSAGE s073(z_gsp04_message) WITH iv_func.
+    ELSEIF iv_clas IS NOT INITIAL.
+      MESSAGE s074(z_gsp04_message) WITH iv_clas.
+    ELSEIF iv_tr IS NOT INITIAL.
+      MESSAGE s075(z_gsp04_message) WITH iv_tr.
+    ENDIF.
+  ENDIF.
 
 ENDMETHOD.
 

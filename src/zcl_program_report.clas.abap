@@ -125,6 +125,14 @@ CLASS zcl_program_report DEFINITION
     TYPES:
       tt_tab_hits TYPE SORTED TABLE OF ty_tab_hit
           WITH UNIQUE KEY tab_name usa_type acc_type src .
+    TYPES: BEGIN OF ty_str_hit,
+             str_name TYPE tabname,
+             usa_type TYPE char20,
+             src      TYPE char20,
+           END OF ty_str_hit.
+    TYPES:
+      tt_str_hits TYPE SORTED TABLE OF ty_str_hit
+        WITH UNIQUE KEY str_name usa_type src.
 
     DATA mo_fetch TYPE REF TO zcl_program_fetch .
     DATA mo_check TYPE REF TO zcl_program_check .
@@ -284,6 +292,30 @@ CLASS zcl_program_report DEFINITION
         iv_tabname   TYPE tabname
       RETURNING
         VALUE(rv_ok) TYPE abap_bool.
+    METHODS fill_structure
+      IMPORTING
+        !iv_objtype         TYPE trobjtype
+        !iv_objname         TYPE sobj_name
+      RETURNING
+        VALUE(rt_structure) TYPE ztt_structure.
+
+    METHODS collect_structure_from_source
+      IMPORTING
+        !it_source   TYPE string_table
+      CHANGING
+        !ct_str_hits TYPE tt_str_hits.
+
+    METHODS build_structure_rows
+      IMPORTING
+        !it_str_hits        TYPE tt_str_hits
+      RETURNING
+        VALUE(rt_structure) TYPE ztt_structure.
+    METHODS collect_structure_from_meta
+      IMPORTING
+        !iv_objtype  TYPE trobjtype
+        !iv_objname  TYPE sobj_name
+      CHANGING
+        !ct_str_hits TYPE tt_str_hits.
 ENDCLASS.
 
 
@@ -317,7 +349,16 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
         CHANGING
           cs_row     = ls_row
       ).
-
+      ls_row-tab_name = COND #( WHEN ls_row-tab_name IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_name ).
+      ls_row-tab_type = COND #( WHEN ls_row-tab_type IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_type ).
+      ls_row-tab_des  = COND #( WHEN ls_row-tab_des  IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_des  ).
+      ls_row-tab_usa_typ = COND #( WHEN ls_row-tab_usa_typ IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_usa_typ ).
+      ls_row-tab_acc_typ = COND #( WHEN ls_row-tab_acc_typ IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_acc_typ ).
+      ls_row-tab_use_fld = COND #( WHEN ls_row-tab_use_fld IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_use_fld ).
+      ls_row-tab_key_fld = COND #( WHEN ls_row-tab_key_fld IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_key_fld ).
+      ls_row-tab_cli_dep = COND #( WHEN ls_row-tab_cli_dep IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_cli_dep ).
+      ls_row-tab_del_cls = COND #( WHEN ls_row-tab_del_cls IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_del_cls ).
+      ls_row-tab_src     = COND #( WHEN ls_row-tab_src IS INITIAL THEN gs_export-kw_na ELSE ls_row-tab_src ).
       APPEND ls_row TO rt_table.
 
     ENDLOOP.
@@ -1605,7 +1646,16 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
       IF ls_row-de_des IS INITIAL.
         ls_row-de_des = ls_row-de_name.
       ENDIF.
-
+      ls_row-de_name = COND #( WHEN ls_row-de_name IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_name ).
+      ls_row-de_type = COND #( WHEN ls_row-de_type IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_type ).
+      ls_row-de_des  = COND #( WHEN ls_row-de_des  IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_des  ).
+      ls_row-de_length = COND #( WHEN ls_row-de_length IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_length ).
+      ls_row-de_decimals = COND #( WHEN ls_row-de_decimals IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_decimals ).
+      ls_row-de_domain = COND #( WHEN ls_row-de_domain IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_domain ).
+      ls_row-de_valtab = COND #( WHEN ls_row-de_valtab IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_valtab ).
+      ls_row-de_short = COND #( WHEN ls_row-de_short IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_short ).
+      ls_row-de_medium = COND #( WHEN ls_row-de_medium IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_medium ).
+      ls_row-de_long = COND #( WHEN ls_row-de_long IS INITIAL THEN gs_export-kw_na ELSE ls_row-de_long ).
       APPEND ls_row TO rt_dataelement.
 
     ENDLOOP.
@@ -1738,6 +1788,10 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
       iv_objtype = gs_export-kw_obj_clas
       iv_objname = lv_class_objname
     ).
+    gs_excel-structure-struc_item = me->fill_structure(
+      iv_objtype = gs_export-kw_obj_clas
+      iv_objname = lv_class_objname
+    ).
 
     lv_viewer_title = |CLASS_{ lv_class_name }|.
 
@@ -1746,6 +1800,7 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
     gs_excel-show_screen_layout,
     gs_excel-show_data_element,
     gs_excel-show_table,
+    gs_excel-show_structure,
     gs_excel-show_fm_layout,
     gs_excel-show_class_layout.
 
@@ -1753,6 +1808,7 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
     gs_excel-show_screen_layout = abap_false.
     gs_excel-show_data_element  = abap_true.
     gs_excel-show_table         = abap_true.
+    gs_excel-show_structure     = abap_true.
     gs_excel-show_fm_layout     = abap_false.
     gs_excel-show_class_layout  = abap_true.
 
@@ -2094,6 +2150,10 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
       iv_objtype = gs_export-kw_obj_func
       iv_objname = lv_func_objname ).
 
+    gs_excel-structure-struc_item = me->fill_structure(
+      iv_objtype = gs_export-kw_obj_func
+      iv_objname = lv_func_objname ).
+
     lv_viewer_title      = |FM_{ lv_func_name }|.
     gv_xlwb_default_file = |FM_{ lv_func_name }|.
 
@@ -2102,6 +2162,7 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
     gs_excel-show_screen_layout,
     gs_excel-show_data_element,
     gs_excel-show_table,
+gs_excel-show_structure,
     gs_excel-show_fm_layout,
     gs_excel-show_class_layout.
 
@@ -2109,6 +2170,7 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
     gs_excel-show_screen_layout = abap_false.
     gs_excel-show_data_element  = abap_true.
     gs_excel-show_table         = abap_true.
+    gs_excel-show_structure = abap_true.
     gs_excel-show_fm_layout     = abap_true.
     gs_excel-show_class_layout  = abap_false.
 
@@ -2385,6 +2447,10 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
       iv_objtype = gs_export-kw_obj_prog
       iv_objname = lv_prog_name ).
 
+    gs_excel-structure-struc_item = me->fill_structure(
+      iv_objtype = gs_export-kw_obj_prog
+      iv_objname = lv_prog_name ).
+
     lv_viewer_title = |PROG_{ lv_prog_name }|.
 
     CLEAR:
@@ -2392,6 +2458,7 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
     gs_excel-show_screen_layout,
     gs_excel-show_data_element,
     gs_excel-show_table,
+gs_excel-show_structure,
     gs_excel-show_fm_layout,
     gs_excel-show_class_layout.
 
@@ -2400,6 +2467,7 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
     gs_excel-show_screen_layout = abap_true.
     gs_excel-show_data_element  = abap_true.
     gs_excel-show_table         = abap_true.
+    gs_excel-show_structure = abap_true.
     gs_excel-show_fm_layout     = abap_false.
     gs_excel-show_class_layout  = abap_false.
 
@@ -5082,6 +5150,578 @@ CLASS ZCL_PROGRAM_REPORT IMPLEMENTATION.
     IF sy-subrc = 0.
       cs_row-tab_cli_dep = 'X'.
     ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD build_structure_rows.
+
+    DATA: ls_hit       TYPE ty_str_hit,
+          ls_row       TYPE zst_structure,
+          lv_no        TYPE i,
+          lv_ddtext    TYPE dd02t-ddtext,
+          lt_dd03l     TYPE STANDARD TABLE OF dd03l WITH EMPTY KEY,
+          ls_dd03l     TYPE dd03l,
+          lv_comp_text TYPE string,
+          lt_seen_name TYPE SORTED TABLE OF tabname WITH UNIQUE KEY table_line.
+
+    CLEAR lv_no.
+
+    LOOP AT it_str_hits INTO ls_hit.
+      READ TABLE lt_seen_name WITH TABLE KEY table_line = ls_hit-str_name
+        TRANSPORTING NO FIELDS.
+      IF sy-subrc = 0.
+        CONTINUE.
+      ENDIF.
+
+      INSERT ls_hit-str_name INTO TABLE lt_seen_name.
+      CLEAR: ls_row, lv_ddtext, lt_dd03l, lv_comp_text.
+      lv_no = lv_no + 1.
+
+      SELECT SINGLE ddtext
+        INTO @lv_ddtext
+        FROM dd02t
+        WHERE tabname    = @ls_hit-str_name
+          AND ddlanguage = @sy-langu
+          AND as4local   = 'A'
+          AND as4vers    = '0000'.
+
+      SELECT *
+        INTO TABLE @lt_dd03l
+        FROM dd03l
+        WHERE tabname   = @ls_hit-str_name
+          AND as4local  = 'A'
+          AND as4vers   = '0000'
+          AND fieldname NOT LIKE '.%'.
+
+      ls_row-struc_no      = lv_no.
+      ls_row-struc_name    = ls_hit-str_name.
+      ls_row-struc_des     = lv_ddtext.
+      ls_row-struc_usa_typ = ls_hit-usa_type.
+      ls_row-struc_src     = ls_hit-src.
+
+      LOOP AT lt_dd03l INTO ls_dd03l.
+        IF ls_dd03l-fieldname IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        IF lv_comp_text IS INITIAL.
+          lv_comp_text = ls_dd03l-fieldname.
+        ELSE.
+          CONCATENATE lv_comp_text ls_dd03l-fieldname
+            INTO lv_comp_text
+            SEPARATED BY cl_abap_char_utilities=>newline.
+        ENDIF.
+      ENDLOOP.
+
+      ls_row-struc_comp = lv_comp_text.
+      ls_row-struc_name = COND #( WHEN ls_row-struc_name IS INITIAL THEN gs_export-kw_na ELSE ls_row-struc_name ).
+      ls_row-struc_des  = COND #( WHEN ls_row-struc_des  IS INITIAL THEN gs_export-kw_na ELSE ls_row-struc_des  ).
+      ls_row-struc_usa_typ = COND #( WHEN ls_row-struc_usa_typ IS INITIAL THEN gs_export-kw_na ELSE ls_row-struc_usa_typ ).
+      ls_row-struc_src  = COND #( WHEN ls_row-struc_src  IS INITIAL THEN gs_export-kw_na ELSE ls_row-struc_src  ).
+      ls_row-struc_comp = COND #( WHEN ls_row-struc_comp IS INITIAL THEN gs_export-kw_na ELSE ls_row-struc_comp ).
+      APPEND ls_row TO rt_structure.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD collect_structure_from_meta.
+
+    DATA: lv_tabclass TYPE dd02l-tabclass,
+          lv_rowtype  TYPE dd40l-rowtype,
+          lv_target   TYPE tabname,
+          ls_hit      TYPE ty_str_hit.
+
+    DATA: lt_params TYPE STANDARD TABLE OF fupararef WITH EMPTY KEY,
+          ls_param  TYPE fupararef.
+
+    DATA: lt_subco TYPE STANDARD TABLE OF seosubcodf WITH EMPTY KEY,
+          ls_subco TYPE seosubcodf.
+
+    CASE iv_objtype.
+
+        "========================================================
+        " 1. FM parameter structure
+        "========================================================
+      WHEN gs_export-kw_obj_func.
+
+        SELECT *
+          INTO TABLE @lt_params
+          FROM fupararef
+          WHERE funcname = @iv_objname.
+
+        LOOP AT lt_params INTO ls_param.
+
+          CLEAR: lv_target, lv_tabclass, lv_rowtype.
+
+          " Ưu tiên field STRUCTURE
+          IF ls_param-structure IS NOT INITIAL.
+            lv_target = ls_param-structure.
+          ELSE.
+            CONTINUE.
+          ENDIF.
+
+          CONDENSE lv_target NO-GAPS.
+          TRANSLATE lv_target TO UPPER CASE.
+
+          " Nếu là table type thì resolve rowtype
+          SELECT SINGLE rowtype
+            INTO @lv_rowtype
+            FROM dd40l
+            WHERE typename = @lv_target
+              AND as4local = 'A'.
+
+          IF sy-subrc = 0 AND lv_rowtype IS NOT INITIAL.
+            lv_target = lv_rowtype.
+            CONDENSE lv_target NO-GAPS.
+            TRANSLATE lv_target TO UPPER CASE.
+          ENDIF.
+
+          " Chỉ nhận DDIC structure thật
+          SELECT SINGLE tabclass
+            INTO @lv_tabclass
+            FROM dd02l
+            WHERE tabname  = @lv_target
+              AND as4local = 'A'
+              AND as4vers  = '0000'.
+
+          IF sy-subrc = 0
+             AND ( lv_tabclass = 'INTTAB'
+                OR lv_tabclass = 'APPEND'
+                OR lv_tabclass = 'STRUCT' ).
+
+            CLEAR ls_hit.
+            ls_hit-str_name = lv_target.
+            ls_hit-usa_type = 'FM_PARAM'.
+            ls_hit-src      = 'META'.
+
+            INSERT ls_hit INTO TABLE ct_str_hits.
+
+          ENDIF.
+
+        ENDLOOP.
+
+        "========================================================
+        " 2. Class method parameter structure
+        "========================================================
+      WHEN gs_export-kw_obj_clas.
+
+        SELECT *
+          INTO TABLE @lt_subco
+          FROM seosubcodf
+          WHERE clsname  = @iv_objname
+            AND version  = '1'.
+
+        LOOP AT lt_subco INTO ls_subco.
+
+          CLEAR: lv_target, lv_tabclass, lv_rowtype.
+
+          " Nếu parameter type có giá trị thì lấy type đó
+          IF ls_subco-type IS NOT INITIAL.
+            lv_target = ls_subco-type.
+          ELSE.
+            CONTINUE.
+          ENDIF.
+
+          CONDENSE lv_target NO-GAPS.
+          TRANSLATE lv_target TO UPPER CASE.
+
+          " Nếu là table type hoặc TABLE OF thì resolve rowtype
+          SELECT SINGLE rowtype
+            INTO @lv_rowtype
+            FROM dd40l
+            WHERE typename = @lv_target
+              AND as4local = 'A'.
+
+          IF sy-subrc = 0 AND lv_rowtype IS NOT INITIAL.
+            lv_target = lv_rowtype.
+            CONDENSE lv_target NO-GAPS.
+            TRANSLATE lv_target TO UPPER CASE.
+          ENDIF.
+
+          " Chỉ nhận DDIC structure thật
+          SELECT SINGLE tabclass
+            INTO @lv_tabclass
+            FROM dd02l
+            WHERE tabname  = @lv_target
+              AND as4local = 'A'
+              AND as4vers  = '0000'.
+
+          IF sy-subrc = 0
+             AND ( lv_tabclass = 'INTTAB'
+                OR lv_tabclass = 'APPEND'
+                OR lv_tabclass = 'STRUCT' ).
+
+            CLEAR ls_hit.
+            ls_hit-str_name = lv_target.
+            ls_hit-usa_type = 'CLASS_PARAM'.
+            ls_hit-src      = 'META'.
+
+            INSERT ls_hit INTO TABLE ct_str_hits.
+
+          ENDIF.
+
+        ENDLOOP.
+
+      WHEN OTHERS.
+        RETURN.
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+
+  METHOD collect_structure_from_source.
+
+    DATA: lv_line     TYPE string,
+          lv_stmt     TYPE string,
+          lv_work     TYPE string,
+          lt_tokens   TYPE STANDARD TABLE OF string WITH EMPTY KEY,
+          lv_token    TYPE string,
+          lv_next     TYPE string,
+          lv_next2    TYPE string,
+          lv_next3    TYPE string,
+          lv_next4    TYPE string,
+          lv_target   TYPE string,
+          lv_idx      TYPE sy-tabix,
+          lv_tabclass TYPE dd02l-tabclass,
+          lv_rowtype  TYPE dd40l-rowtype,
+          ls_hit      TYPE ty_str_hit.
+
+    CLEAR: lv_stmt.
+
+    LOOP AT it_source INTO lv_line.
+
+      IF lv_line IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      IF lv_stmt IS INITIAL.
+        lv_stmt = lv_line.
+      ELSE.
+        CONCATENATE lv_stmt lv_line INTO lv_stmt SEPARATED BY space.
+      ENDIF.
+
+      IF lv_line NS '.'.
+        CONTINUE.
+      ENDIF.
+
+      lv_work = lv_stmt.
+      TRANSLATE lv_work TO UPPER CASE.
+
+      REPLACE ALL OCCURRENCES OF '(' IN lv_work WITH ' ( '.
+      REPLACE ALL OCCURRENCES OF ')' IN lv_work WITH ' ) '.
+      REPLACE ALL OCCURRENCES OF ',' IN lv_work WITH ' , '.
+      REPLACE ALL OCCURRENCES OF '.' IN lv_work WITH ' . '.
+      REPLACE ALL OCCURRENCES OF ':' IN lv_work WITH ' : '.
+      REPLACE ALL OCCURRENCES OF '!' IN lv_work WITH ''.
+      CONDENSE lv_work.
+
+      CLEAR lt_tokens.
+      SPLIT lv_work AT space INTO TABLE lt_tokens.
+
+      LOOP AT lt_tokens INTO lv_token.
+
+        lv_idx = sy-tabix.
+        CLEAR: lv_next, lv_next2, lv_next3, lv_next4,
+       lv_target, lv_tabclass, lv_rowtype.
+
+        READ TABLE lt_tokens INTO lv_next  INDEX lv_idx + 1.
+        READ TABLE lt_tokens INTO lv_next2 INDEX lv_idx + 2.
+
+        "====================================================
+        " Block 1: chỉ bắt TYPE xxx
+        "====================================================
+        IF lv_token = 'TYPE'.
+
+          CLEAR: lv_target, lv_tabclass, lv_rowtype.
+
+          READ TABLE lt_tokens INTO lv_next  INDEX lv_idx + 1.
+          READ TABLE lt_tokens INTO lv_next2 INDEX lv_idx + 2.
+          READ TABLE lt_tokens INTO lv_next3 INDEX lv_idx + 3.
+          READ TABLE lt_tokens INTO lv_next4 INDEX lv_idx + 4.
+
+          "--------------------------------------------
+          " 1. Bỏ REF TO
+          " TYPE REF TO cl_xxx
+          "--------------------------------------------
+          IF lv_next = 'REF'.
+            CONTINUE.
+          ENDIF.
+
+          "--------------------------------------------
+          " 2. TYPE STANDARD/SORTED/HASHED TABLE OF xxx
+          "--------------------------------------------
+          IF ( lv_next = 'STANDARD'
+            OR lv_next = 'SORTED'
+            OR lv_next = 'HASHED' )
+             AND lv_next2 = 'TABLE'
+             AND lv_next3 = 'OF'.
+
+            lv_target = lv_next4.
+
+            "--------------------------------------------
+            " 3. TYPE TABLE OF xxx
+            "--------------------------------------------
+          ELSEIF lv_next = 'TABLE'
+             AND lv_next2 = 'OF'.
+
+            lv_target = lv_next3.
+
+            "--------------------------------------------
+            " 4. TYPE LINE OF xxx
+            "--------------------------------------------
+          ELSEIF lv_next = 'LINE'
+             AND lv_next2 = 'OF'.
+
+            lv_target = lv_next3.
+
+            "--------------------------------------------
+            " 5. TYPE xxx
+            "--------------------------------------------
+          ELSE.
+            lv_target = lv_next.
+          ENDIF.
+
+          IF lv_target IS INITIAL
+             OR lv_target = '.'
+             OR lv_target = ','
+             OR lv_target CP 'TY_*'
+             OR lv_target CP 'LT_*'
+             OR lv_target CP 'LS_*'
+             OR lv_target CP 'LV_*'
+             OR lv_target CP 'GT_*'
+             OR lv_target CP 'GS_*'.
+            CONTINUE.
+          ENDIF.
+
+          CONDENSE lv_target NO-GAPS.
+          TRANSLATE lv_target TO UPPER CASE.
+
+          "--------------------------------------------
+          " 6. Nếu là table type trong DD40L -> resolve rowtype
+          "--------------------------------------------
+          CLEAR lv_rowtype.
+          SELECT SINGLE rowtype
+            INTO @lv_rowtype
+            FROM dd40l
+            WHERE typename = @lv_target
+              AND as4local = 'A'.
+
+          IF sy-subrc = 0 AND lv_rowtype IS NOT INITIAL.
+            lv_target = lv_rowtype.
+            CONDENSE lv_target NO-GAPS.
+            TRANSLATE lv_target TO UPPER CASE.
+          ENDIF.
+
+          "--------------------------------------------
+          " 7. Chỉ nhận DDIC structure thật
+          "--------------------------------------------
+          CLEAR lv_tabclass.
+          SELECT SINGLE tabclass
+            INTO @lv_tabclass
+            FROM dd02l
+            WHERE tabname  = @lv_target
+              AND as4local = 'A'
+              AND as4vers  = '0000'.
+
+          IF sy-subrc = 0
+             AND ( lv_tabclass = 'INTTAB'
+                OR lv_tabclass = 'APPEND'
+                OR lv_tabclass = 'STRUCT' ).
+
+            CLEAR ls_hit.
+            ls_hit-str_name = lv_target.
+            ls_hit-usa_type = 'TYPE'.
+            ls_hit-src      = 'SOURCE'.
+
+            INSERT ls_hit INTO TABLE ct_str_hits.
+
+          ENDIF.
+
+        ENDIF.
+        "====================================================
+        " Block 2: Xử lý LIKE và REFERENCES
+        "====================================================
+        IF lv_token = 'LIKE' OR lv_token = 'REFERENCES'.
+
+          CLEAR: lv_target, lv_tabclass, lv_rowtype.
+
+          READ TABLE lt_tokens INTO lv_next  INDEX lv_idx + 1.
+          READ TABLE lt_tokens INTO lv_next2 INDEX lv_idx + 2.
+          READ TABLE lt_tokens INTO lv_next3 INDEX lv_idx + 3.
+
+          "--------------------------------------------
+          " 1. LIKE LINE OF xxx
+          "--------------------------------------------
+          IF lv_next = 'LINE' AND lv_next2 = 'OF'.
+            lv_target = lv_next3.
+          ELSE.
+            lv_target = lv_next.
+          ENDIF.
+
+          IF lv_target IS INITIAL
+             OR lv_target = '.'
+             OR lv_target = ','
+             OR lv_target CP 'TY_*'
+             OR lv_target CP 'LT_*'
+             OR lv_target CP 'LS_*'
+             OR lv_target CP 'LV_*'
+             OR lv_target CP 'GT_*'
+             OR lv_target CP 'GS_*'.
+            CONTINUE.
+          ENDIF.
+
+          CONDENSE lv_target NO-GAPS.
+          TRANSLATE lv_target TO UPPER CASE.
+
+          "--------------------------------------------
+          " 2. Nếu là table type -> resolve rowtype
+          "--------------------------------------------
+          CLEAR lv_rowtype.
+          SELECT SINGLE rowtype
+            INTO @lv_rowtype
+            FROM dd40l
+            WHERE typename = @lv_target
+              AND as4local = 'A'.
+
+          IF sy-subrc = 0 AND lv_rowtype IS NOT INITIAL.
+            lv_target = lv_rowtype.
+            CONDENSE lv_target NO-GAPS.
+            TRANSLATE lv_target TO UPPER CASE.
+          ENDIF.
+
+          "--------------------------------------------
+          " 3. Chỉ nhận DDIC structure thật
+          "--------------------------------------------
+          CLEAR lv_tabclass.
+          SELECT SINGLE tabclass
+            INTO @lv_tabclass
+            FROM dd02l
+            WHERE tabname  = @lv_target
+              AND as4local = 'A'.
+
+          IF sy-subrc = 0
+             AND ( lv_tabclass = 'INTTAB'
+                OR lv_tabclass = 'APPEND'
+                OR lv_tabclass = 'STRUCT' ).
+
+            CLEAR ls_hit.
+            ls_hit-str_name = lv_target.
+            ls_hit-usa_type = 'LIKE/REFERENCES'.
+            ls_hit-src      = 'SOURCE'.
+
+            INSERT ls_hit INTO TABLE ct_str_hits.
+
+          ENDIF.
+
+        ENDIF.
+      ENDLOOP.
+
+      CLEAR lv_stmt.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD fill_structure.
+
+    DATA: lt_str_hits     TYPE tt_str_hits,
+          lt_source       TYPE string_table,
+          lt_sources      TYPE tt_program_source,
+          ls_source       TYPE ty_program_source,
+          lt_class_source TYPE tt_class_source,
+          ls_class_source TYPE ty_class_source,
+          lv_prog_name    TYPE progname,
+          lv_func_name    TYPE rs38l-name,
+          lv_class_name   TYPE seoclsname.
+
+    me->ensure_objects( ).
+
+    CASE iv_objtype.
+
+      WHEN gs_export-kw_obj_prog.
+
+        lv_prog_name = iv_objname.
+        TRANSLATE lv_prog_name TO UPPER CASE.
+        CONDENSE lv_prog_name NO-GAPS.
+
+        lt_source = me->mo_fetch->get_source_code(
+          iv_name = lv_prog_name
+        ).
+
+        me->collect_structure_from_source(
+          EXPORTING
+            it_source   = lt_source
+          CHANGING
+            ct_str_hits = lt_str_hits
+        ).
+
+      WHEN gs_export-kw_obj_func.
+
+        lv_func_name = iv_objname.
+        TRANSLATE lv_func_name TO UPPER CASE.
+        CONDENSE lv_func_name NO-GAPS.
+
+        lt_sources = me->mo_fetch->get_function_module(
+          iv_funcname = lv_func_name
+        ).
+
+        LOOP AT lt_sources INTO ls_source.
+          IF ls_source-source_code IS NOT INITIAL.
+            me->collect_structure_from_source(
+              EXPORTING
+                it_source   = ls_source-source_code
+              CHANGING
+                ct_str_hits = lt_str_hits
+            ).
+          ENDIF.
+        ENDLOOP.
+        me->collect_structure_from_meta(
+          EXPORTING
+            iv_objtype  = gs_export-kw_obj_func
+            iv_objname  = CONV sobj_name( lv_func_name )
+          CHANGING
+            ct_str_hits = lt_str_hits
+        ).
+
+      WHEN gs_export-kw_obj_clas.
+
+        lv_class_name = iv_objname.
+        TRANSLATE lv_class_name TO UPPER CASE.
+        CONDENSE lv_class_name NO-GAPS.
+
+        lt_class_source = me->mo_fetch->get_class(
+          iv_class_name = lv_class_name
+        ).
+
+        LOOP AT lt_class_source INTO ls_class_source.
+          IF ls_class_source-source_code IS NOT INITIAL.
+            me->collect_structure_from_source(
+              EXPORTING
+                it_source   = ls_class_source-source_code
+              CHANGING
+                ct_str_hits = lt_str_hits
+            ).
+          ENDIF.
+        ENDLOOP.
+        me->collect_structure_from_meta(
+          EXPORTING
+            iv_objtype  = gs_export-kw_obj_clas
+            iv_objname  = CONV sobj_name( lv_class_name )
+          CHANGING
+            ct_str_hits = lt_str_hits
+        ).
+
+      WHEN OTHERS.
+        RETURN.
+
+    ENDCASE.
+
+    rt_structure = me->build_structure_rows( lt_str_hits ).
 
   ENDMETHOD.
 ENDCLASS.
