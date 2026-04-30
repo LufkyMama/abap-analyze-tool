@@ -11,6 +11,18 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_WHERE_USED</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Get where-used list</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>SCAN_COMMENT_OUT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Get commented where-used</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
   </asx:values>
  </asx:abap>
 </abapGit>

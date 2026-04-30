@@ -6,12 +6,11 @@ INCLUDE <icon>.
 
 * ======== SELECTION SCREEN ========
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
-  PARAMETERS: p_tr    TYPE trkorr     MATCHCODE OBJECT ZSH_TR_GSP04 MODIF ID m2,
+  PARAMETERS: p_tr    TYPE trkorr         MATCHCODE OBJECT ZSH_TR_GSP04 MODIF ID m2,
               p_fugr  TYPE rs38l-area,
-*              p_prog  TYPE progname   MATCHCODE OBJECT progname,
-              p_prog  TYPE RS38L-progname,
-              p_func  TYPE rs38l-name MATCHCODE OBJECT funcname,
-              p_class TYPE seoclsname MATCHCODE OBJECT seo_classes.
+              p_prog  TYPE rs38l-progname MATCHCODE OBJECT ZSH_PROGRAM_GSP04,
+              p_func  TYPE rs38l-name     MATCHCODE OBJECT ZSH_FUNC_GSP04,
+              p_class TYPE seoclsname     MATCHCODE OBJECT ZSH_CLASS_GSP04.
 SELECTION-SCREEN END OF BLOCK b1.
 
 SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-002.

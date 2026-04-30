@@ -60,24 +60,13 @@ CLASS zcl_program_fetch DEFINITION
         VALUE(rt_class_source) TYPE gty_t_class_source .
   PROTECTED SECTION.
 PRIVATE SECTION.
-  "Repository / TR Object Types
-  CONSTANTS:
-    gc_objtype_prog TYPE trobjtype VALUE 'PROG',
-    gc_objtype_fugr TYPE trobjtype VALUE 'FUGR',
-    gc_objtype_func TYPE trobjtype VALUE 'FUNC'.
-
-
   CONSTANTS:
     gc_pat_class_cs    TYPE programm VALUE '*CS',
     gc_pat_class_cp    TYPE programm VALUE '*CP',
     gc_pat_class_ct    TYPE programm VALUE '*CT',
     gc_pat_class_cu    TYPE programm VALUE '*=CU',
     gc_pat_class_co    TYPE programm VALUE '*=CO',
-    gc_pat_class_ci    TYPE programm VALUE '*=CI',
-    gc_pat_class_ccdef TYPE programm VALUE '*CCDEF',
-    gc_pat_class_ccmac TYPE programm VALUE '*CCMAC',
-    gc_pat_class_ccimp TYPE programm VALUE '*CCIMP',
-    gc_pat_class_ccau  TYPE programm VALUE '*CCAU'.
+    gc_pat_class_ci    TYPE programm VALUE '*=CI'.
   "Class Section Labels
   CONSTANTS:
     gc_label_public_section    TYPE string VALUE '(Public Section)',
@@ -101,6 +90,57 @@ PRIVATE SECTION.
   "Program Include Patterns
   CONSTANTS:
     gc_pat_class_pool TYPE string VALUE '=='.
+  "------------------------------------------------------------
+  " Class include kind
+  "------------------------------------------------------------
+  CONSTANTS:
+    gc_class_kind_method  TYPE string VALUE 'METHOD',
+    gc_class_kind_section TYPE string VALUE 'SECTION'.
+
+  "------------------------------------------------------------
+  " Class visibility / exposure values
+  "------------------------------------------------------------
+  CONSTANTS:
+    gc_exposure_private   TYPE c LENGTH 1 VALUE '0',
+    gc_exposure_protected TYPE c LENGTH 1 VALUE '1',
+    gc_exposure_public    TYPE c LENGTH 1 VALUE '2'.
+  "------------------------------------------------------------
+  " Class section names
+  "------------------------------------------------------------
+  CONSTANTS:
+    gc_section_private   TYPE string VALUE 'PRIVATE',
+    gc_section_protected TYPE string VALUE 'PROTECTED',
+    gc_section_public    TYPE string VALUE 'PUBLIC'.
+
+  "------------------------------------------------------------
+  " Class method declaration type
+  "------------------------------------------------------------
+  CONSTANTS:
+    gc_mtddecl_instance TYPE seomtddecl VALUE '0',
+    gc_mtddecl_static   TYPE seomtddecl VALUE '1'.
+
+  "------------------------------------------------------------
+  " Class method level text
+  "------------------------------------------------------------
+  CONSTANTS:
+    gc_method_level_instance TYPE string VALUE 'INSTANCE',
+    gc_method_level_static   TYPE string VALUE 'STATIC'.
+
+  "------------------------------------------------------------
+  " Class section descriptions
+  "------------------------------------------------------------
+  CONSTANTS:
+    gc_desc_public_section    TYPE string VALUE 'Public section declarations',
+    gc_desc_protected_section TYPE string VALUE 'Protected section declarations',
+    gc_desc_private_section   TYPE string VALUE 'Private section declarations'.
+
+  "------------------------------------------------------------
+  " Function group include technical tokens
+  "------------------------------------------------------------
+  CONSTANTS:
+    gc_fg_prefix_l TYPE c LENGTH 1 VALUE 'L',
+    gc_fg_top      TYPE string     VALUE 'TOP',
+    gc_like_any    TYPE c LENGTH 1 VALUE '%'.
 ENDCLASS.
 
 
@@ -116,10 +156,9 @@ METHOD get_class.
         lv_inc        TYPE programm,
         lv_class_name TYPE seoclsname.
 
-  DATA: ls_clskey     TYPE seoclskey,
-        lt_methods    TYPE seoo_methods_r,
-        ls_method_md  LIKE LINE OF lt_methods,
-        ls_class      TYPE vseoclass.
+  DATA: ls_clskey  TYPE seoclskey,
+        lt_methods TYPE seoo_methods_r,
+        ls_class   TYPE vseoclass.
 
   CLEAR rt_class_source.
 
@@ -179,34 +218,35 @@ METHOD get_class.
 
     IF sy-subrc = 0 AND ls_mtdkey-cpdname IS NOT INITIAL.
 
-      ls_row-include_kind = 'METHOD'.
+      ls_row-include_kind = gc_class_kind_method.
       ls_row-method_name  = ls_mtdkey-cpdname.
       TRANSLATE ls_row-method_name TO UPPER CASE.
       CONDENSE ls_row-method_name NO-GAPS.
 
-      READ TABLE lt_methods INTO ls_method_md
-        WITH KEY cmpname = ls_mtdkey-cpdname
-        BINARY SEARCH.
+      READ TABLE lt_methods ASSIGNING FIELD-SYMBOL(<lfs_method_md>)
+       WITH KEY cmpname = ls_mtdkey-cpdname
+       BINARY SEARCH.
+
       IF sy-subrc = 0.
 
-        CASE ls_method_md-exposure.
-          WHEN '0'.
-            ls_row-section = 'PRIVATE'.
-          WHEN '1'.
-            ls_row-section = 'PROTECTED'.
-          WHEN '2'.
-            ls_row-section = 'PUBLIC'.
+        CASE <lfs_method_md>-exposure.
+          WHEN gc_exposure_private. "0
+            ls_row-section = gc_section_private.
+          WHEN gc_exposure_protected. "1
+            ls_row-section = gc_section_protected.
+          WHEN gc_exposure_public. "2
+            ls_row-section = gc_section_public.
           WHEN OTHERS.
             CLEAR ls_row-section.
         ENDCASE.
 
-        ls_row-description = ls_method_md-descript.
+        ls_row-description = <lfs_method_md>-descript.
 
-        CASE ls_method_md-mtddecltyp.
-          WHEN '0'.
-            ls_row-method_level = 'INSTANCE'.
-          WHEN '1'.
-            ls_row-method_level = 'STATIC'.
+        CASE <lfs_method_md>-mtddecltyp.
+          WHEN gc_mtddecl_instance.
+            ls_row-method_level = gc_method_level_instance.
+          WHEN gc_mtddecl_static.
+            ls_row-method_level = gc_method_level_static.
           WHEN OTHERS.
             CLEAR ls_row-method_level.
         ENDCASE.
@@ -215,24 +255,24 @@ METHOD get_class.
 
     ELSE.
 
-      ls_row-include_kind = 'SECTION'.
+      ls_row-include_kind = gc_class_kind_section.
 
       IF lv_inc CP gc_pat_class_cu.
-        ls_row-section      = 'PUBLIC'.
+        ls_row-section      = gc_section_public.
         ls_row-method_name  = gc_label_public_section.
-        ls_row-description  = 'Public section declarations'.
+        ls_row-description  = gc_desc_public_section.
         CLEAR ls_row-method_level.
 
       ELSEIF lv_inc CP gc_pat_class_co.
-        ls_row-section      = 'PROTECTED'.
+        ls_row-section      = gc_section_protected.
         ls_row-method_name  = gc_label_protected_section.
-        ls_row-description  = 'Protected section declarations'.
+        ls_row-description  = gc_desc_protected_section.
         CLEAR ls_row-method_level.
 
       ELSEIF lv_inc CP gc_pat_class_ci.
-        ls_row-section      = 'PRIVATE'.
+        ls_row-section      = gc_section_private.
         ls_row-method_name  = gc_label_private_section.
-        ls_row-description  = 'Private section declarations'.
+        ls_row-description  = gc_desc_private_section.
         CLEAR ls_row-method_level.
 
       ELSE.
@@ -257,19 +297,19 @@ ENDMETHOD.
 
     DATA: ls_source TYPE gty_function_group.
 
-    DATA(lv_top_name) = CONV progname( |L{ iv_fg_name }TOP| ).
-    DATA(lt_top_src)  = me->get_source_code( lv_top_name ).
+    DATA(lv_top_name) = CONV progname( |{ gc_fg_prefix_l }{ iv_fg_name }{ gc_fg_top }| ).
+    DATA(lo_top_src)  = me->get_source_code( lv_top_name ).
 
-    IF lt_top_src IS NOT INITIAL.
+    IF lo_top_src IS NOT INITIAL.
       CLEAR ls_source.
       ls_source-include     = lv_top_name.
       ls_source-type        = gc_src_type_top.
-      ls_source-source_code = lt_top_src.
+      ls_source-source_code = lo_top_src.
       APPEND ls_source TO rt_sources.
     ENDIF.
 
     DATA: lt_incls TYPE STANDARD TABLE OF progname.
-    DATA(lv_like) = |L{ iv_fg_name }%|.
+    DATA(lv_like) = CONV progname( |{ gc_fg_prefix_l }{ iv_fg_name }{ gc_like_any }| ).
 
     SELECT name
       FROM trdir
@@ -286,9 +326,9 @@ ENDMETHOD.
         CONTINUE.
       ENDIF.
 
-      DATA(lt_temp) = me->get_source_code( lv_incl ).
+      DATA(lo_temp) = me->get_source_code( lv_incl ).
 
-      IF lt_temp IS NOT INITIAL.
+      IF lo_temp IS NOT INITIAL.
         CLEAR ls_source.
         ls_source-include = lv_incl.
 
@@ -300,7 +340,7 @@ ENDMETHOD.
           ls_source-type = gc_src_type_incl.
         ENDIF.
 
-        ls_source-source_code = lt_temp.
+        ls_source-source_code = lo_temp.
         APPEND ls_source TO rt_sources.
       ENDIF.
     ENDLOOP.

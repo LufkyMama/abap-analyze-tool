@@ -28,53 +28,65 @@ public section.
     returning
       value(RE_FOUNDS) type TY_FOUNDS .
 protected section.
-PRIVATE SECTION.
+private section.
 
-  TYPES:
+  types:
     ty_t_euobj_id TYPE STANDARD TABLE OF euobj-id WITH EMPTY KEY .
-  TYPES:
+  types:
     tt_repids     TYPE SORTED TABLE OF syrepid WITH UNIQUE KEY table_line .
 
-  METHODS scan_comment_out
-    IMPORTING
-      !im_repids       TYPE tt_repids
-      !im_find_obj_cls TYPE euobj-id
-      !im_object       TYPE rsobject
-      !im_comment_only TYPE abap_bool DEFAULT abap_true
-      !im_used_cls_out TYPE euobj-id  OPTIONAL
-    RETURNING
-      VALUE(re_founds) TYPE ty_founds .
+  constants GC_OBJ_CLAS type TADIR-OBJECT value 'CLAS' ##NO_TEXT.
+  constants GC_OBJ_PROG type TADIR-OBJECT value 'PROG' ##NO_TEXT.
+  constants GC_OBJ_FUNC type TADIR-OBJECT value 'FUNC' ##NO_TEXT.
+  constants GC_OBJ_FUGR type TADIR-OBJECT value 'FUGR' ##NO_TEXT.
+  constants:
+    gc_obj_incl            TYPE c LENGTH 4 value 'INCL' ##NO_TEXT.
+  constants:
+    gc_used_comm           TYPE c LENGTH 4 value 'COMM' ##NO_TEXT.
+  constants:
+    gc_pgmid_r3tr          TYPE c LENGTH 4 value 'R3TR' ##NO_TEXT.
+  constants GC_DEV_TMP type DEVCLASS value '$TMP' ##NO_TEXT.
+  constants:
+    gc_prefix_sapl         TYPE c LENGTH 4 value 'SAPL' ##NO_TEXT.
+  constants:
+    gc_suffix_cp           TYPE c LENGTH 2 value 'CP' ##NO_TEXT.
+  constants:
+    gc_range_sign_inc      TYPE c LENGTH 1 value 'I' ##NO_TEXT.
+  constants:
+    gc_range_opt_eq        TYPE c LENGTH 2 value 'EQ' ##NO_TEXT.
+  constants:
+    gc_flag_x              TYPE c LENGTH 1 value 'X' ##NO_TEXT.
+  constants:
+    gc_trdir_subc_i        TYPE c LENGTH 1 value 'I' ##NO_TEXT.
+  constants:
+    gc_char_eq             TYPE c LENGTH 1 value '=' ##NO_TEXT.
+  constants:
+    gc_state_inactive      TYPE c LENGTH 1 value 'I' ##NO_TEXT.
+  constants:
+    gc_comment_star        TYPE c LENGTH 1 value '*' ##NO_TEXT.
+  constants:
+    gc_comment_quote       TYPE c LENGTH 1 value '"' ##NO_TEXT.
+  constants GC_PLACEHOLDER_OBJ type STRING value '{OBJ}' ##NO_TEXT.
+  constants GC_REGEX_INCL_COMMENT type STRING value '^INCLUDE[[:space:]]*:?[[:space:]]*(''{OBJ}''|{OBJ})([^A-Z0-9_/]|$)' ##NO_TEXT.
+  constants GC_REGEX_FUNC_COMMENT type STRING value 'CALL[[:space:]]+FUNCTION[[:space:]]+(''{OBJ}''|{OBJ})([^A-Z0-9_/]|$)' ##NO_TEXT.
+  constants GC_REGEX_PROG_COMMENT type STRING value 'SUBMIT[[:space:]]+(''{OBJ}''|{OBJ})([^A-Z0-9_/]|$)' ##NO_TEXT.
+  constants GC_REGEX_CLAS_NEW type STRING value 'NEW[[:space:]]+{OBJ}([^A-Z0-9_/]|$)' ##NO_TEXT.
+  constants GC_REGEX_CLAS_TYPE_REF type STRING value 'TYPE[[:space:]]+REF[[:space:]]+TO[[:space:]]+{OBJ}([^A-Z0-9_/]|$)' ##NO_TEXT.
+  constants GC_REGEX_CLAS_REF_TO type STRING value 'REF[[:space:]]+TO[[:space:]]+{OBJ}([^A-Z0-9_/]|$)' ##NO_TEXT.
+  constants GC_REGEX_CLAS_CREATE type STRING value 'CREATE[[:space:]]+OBJECT.*TYPE[[:space:]]+{OBJ}([^A-Z0-9_/]|$)' ##NO_TEXT.
+  constants GC_REGEX_CLAS_STATIC type STRING value '{OBJ}[[:space:]]*=>' ##NO_TEXT.
+  constants GC_REGEX_DEFAULT_OBJ type STRING value '(^|[^A-Z0-9_/]){OBJ}([^A-Z0-9_/]|$)' ##NO_TEXT.
+  constants GC_REGEX_FG_INC type STRING value '^L(.+)(TOP|U[0-9A-Z]{2}|F[0-9A-Z]{2}|I[0-9A-Z]{2}|O[0-9A-Z]{2})$' ##NO_TEXT.
 
-  CONSTANTS:
-    gc_obj_clas            TYPE tadir-object VALUE 'CLAS',
-    gc_obj_prog            TYPE tadir-object VALUE 'PROG',
-    gc_obj_func            TYPE tadir-object VALUE 'FUNC',
-    gc_obj_fugr            TYPE tadir-object VALUE 'FUGR',
-    gc_obj_incl            TYPE c LENGTH 4   VALUE 'INCL',
-    gc_used_comm           TYPE c LENGTH 4   VALUE 'COMM',
-    gc_pgmid_r3tr          TYPE c LENGTH 4   VALUE 'R3TR',
-    gc_dev_tmp             TYPE devclass     VALUE '$TMP',
-    gc_prefix_sapl         TYPE c LENGTH 4   VALUE 'SAPL',
-    gc_suffix_cp           TYPE c LENGTH 2   VALUE 'CP',
-    gc_range_sign_inc      TYPE c LENGTH 1   VALUE 'I',
-    gc_range_opt_eq        TYPE c LENGTH 2   VALUE 'EQ',
-    gc_flag_x              TYPE c LENGTH 1   VALUE 'X',
-    gc_trdir_subc_i        TYPE c LENGTH 1   VALUE 'I',
-    gc_char_eq             TYPE c LENGTH 1   VALUE '=',
-    gc_state_inactive      TYPE c LENGTH 1 VALUE 'I',
-    gc_comment_star        TYPE c LENGTH 1 VALUE '*',
-    gc_comment_quote       TYPE c LENGTH 1 VALUE '"',
-    gc_placeholder_obj     TYPE string     VALUE '{OBJ}',
-    gc_regex_incl_comment  TYPE string     VALUE '^INCLUDE[[:space:]]*:?[[:space:]]*(''{OBJ}''|{OBJ})([^A-Z0-9_/]|$)',
-    gc_regex_func_comment  TYPE string     VALUE 'CALL[[:space:]]+FUNCTION[[:space:]]+(''{OBJ}''|{OBJ})([^A-Z0-9_/]|$)',
-    gc_regex_prog_comment  TYPE string     VALUE 'SUBMIT[[:space:]]+(''{OBJ}''|{OBJ})([^A-Z0-9_/]|$)',
-    gc_regex_clas_new      TYPE string     VALUE 'NEW[[:space:]]+{OBJ}([^A-Z0-9_/]|$)',
-    gc_regex_clas_type_ref TYPE string     VALUE 'TYPE[[:space:]]+REF[[:space:]]+TO[[:space:]]+{OBJ}([^A-Z0-9_/]|$)',
-    gc_regex_clas_ref_to   TYPE string     VALUE 'REF[[:space:]]+TO[[:space:]]+{OBJ}([^A-Z0-9_/]|$)',
-    gc_regex_clas_create   TYPE string     VALUE 'CREATE[[:space:]]+OBJECT.*TYPE[[:space:]]+{OBJ}([^A-Z0-9_/]|$)',
-    gc_regex_clas_static   TYPE string     VALUE '{OBJ}[[:space:]]*=>',
-    gc_regex_default_obj   TYPE string     VALUE '(^|[^A-Z0-9_/]){OBJ}([^A-Z0-9_/]|$)',
-    gc_regex_fg_inc        TYPE string VALUE '^L(.+)(TOP|U[0-9A-Z]{2}|F[0-9A-Z]{2}|I[0-9A-Z]{2}|O[0-9A-Z]{2})$'.
+  methods SCAN_COMMENT_OUT
+    importing
+      !IM_REPIDS type TT_REPIDS
+      !IM_FIND_OBJ_CLS type EUOBJ-ID
+      !IM_OBJECT type RSOBJECT
+      !IM_COMMENT_ONLY type ABAP_BOOL default ABAP_TRUE
+      !IM_USED_CLS_OUT type EUOBJ-ID optional
+    returning
+      value(RE_FOUNDS) type TY_FOUNDS .
 ENDCLASS.
 
 
@@ -106,8 +118,6 @@ METHOD get_where_used.
   DATA lt_founds       TYPE ty_founds.
   DATA lt_findstrings  TYPE STANDARD TABLE OF string WITH EMPTY KEY.
   DATA lt_comm         TYPE ty_founds.
-  DATA lv_cls          LIKE LINE OF lt_cls.
-  DATA ls_fx           LIKE LINE OF lt_founds.
 
   DATA lv_object_full TYPE string.
   DATA lv_object_root TYPE tadir-obj_name.
@@ -122,7 +132,6 @@ METHOD get_where_used.
   DATA lt_seed_repids  TYPE tt_repids.
   DATA lv_devclass_hit TYPE devclass.
   DATA lv_is_tmp_hit   TYPE abap_bool.
-  DATA lv_root_repid   TYPE syrepid.
 
   DATA lv_fugr_main   TYPE rs38l-area.
   DATA lv_class_30    TYPE c LENGTH 30.
@@ -139,12 +148,6 @@ METHOD get_where_used.
   DATA lt_fugrs2       TYPE tt_tadir_name.
   DATA lt_includes2    TYPE STANDARD TABLE OF syrepid WITH EMPTY KEY.
 
-  DATA lv_prog_root2   TYPE tadir-obj_name.
-  DATA lv_class2       TYPE tadir-obj_name.
-  DATA lv_fugr3        TYPE tadir-obj_name.
-  DATA lv_root2        TYPE syrepid.
-  DATA lv_expand_prog2 TYPE syrepid.
-  DATA lv_inc2         TYPE syrepid.
   DATA lv_class_prog3  TYPE syrepid.
   DATA lv_fugr_prog2   TYPE syrepid.
 
@@ -158,25 +161,6 @@ METHOD get_where_used.
 
   " Enrich line data
   DATA lt_src_enrich TYPE STANDARD TABLE OF string WITH EMPTY KEY.
-  DATA lv_src_line   TYPE string.
-  DATA lv_src_u      TYPE string.
-  DATA lv_trim       TYPE string.
-  DATA lv_obj_u      TYPE string.
-  DATA lv_used_u     TYPE string.
-  DATA lv_find_u     TYPE string.
-  DATA lv_row_new    TYPE i.
-  DATA lv_row_try    TYPE i.
-  DATA lv_old_row    TYPE i.
-  DATA lv_best_dist  TYPE i.
-  DATA lv_dist       TYPE i.
-  DATA lv_has_match  TYPE abap_bool.
-  DATA lv_pat_incl   TYPE string.
-  DATA lv_pat_func   TYPE string.
-  DATA lv_pat_prog   TYPE string.
-  DATA lv_pat_class  TYPE string.
-  DATA lv_pat_static TYPE string.
-  DATA lv_stmt_u     TYPE string.
-  DATA lv_stmt_row   TYPE i.
 
   FIELD-SYMBOLS <ls_fx> LIKE LINE OF lt_founds.
 
@@ -296,7 +280,7 @@ METHOD get_where_used.
   CLEAR: lt_founds, lt_findstrings.
   APPEND lv_object_full TO lt_findstrings.
 
-  LOOP AT lt_cls INTO lv_cls.
+  LOOP AT lt_cls INTO DATA(lv_cls).
     CLEAR lt_founds.
 
     CALL FUNCTION 'RS_EU_CROSSREF'
@@ -346,41 +330,21 @@ METHOD get_where_used.
        WHERE program IS NOT INITIAL
          AND used_cls <> gc_used_comm.
 
-    CLEAR: lt_src_enrich,
-           lv_src_line,
-           lv_src_u,
-           lv_trim,
-           lv_obj_u,
-           lv_used_u,
-           lv_find_u,
-           lv_row_new,
-           lv_old_row,
-           lv_best_dist,
-           lv_has_match,
-           lv_pat_incl,
-           lv_pat_func,
-           lv_pat_prog,
-           lv_pat_class,
-           lv_pat_static,
-           lv_stmt_u,
-           lv_stmt_row.
+    CLEAR lt_src_enrich.
 
     " keep USED_OBJ untouched
-    lv_old_row = <ls_fx>-object_row.
-    lv_obj_u   = im_object.
-    lv_used_u  = <ls_fx>-used_obj.
-
-    TRANSLATE lv_obj_u  TO UPPER CASE.
-    TRANSLATE lv_used_u TO UPPER CASE.
+    DATA(lv_old_row) = <ls_fx>-object_row.
+    DATA(lv_obj_u)   = to_upper( CONV string( im_object ) ).
+    DATA(lv_used_u)  = to_upper( CONV string( <ls_fx>-used_obj ) ).
 
     " normalize technical prefix from USED_OBJ like \IC:....
     IF lv_used_u CS ':' AND lv_used_u+0(1) = '\'.
       SPLIT lv_used_u AT ':' INTO DATA(lv_dummy_prefix) lv_used_u.
-      TRANSLATE lv_used_u TO UPPER CASE.
+      lv_used_u = to_upper( lv_used_u ).
     ENDIF.
 
     " prefer object name from input; fallback to used_obj
-    lv_find_u = lv_obj_u.
+    DATA(lv_find_u) = lv_obj_u.
     IF lv_find_u IS INITIAL.
       lv_find_u = lv_used_u.
     ENDIF.
@@ -398,24 +362,24 @@ METHOD get_where_used.
       CONTINUE.
     ENDIF.
 
-    lv_best_dist = 999999.
-    lv_has_match = abap_false.
+    DATA(lv_row_new)   = 0.
+    DATA(lv_best_dist) = 999999.
+    DATA(lv_has_match) = abap_false.
 
     " simple uppercase patterns, no PCRE to avoid regex dump and false object_row=1
-    lv_pat_incl   = |INCLUDE { lv_find_u }|.
-    lv_pat_func   = |CALL FUNCTION '{ lv_find_u }'|.
-    lv_pat_prog   = |SUBMIT { lv_find_u }|.
-    lv_pat_class  = lv_find_u.
-    lv_pat_static = |{ lv_find_u }=>|.
+    DATA(lv_pat_incl)   = |INCLUDE { lv_find_u }|.
+    DATA(lv_pat_func)   = |CALL FUNCTION '{ lv_find_u }'|.
+    DATA(lv_pat_prog)   = |SUBMIT { lv_find_u }|.
+    DATA(lv_pat_static) = |{ lv_find_u }=>|.
 
-    LOOP AT lt_src_enrich INTO lv_src_line.
-      lv_stmt_row = sy-tabix.
+    LOOP AT lt_src_enrich INTO DATA(lv_src_line).
+      DATA(lv_stmt_row) = sy-tabix.
 
       IF lv_src_line IS INITIAL.
         CONTINUE.
       ENDIF.
 
-      lv_trim = lv_src_line.
+      DATA(lv_trim) = lv_src_line.
       SHIFT lv_trim LEFT DELETING LEADING space.
       IF lv_trim IS INITIAL.
         CONTINUE.
@@ -426,8 +390,7 @@ METHOD get_where_used.
         CONTINUE.
       ENDIF.
 
-      lv_src_u = lv_src_line.
-      TRANSLATE lv_src_u TO UPPER CASE.
+      DATA(lv_src_u) = to_upper( lv_src_line ).
 
       DATA(lv_match_this_line) = abap_false.
 
@@ -507,7 +470,7 @@ METHOD get_where_used.
 
       " choose nearest match to old row if old row exists, otherwise first match
       IF lv_old_row > 0.
-        lv_dist = abs( lv_stmt_row - lv_old_row ).
+        DATA(lv_dist) = abs( lv_stmt_row - lv_old_row ).
         IF lv_dist < lv_best_dist.
           lv_best_dist = lv_dist.
           lv_row_new   = lv_stmt_row.
@@ -541,7 +504,7 @@ METHOD get_where_used.
 
     CLEAR: lt_tadir_cache, lt_prog_names, lt_fugr_names, lt_class_names.
 
-    LOOP AT lt_founds INTO ls_fx WHERE program IS NOT INITIAL AND used_cls <> gc_used_comm.
+    LOOP AT lt_founds INTO DATA(ls_fx) WHERE program IS NOT INITIAL AND used_cls <> gc_used_comm.
 
       APPEND ls_fx-program TO lt_prog_names.
 
@@ -563,7 +526,7 @@ METHOD get_where_used.
       ENDIF.
 
       lv_rep_u = ls_fx-program.
-      TRANSLATE lv_rep_u TO UPPER CASE.
+      lv_rep_u = to_upper( lv_rep_u ).
 
       CLEAR: lv_fg_name, lv_fg_suffix.
       FIND FIRST OCCURRENCE OF PCRE gc_regex_fg_inc
@@ -637,7 +600,7 @@ METHOD get_where_used.
       ENDIF.
 
       CLEAR: lv_devclass_hit, lv_is_tmp_hit.
-      lv_root_repid = ls_fx-program.
+      DATA(lv_root_repid) = ls_fx-program.
 
       READ TABLE lt_tadir_cache
         INTO ls_tadir_cache
@@ -697,7 +660,7 @@ METHOD get_where_used.
 
         IF lv_devclass_hit IS INITIAL.
           lv_rep_u = ls_fx-program.
-          TRANSLATE lv_rep_u TO UPPER CASE.
+          lv_rep_u = to_upper( lv_rep_u ).
 
           CLEAR: lv_fg_name, lv_fg_suffix.
           FIND FIRST OCCURRENCE OF PCRE gc_regex_fg_inc
@@ -831,7 +794,7 @@ METHOD get_where_used.
 
       CLEAR lt_repids.
 
-      LOOP AT lt_seed_repids INTO lv_root2.
+      LOOP AT lt_seed_repids INTO DATA(lv_root2).
         INSERT lv_root2 INTO TABLE lt_repids.
         IF lines( lt_repids ) >= 5000.
           EXIT.
@@ -850,7 +813,7 @@ METHOD get_where_used.
             AND a~devclass IN @lt_scope_comm
             AND t~subc     <> @gc_trdir_subc_i.
 
-        LOOP AT lt_prog_roots2 INTO lv_prog_root2.
+        LOOP AT lt_prog_roots2 INTO DATA(lv_prog_root2).
           INSERT lv_prog_root2 INTO TABLE lt_repids.
           IF lines( lt_repids ) >= 5000.
             EXIT.
@@ -866,7 +829,7 @@ METHOD get_where_used.
               AND object   = @gc_obj_clas
               AND devclass IN @lt_scope_comm.
 
-          LOOP AT lt_classes2 INTO lv_class2.
+          LOOP AT lt_classes2 INTO DATA(lv_class2).
             CLEAR lv_class_prog3.
             lv_class_prog3 = |{ lv_class2 WIDTH = 30 PAD = gc_char_eq }{ gc_suffix_cp }|.
             INSERT lv_class_prog3 INTO TABLE lt_repids.
@@ -886,7 +849,7 @@ METHOD get_where_used.
               AND object   = @gc_obj_fugr
               AND devclass IN @lt_scope_comm.
 
-          LOOP AT lt_fugrs2 INTO lv_fugr3.
+          LOOP AT lt_fugrs2 INTO DATA(lv_fugr3).
             CLEAR lv_fugr_prog2.
             lv_fugr_prog2 = |{ gc_prefix_sapl }{ lv_fugr3 }|.
             INSERT lv_fugr_prog2 INTO TABLE lt_repids.
@@ -900,7 +863,7 @@ METHOD get_where_used.
       ENDIF.
 
       lt_expand_from2 = lt_repids.
-      LOOP AT lt_expand_from2 INTO lv_expand_prog2.
+      LOOP AT lt_expand_from2 INTO DATA(lv_expand_prog2).
         CLEAR lt_includes2.
         CALL FUNCTION 'RS_GET_ALL_INCLUDES'
           EXPORTING
@@ -917,7 +880,7 @@ METHOD get_where_used.
           CONTINUE.
         ENDIF.
 
-        LOOP AT lt_includes2 INTO lv_inc2.
+        LOOP AT lt_includes2 INTO DATA(lv_inc2).
           INSERT lv_inc2 INTO TABLE lt_repids.
           IF lines( lt_repids ) >= 5000.
             EXIT.

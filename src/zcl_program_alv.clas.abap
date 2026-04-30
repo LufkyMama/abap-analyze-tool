@@ -6,16 +6,17 @@ class ZCL_PROGRAM_ALV definition
 public section.
 
   types:
-    BEGIN OF ty_where_used_alv,
-        line_no     TYPE i,
-        program     TYPE progname,
-        used_object TYPE string,
-        description TYPE string,
-      END OF ty_where_used_alv .
-  types:
-    ty_t_where_used_alv TYPE STANDARD TABLE OF ty_where_used_alv WITH EMPTY KEY .
-  types:
-    BEGIN OF ty_wu_hit,
+*  types:
+*    ty_t_where_used_alv TYPE STANDARD TABLE OF ty_where_used_alv WITH EMPTY KEY .
+    BEGIN OF gty_alv_header,
+        object_name TYPE string,
+        object_type TYPE string,
+        checked_by  TYPE syuname,
+        checked_on  TYPE sydatum,
+        checked_at  TYPE syuzeit,
+      END OF gty_alv_header.
+ types:
+    BEGIN OF gty_wu_hit,
         used_in_prog    TYPE progname,
         obj_type        TYPE char10,
         object_name     TYPE string,
@@ -40,25 +41,23 @@ public section.
         nav_kind_raw    TYPE string,
         used_cls_raw    TYPE rsfindlst-used_cls,
         used_obj_raw    TYPE rsfindlst-used_obj,
-      END OF ty_wu_hit .
+      END OF gty_wu_hit .
   types:
-    ty_t_wu_hit TYPE STANDARD TABLE OF ty_wu_hit WITH EMPTY KEY .
+    gty_t_wu_hit TYPE STANDARD TABLE OF gty_wu_hit WITH EMPTY KEY .
 
   methods DISPLAY_ANALYSIS_ALV
     importing
       !IT_DATA type ZTT_ERROR optional
-      !IV_USER type SYUNAME optional
-      !IV_OBJECT type STRING optional
-      !IV_DATE type DATUM optional
-      !IV_TIME type UZEIT optional .
+      !IS_HEADER type GTY_ALV_HEADER optional .
   methods DISPLAY_WHERE_USED_ALV
     importing
-      !IT_DATA type ZCL_PROGRAM_WHEREUSED=>TY_FOUNDS .
+      !IV_DATA type ZCL_PROGRAM_WHEREUSED=>TY_FOUNDS
+      !IS_HEADER type GTY_ALV_HEADER optional .
   PROTECTED SECTION.
-PRIVATE SECTION.
+private section.
 
-  TYPES:
-    BEGIN OF ty_error_alv,
+  types:
+    BEGIN OF gty_error_alv,
       line        TYPE zst_error-line,
       line_txt    TYPE string,
       msg         TYPE zst_error-msg,
@@ -72,58 +71,59 @@ PRIVATE SECTION.
       chk_date    TYPE zst_error-chk_date,
       chk_usr     TYPE zst_error-chk_usr,
       cell_color  TYPE lvc_t_scol,
-    END OF ty_error_alv .
-  TYPES:
-    tt_error_alv TYPE STANDARD TABLE OF ty_error_alv WITH EMPTY KEY .
+    END OF gty_error_alv.
+  types:
+    gty_t_error_alv TYPE STANDARD TABLE OF gty_error_alv WITH EMPTY KEY.
 
-  DATA mt_data TYPE ztt_error .
-  DATA mt_wu_disp TYPE ty_t_wu_hit .
-  DATA mo_events TYPE REF TO cl_salv_events_table .
-  DATA mo_alv TYPE REF TO cl_salv_table .
-  DATA mt_analysis_disp TYPE tt_error_alv .
-  CONSTANTS:
-    BEGIN OF gc_col,
-      object_name    TYPE lvc_fname VALUE 'OBJECT_NAME',
-      hit_source     TYPE lvc_fname VALUE 'HIT_SOURCE',
-      obj_type       TYPE lvc_fname VALUE 'OBJ_TYPE',
-      short_text     TYPE lvc_fname VALUE 'SHORT_TEXT',
-      used_in_prog   TYPE lvc_fname VALUE 'USED_IN_PROG',
-      changed_by     TYPE lvc_fname VALUE 'CHANGED_BY',
-      changed_on     TYPE lvc_fname VALUE 'CHANGED_ON',
-      author         TYPE lvc_fname VALUE 'AUTHOR',
-      package        TYPE lvc_fname VALUE 'PACKAGE',
-      include        TYPE lvc_fname VALUE 'INCLUDE',
+  data MT_ANALYSIS_DISP type GTY_T_ERROR_ALV.
+  data GS_HIT           type GTY_WU_HIT.
+  data MT_DATA          type ZTT_ERROR.
+  data MT_WU_DISP       type GTY_T_WU_HIT .
+  data MT_ANALYSIS_ALL  type ZTT_ERROR.
+  data MV_CURRENT_VIEW  type STRING.
+  data MO_EVENTS        type ref to CL_SALV_EVENTS_TABLE.
+  data MO_ALV           type ref to CL_SALV_TABLE.
 
-      nav_obj_name   TYPE lvc_fname VALUE 'NAV_OBJ_NAME',
-      nav_obj_type   TYPE lvc_fname VALUE 'NAV_OBJ_TYPE',
-      nav_pgmid      TYPE lvc_fname VALUE 'NAV_PGMID',
-      nav_used_name  TYPE lvc_fname VALUE 'NAV_USED_NAME',
-      nav_used_type  TYPE lvc_fname VALUE 'NAV_USED_TYPE',
-      nav_line       TYPE lvc_fname VALUE 'NAV_LINE',
-      nav_include    TYPE lvc_fname VALUE 'NAV_INCLUDE',
-      nav_method     TYPE lvc_fname VALUE 'NAV_METHOD_NAME',
-      nav_func_group TYPE lvc_fname VALUE 'NAV_FUNC_GROUP',
-*    nav_kind_raw   TYPE lvc_fname VALUE 'NAV_KIND_RAW',
-*    used_cls_raw   TYPE lvc_fname VALUE 'USED_CLS_RAW',
-*    used_obj_raw   TYPE lvc_fname VALUE 'USED_OBJ_RAW',
-      category       TYPE lvc_fname VALUE 'CATEGORY',
-      line           TYPE lvc_fname VALUE 'LINE',
-    END OF gc_col .
   CONSTANTS:
-    BEGIN OF gc_param,
-      prog  TYPE string VALUE 'P_PROG',
-      func  TYPE string VALUE 'P_FUNC',
-      fugr  TYPE string VALUE 'P_FUGR',
-      tr    TYPE string VALUE 'P_TR',
-      class TYPE string VALUE 'P_CLASS',
-    END OF gc_param .
-  CONSTANTS:
+  BEGIN OF gc_col,
+    object_name    TYPE lvc_fname VALUE 'OBJECT_NAME',
+    hit_source     TYPE lvc_fname VALUE 'HIT_SOURCE',
+    obj_type       TYPE lvc_fname VALUE 'OBJ_TYPE',
+    short_text     TYPE lvc_fname VALUE 'SHORT_TEXT',
+    used_in_prog   TYPE lvc_fname VALUE 'USED_IN_PROG',
+    changed_by     TYPE lvc_fname VALUE 'CHANGED_BY',
+    changed_on     TYPE lvc_fname VALUE 'CHANGED_ON',
+    author         TYPE lvc_fname VALUE 'AUTHOR',
+    package        TYPE lvc_fname VALUE 'PACKAGE',
+    include        TYPE lvc_fname VALUE 'INCLUDE',
+    include_txt    TYPE lvc_fname VALUE 'INCLUDE_TXT',
+    line           TYPE lvc_fname VALUE 'LINE',
+    line_txt       TYPE lvc_fname VALUE 'LINE_TXT',
+    sev            TYPE lvc_fname VALUE 'SEV',
+    cell_color     TYPE lvc_fname VALUE 'CELL_COLOR',
+    objname        TYPE lvc_fname VALUE 'OBJNAME',
+    objtype        TYPE lvc_fname VALUE 'OBJTYPE',
+    nav_obj_name   TYPE lvc_fname VALUE 'NAV_OBJ_NAME',
+    nav_obj_type   TYPE lvc_fname VALUE 'NAV_OBJ_TYPE',
+    nav_pgmid      TYPE lvc_fname VALUE 'NAV_PGMID',
+    nav_used_name  TYPE lvc_fname VALUE 'NAV_USED_NAME',
+    nav_used_type  TYPE lvc_fname VALUE 'NAV_USED_TYPE',
+    nav_line       TYPE lvc_fname VALUE 'NAV_LINE',
+    nav_include    TYPE lvc_fname VALUE 'NAV_INCLUDE',
+    nav_method     TYPE lvc_fname VALUE 'NAV_METHOD_NAME',
+    nav_func_group TYPE lvc_fname VALUE 'NAV_FUNC_GROUP',
+    nav_kind_raw   TYPE lvc_fname VALUE 'NAV_KIND_RAW',
+    used_cls_raw   TYPE lvc_fname VALUE 'USED_CLS_RAW',
+    used_obj_raw   TYPE lvc_fname VALUE 'USED_OBJ_RAW',
+    category       TYPE lvc_fname VALUE 'CATEGORY',
+  END OF gc_col.
+  constants:
     BEGIN OF gc_repo,
       report_name TYPE syrepid     VALUE 'Z_ANALYZE_TOOL',
       pfstatus    TYPE sypfkey     VALUE 'ZSALV_STATUS',
       pgmid_r3tr  TYPE tadir-pgmid VALUE 'R3TR',
-    END OF gc_repo .
-  CONSTANTS:
+    END OF gc_repo.
+  constants:
     BEGIN OF gc_objtype,
       incl TYPE char4     VALUE 'INCL',
       prog TYPE char4     VALUE 'PROG',
@@ -136,45 +136,45 @@ PRIVATE SECTION.
       tabl TYPE char4     VALUE 'TABL',
       dtel TYPE char4     VALUE 'DTEL',
       msag TYPE char4     VALUE 'MSAG',
-    END OF gc_objtype .
-  CONSTANTS:
+    END OF gc_objtype.
+  constants:
     BEGIN OF gc_prog,
       prefix_sapl  TYPE string      VALUE 'SAPL',
       class_suffix TYPE string      VALUE 'CP',
       subc_include TYPE trdir-subc  VALUE 'I',
     END OF gc_prog .
-  CONSTANTS:
+  constants:
     BEGIN OF gc_operation,
       show TYPE c LENGTH 10 VALUE 'SHOW',
-    END OF gc_operation .
-  CONSTANTS:
+    END OF gc_operation.
+  constants:
     BEGIN OF gc_disp,
       form        TYPE string VALUE 'FORM',
       method_impl TYPE string VALUE 'METHOD_IMPL',
       unknown     TYPE string VALUE 'UNKNOWN',
-    END OF gc_disp .
-  CONSTANTS:
+    END OF gc_disp.
+  constants:
     BEGIN OF gc_kind,
       ic TYPE c LENGTH 2 VALUE 'IC',
       fo TYPE c LENGTH 2 VALUE 'FO',
       fu TYPE c LENGTH 2 VALUE 'FU',
       ty TYPE c LENGTH 2 VALUE 'TY',
-    END OF gc_kind .
-  CONSTANTS:
+    END OF gc_kind.
+  constants:
     BEGIN OF gc_token,
-      method_sep   TYPE string     VALUE '=>',
-      prefix_slash TYPE c LENGTH 1 VALUE '\',
-      prefix_colon TYPE c LENGTH 1 VALUE ':',
-      pattern      TYPE c LENGTH 1 VALUE '=',
-      kw_method    TYPE string     VALUE 'METHOD',
-    END OF gc_token .
-  CONSTANTS:
+      method_sep    TYPE string     VALUE '=>',
+      prefix_slash  TYPE c LENGTH 1 VALUE '\',
+      prefix_colon  TYPE c LENGTH 1 VALUE ':',
+      pattern       TYPE c LENGTH 1 VALUE '=',
+      class_include TYPE string     VALUE '*=*',
+    END OF gc_token.
+  constants:
     BEGIN OF gc_hit_source,
       comm           TYPE c LENGTH 4  VALUE 'COMM',
       comment_source TYPE c LENGTH 14 VALUE 'COMMENT SOURCE',
       cross_ref      TYPE c LENGTH 9  VALUE 'CROSS-REF',
-    END OF gc_hit_source .
-  CONSTANTS:
+    END OF gc_hit_source.
+  constants:
     BEGIN OF gc_category,
       hardcode    TYPE string VALUE 'HARDCODE',
       naming      TYPE string VALUE 'NAMING',
@@ -183,61 +183,72 @@ PRIVATE SECTION.
       obsolete    TYPE string VALUE 'OBSOLETE',
     END OF gc_category.
 
-  DATA mt_analysis_all TYPE ztt_error .
-  DATA mv_current_view TYPE string .
+  constants GC_TZONE_VN type TTZZ-TZONE value 'UTC+7'.
 
-  METHODS navigate_analysis_hit
-    IMPORTING
-      !ls_hit TYPE ty_error_alv .
-  METHODS get_class_include_text
-    IMPORTING
-      !im_class_name TYPE seoclsname
-      !im_include    TYPE programm
-    RETURNING
-      VALUE(re_text) TYPE string .
-  METHODS on_hotspot_click
-    FOR EVENT link_click OF cl_salv_events_table
-    IMPORTING
-      !row
-      !column .
-  METHODS build_where_used_display
-    IMPORTING
-      !it_founds     TYPE zcl_program_whereused=>ty_founds
-    RETURNING
-      VALUE(rt_disp) TYPE ty_t_wu_hit .
-  METHODS parse_used_token
-    IMPORTING
-      !iv_used_obj    TYPE string
-      !iv_used_cls    TYPE rsused_cls
-      !iv_program     TYPE progname OPTIONAL
-      !iv_object_row  TYPE rsfindlst-object_row OPTIONAL
-    EXPORTING
-      !ev_obj_type    TYPE char10
-      !ev_obj_name    TYPE string
-      !ev_nav_pgmid   TYPE tadir-pgmid
-      !ev_nav_object  TYPE tadir-object
-      !ev_nav_name    TYPE sobj_name
-      !ev_nav_include TYPE programm
-      !ev_nav_line    TYPE i .
-  METHODS enrich_where_used_hit
-    CHANGING
-      !cs_hit TYPE ty_wu_hit .
-  METHODS on_salv_link_click
-    FOR EVENT link_click OF cl_salv_events_table
-    IMPORTING
-      !row
-      !column .
-  METHODS navigate_where_used_hit
-    IMPORTING
-      !ls_hit    TYPE ty_wu_hit
-      !iv_column TYPE salv_de_column .
-  METHODS on_user_command
-    FOR EVENT added_function OF cl_salv_events_table
-    IMPORTING
-      !e_salv_function .
-  METHODS filter_analysis_by_category
-    IMPORTING
-      !iv_category TYPE string OPTIONAL .
+  CONSTANTS:
+  BEGIN OF gc_view,
+    all TYPE string VALUE 'ALL',
+  END OF gc_view.
+
+  CONSTANTS:
+  BEGIN OF gc_sev,
+    error   TYPE zst_error-sev VALUE 'E',
+    warning TYPE zst_error-sev VALUE 'W',
+    sev     TYPE string        VALUE 'SEV',
+  END OF gc_sev.
+
+  methods NAVIGATE_ANALYSIS_HIT
+    importing
+      !IS_HIT type GTY_ERROR_ALV.
+  methods GET_CLASS_INCLUDE_TEXT
+    importing
+      !IV_CLASS_NAME type SEOCLSNAME
+      !IV_INCLUDE type PROGRAMM
+    returning
+      value(RT_TEXT) type STRING.
+  methods ON_HOTSPOT_CLICK
+    for event LINK_CLICK of CL_SALV_EVENTS_TABLE
+    importing
+      !ROW
+      !COLUMN .
+  methods BUILD_WHERE_USED_DISPLAY
+    importing
+      !IV_FOUNDS type ZCL_PROGRAM_WHEREUSED=>TY_FOUNDS
+    returning
+      value(RT_DISP) type GTY_T_WU_HIT.
+  methods PARSE_USED_TOKEN
+    importing
+      !IV_USED_OBJ type STRING
+      !IV_USED_CLS type RSUSED_CLS
+      !IV_PROGRAM type PROGNAME optional
+      !IV_OBJECT_ROW type RSFINDLST-OBJECT_ROW optional
+    exporting
+      !EV_OBJ_TYPE type CHAR10
+      !EV_OBJ_NAME type STRING
+      !EV_NAV_PGMID type TADIR-PGMID
+      !EV_NAV_OBJECT type TADIR-OBJECT
+      !EV_NAV_NAME type SOBJ_NAME
+      !EV_NAV_INCLUDE type PROGRAMM
+      !EV_NAV_LINE type I .
+  methods ENRICH_WHERE_USED_HIT
+    changing
+      !CS_HIT type GTY_WU_HIT.
+  methods ON_SALV_LINK_CLICK
+    for event LINK_CLICK of CL_SALV_EVENTS_TABLE
+    importing
+      !ROW
+      !COLUMN .
+  methods NAVIGATE_WHERE_USED_HIT
+    importing
+      !IS_HIT type GTY_WU_HIT
+      !IV_COLUMN type SALV_DE_COLUMN.
+  methods ON_USER_COMMAND
+    for event ADDED_FUNCTION of CL_SALV_EVENTS_TABLE
+    importing
+      !E_SALV_FUNCTION .
+  methods FILTER_ANALYSIS_BY_CATEGORY
+    importing
+      !IV_CATEGORY type STRING optional.
 ENDCLASS.
 
 
@@ -247,7 +258,7 @@ CLASS ZCL_PROGRAM_ALV IMPLEMENTATION.
 
 METHOD build_where_used_display.
 
-  DATA: ls_hit        TYPE ty_wu_hit,
+  DATA: ls_hit        TYPE gty_wu_hit,
         lv_class_name TYPE sobj_name.
 
   DATA: lt_prog_keys TYPE SORTED TABLE OF trdir-name
@@ -255,14 +266,23 @@ METHOD build_where_used_display.
         lt_trdir     TYPE SORTED TABLE OF trdir-name
                       WITH UNIQUE KEY table_line.
 
-  " Collect program names first
-  LOOP AT it_founds INTO DATA(ls_found_collect).
+  DATA: lv_owner_class TYPE seoclsname,
+        lv_dummy       TYPE string,
+        lv_prog_u      TYPE string,
+        lv_disp_text   TYPE string.
+
+  "------------------------------------------------------------
+  " Collect program/include names first
+  "------------------------------------------------------------
+  LOOP AT iv_founds INTO DATA(ls_found_collect).
     IF ls_found_collect-program IS NOT INITIAL.
       INSERT ls_found_collect-program INTO TABLE lt_prog_keys.
     ENDIF.
   ENDLOOP.
 
+  "------------------------------------------------------------
   " Read TRDIR once
+  "------------------------------------------------------------
   IF lt_prog_keys IS NOT INITIAL.
     SELECT name
       FROM trdir
@@ -271,10 +291,22 @@ METHOD build_where_used_display.
       WHERE name = @lt_prog_keys-table_line.
   ENDIF.
 
-  LOOP AT it_founds INTO DATA(ls_found).
+  "------------------------------------------------------------
+  " Build display rows
+  "------------------------------------------------------------
+  LOOP AT iv_founds INTO DATA(ls_found).
 
-    CLEAR: ls_hit, lv_class_name.
+    CLEAR:
+      ls_hit,
+      lv_class_name,
+      lv_owner_class,
+      lv_dummy,
+      lv_prog_u,
+      lv_disp_text.
 
+    "----------------------------------------------------------
+    " Default display values
+    "----------------------------------------------------------
     ls_hit-used_in_prog = ls_found-program.
     ls_hit-used_cls_raw = ls_found-used_cls.
     ls_hit-used_obj_raw = ls_found-used_obj.
@@ -285,6 +317,9 @@ METHOD build_where_used_display.
       ls_hit-hit_source = gc_hit_source-cross_ref.
     ENDIF.
 
+    "----------------------------------------------------------
+    " Parse object used + technical navigation fields
+    "----------------------------------------------------------
     me->parse_used_token(
       EXPORTING
         iv_used_obj   = CONV string( ls_found-used_obj )
@@ -304,30 +339,117 @@ METHOD build_where_used_display.
       CHANGING
         cs_hit = ls_hit ).
 
-    " Special case: class + method name stored in USED_IN_PROG
+    "----------------------------------------------------------
+    " Special handling for class where-used
+    "
+    " Important:
+    " - Object Used = class being searched
+    " - Used In Program = location where this class is used
+    "
+    " If ls_found-program is a technical class include, e.g.
+    " ZCL_PROGRAM_REPORT_073==========CI,
+    " the owner class is ZCL_PROGRAM_REPORT_073, not necessarily
+    " the searched class.
+    "----------------------------------------------------------
     IF ls_hit-obj_type = gc_objtype-clas
        AND ls_found-program IS NOT INITIAL.
 
-      READ TABLE lt_trdir WITH TABLE KEY table_line = ls_found-program
-           TRANSPORTING NO FIELDS.
+      lv_prog_u = ls_found-program.
+      TRANSLATE lv_prog_u TO UPPER CASE.
 
-      IF sy-subrc <> 0.
-        lv_class_name = ls_hit-nav_obj_name.
-        IF lv_class_name IS INITIAL.
-          lv_class_name = CONV sobj_name( ls_hit-object_name ).
+      "--------------------------------------------------------
+      " Case 1: Used location is a technical class include
+      " Example:
+      " ZCL_PROGRAM_CHECK===============CI
+      " ZCL_PROGRAM_CHECK===============CM001
+      "--------------------------------------------------------
+      IF lv_prog_u CP gc_token-class_include.
+
+        SPLIT lv_prog_u AT gc_token-pattern INTO lv_owner_class lv_dummy.
+
+        IF lv_owner_class IS NOT INITIAL.
+
+          " Keep the searched object as class
+          IF ls_hit-object_name IS INITIAL.
+            ls_hit-object_name = CONV sobj_name( ls_found-used_obj ).
+          ENDIF.
+
+          ls_hit-nav_obj_type = gc_objtype-clas.
+
+          IF ls_hit-nav_obj_name IS INITIAL.
+            ls_hit-nav_obj_name = CONV sobj_name( ls_hit-object_name ).
+          ENDIF.
+
+          " Technical navigation must remain the real include
+          ls_hit-nav_include = ls_found-program.
+          ls_hit-nav_line    = CONV i( ls_found-object_row ).
+
+          " Resolve display text for Used In Program
+          lv_disp_text = me->get_class_include_text(
+                           iv_class_name = lv_owner_class
+                           iv_include    = ls_found-program ).
+
+          IF lv_disp_text IS NOT INITIAL.
+            ls_hit-used_in_prog = lv_disp_text.
+          ELSE.
+            ls_hit-used_in_prog = ls_found-program.
+          ENDIF.
+
+          " Store readable text in method field too
+          ls_hit-nav_method_name = ls_hit-used_in_prog.
+
+          " Used location is technically an include, but belongs to a class
+          ls_hit-nav_used_name = ls_found-program.
+          ls_hit-nav_used_type = gc_objtype-clas.
+
         ENDIF.
 
-        " Main object remains the checked class
-        ls_hit-object_name     = lv_class_name.
-        ls_hit-nav_obj_name    = lv_class_name.
-        ls_hit-nav_obj_type    = gc_objtype-clas.
+      ELSE.
 
-        " Method is kept as technical navigation/display info
-        ls_hit-nav_method_name = ls_found-program.
-        ls_hit-used_in_prog    = ls_found-program.
+        "------------------------------------------------------
+        " Case 2: SAP/cross-ref already returned method/routine
+        " name instead of technical include.
+        " Example:
+        " NM_DATA_CHECKS
+        " RUN_CHECK_CLASS
+        " ANALYZE_NAMING
+        "------------------------------------------------------
+        READ TABLE lt_trdir WITH TABLE KEY table_line = ls_found-program
+             TRANSPORTING NO FIELDS.
+
+        IF sy-subrc <> 0.
+
+          lv_class_name = ls_hit-nav_obj_name.
+
+          IF lv_class_name IS INITIAL.
+            lv_class_name = CONV sobj_name( ls_hit-object_name ).
+          ENDIF.
+
+          " Main object remains the checked class
+          ls_hit-object_name  = lv_class_name.
+          ls_hit-nav_obj_name = lv_class_name.
+          ls_hit-nav_obj_type = gc_objtype-clas.
+
+          " Method/routine name is already readable
+          ls_hit-nav_method_name = ls_found-program.
+          ls_hit-used_in_prog    = ls_found-program.
+
+        ENDIF.
+
       ENDIF.
+
     ENDIF.
 
+    "----------------------------------------------------------
+    " General navigation fallback
+    "
+    " For real programs/includes existing in TRDIR:
+    " - use program/include as navigation target
+    "
+    " For already-handled technical class includes:
+    " - do not overwrite used_in_prog display text
+    " - keep nav_include / nav_line
+    "----------------------------------------------------------
     IF ls_found-program IS NOT INITIAL.
       READ TABLE lt_trdir WITH TABLE KEY table_line = ls_found-program
            TRANSPORTING NO FIELDS.
@@ -336,11 +458,20 @@ METHOD build_where_used_display.
     ENDIF.
 
     IF sy-subrc = 0.
-      ls_hit-nav_include   = ls_found-program.
-      ls_hit-nav_line      = CONV i( ls_found-object_row ).
-      ls_hit-nav_used_name = ls_found-program.
-      ls_hit-nav_used_type = gc_objtype-prog.
+
+      ls_hit-nav_include = ls_found-program.
+      ls_hit-nav_line    = CONV i( ls_found-object_row ).
+
+      IF ls_hit-nav_used_name IS INITIAL.
+        ls_hit-nav_used_name = ls_found-program.
+      ENDIF.
+
+      IF ls_hit-nav_used_type IS INITIAL.
+        ls_hit-nav_used_type = gc_objtype-prog.
+      ENDIF.
+
     ELSE.
+
       IF ls_hit-nav_used_name IS INITIAL.
         ls_hit-nav_used_name = CONV programm( ls_hit-nav_obj_name ).
       ENDIF.
@@ -348,6 +479,7 @@ METHOD build_where_used_display.
       IF ls_hit-nav_used_type IS INITIAL.
         ls_hit-nav_used_type = ls_hit-nav_obj_type.
       ENDIF.
+
     ENDIF.
 
     APPEND ls_hit TO rt_disp.
@@ -359,62 +491,49 @@ ENDMETHOD.
 
 METHOD display_analysis_alv.
 
-  DATA: lt_alv     TYPE tt_error_alv,
-        ls_alv     TYPE ty_error_alv,
+  DATA: lt_alv     TYPE gty_t_error_alv,
+        ls_alv     TYPE gty_error_alv,
         lo_columns TYPE REF TO cl_salv_columns_table,
-        lo_column  TYPE REF TO cl_salv_column_table,
-        lo_header  TYPE REF TO cl_salv_form_layout_grid,
-        lo_label   TYPE REF TO cl_salv_form_label,
-        lo_text    TYPE REF TO cl_salv_form_text.
+        lo_column  TYPE REF TO cl_salv_column_table.
 
-  DATA: lv_vn_t        TYPE t,
-        lv_object      TYPE string,
-        lv_warn_count  TYPE i,
-        lv_err_count   TYPE i,
-        lv_total_count TYPE i,
-        lv_dyn_name    TYPE string.
+  DATA:lv_timestamp   TYPE timestampl,
+       lv_vn_date     TYPE sydatum,
+       lv_vn_time     TYPE syuzeit,
+       lv_warn_count  TYPE i,
+       lv_err_count   TYPE i,
+       lv_total_count TYPE i.
 
   DATA: ls_scol TYPE lvc_s_scol.
 
   FIELD-SYMBOLS:
-    <fs_value> TYPE any,
-    <ls_alv>   TYPE ty_error_alv.
+    <lfs_alv>   TYPE gty_error_alv.
+  "---------------------------------------------------------
+  " Build ALV Header
+  "---------------------------------------------------------
+  GET TIME STAMP FIELD lv_timestamp.
 
-  "---------------------------------------------------------
-  " Tự động lấy giá trị từ selection screen của report
-  "---------------------------------------------------------
-  lv_dyn_name = |({ gc_repo-report_name }){ gc_param-prog }|.
-  ASSIGN (lv_dyn_name) TO <fs_value>.
-  IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-    lv_object = <fs_value>.
-  ELSE.
-    lv_dyn_name = |({ gc_repo-report_name }){ gc_param-func }|.
-    ASSIGN (lv_dyn_name) TO <fs_value>.
-    IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-      lv_object = <fs_value>.
-    ELSE.
-      lv_dyn_name = |({ gc_repo-report_name }){ gc_param-fugr }|.
-      ASSIGN (lv_dyn_name) TO <fs_value>.
-      IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-        lv_object = <fs_value>.
-      ELSE.
-        lv_dyn_name = |({ gc_repo-report_name }){ gc_param-tr }|.
-        ASSIGN (lv_dyn_name) TO <fs_value>.
-        IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-          lv_object = <fs_value>.
-        ELSE.
-          lv_dyn_name = |({ gc_repo-report_name }){ gc_param-class }|.
-          ASSIGN (lv_dyn_name) TO <fs_value>.
-          IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-            lv_object = <fs_value>.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-    ENDIF.
+  CONVERT TIME STAMP lv_timestamp
+    TIME ZONE gc_tzone_vn
+    INTO DATE lv_vn_date
+         TIME lv_vn_time.
+
+  DATA(ls_header) = is_header.
+
+  IF ls_header-object_name IS INITIAL.
+    ls_header-object_name = TEXT-c32.
   ENDIF.
 
-  lv_vn_t = sy-uzeit + ( 5 * 3600 ).
+  IF ls_header-checked_by IS INITIAL.
+    ls_header-checked_by = sy-uname.
+  ENDIF.
 
+  IF ls_header-checked_on IS INITIAL.
+    ls_header-checked_on = lv_vn_date.
+  ENDIF.
+
+  IF ls_header-checked_at IS INITIAL.
+    ls_header-checked_at = lv_vn_time.
+  ENDIF.
   "---------------------------------------------------------
   " Build ALV display table
   "---------------------------------------------------------
@@ -423,12 +542,13 @@ METHOD display_analysis_alv.
 
   IF mt_analysis_all IS INITIAL.
     mt_analysis_all = it_data.
-    mv_current_view = 'ALL'.
+    mv_current_view = gc_view-all.
   ENDIF.
 
-  IF mv_current_view IS INITIAL OR mv_current_view = 'ALL'.
+  IF mv_current_view IS INITIAL OR mv_current_view = gc_view-all.
     mt_analysis_all = it_data.
   ENDIF.
+
 
   CLEAR: lt_alv, lv_warn_count, lv_err_count.
 
@@ -443,8 +563,8 @@ METHOD display_analysis_alv.
        AND ls_err-objname IS NOT INITIAL
        AND ls_err-include IS NOT INITIAL.
       ls_alv-include_txt = me->get_class_include_text(
-                             im_class_name = CONV seoclsname( ls_err-objname )
-                             im_include    = CONV programm( ls_err-include ) ).
+                             iv_class_name = CONV seoclsname( ls_err-objname )
+                             iv_include    = CONV programm( ls_err-include ) ).
     ENDIF.
 
     " Line hiển thị
@@ -456,9 +576,9 @@ METHOD display_analysis_alv.
 
     " Count severity
     CASE ls_err-sev.
-      WHEN 'W'.
+      WHEN gc_sev-warning.
         lv_warn_count = lv_warn_count + 1.
-      WHEN 'E'.
+      WHEN gc_sev-error.
         lv_err_count = lv_err_count + 1.
     ENDCASE.
 
@@ -468,17 +588,17 @@ METHOD display_analysis_alv.
   "---------------------------------------------------------
   " Cell color
   "---------------------------------------------------------
-  LOOP AT lt_alv ASSIGNING <ls_alv>.
-    CLEAR: <ls_alv>-cell_color, ls_scol.
+  LOOP AT lt_alv ASSIGNING <lfs_alv>.
+    CLEAR: <lfs_alv>-cell_color, ls_scol.
 
-    ls_scol-fname = 'SEV'.
+    ls_scol-fname = gc_sev-sev.
 
-    CASE <ls_alv>-sev.
-      WHEN 'E'.
+    CASE <lfs_alv>-sev.
+      WHEN gc_sev-error.
         ls_scol-color-col = 6.
         ls_scol-color-int = 1.
         ls_scol-color-inv = 0.
-      WHEN 'W'.
+      WHEN gc_sev-warning.
         ls_scol-color-col = 3.
         ls_scol-color-int = 1.
         ls_scol-color-inv = 0.
@@ -486,7 +606,7 @@ METHOD display_analysis_alv.
         CONTINUE.
     ENDCASE.
 
-    INSERT ls_scol INTO TABLE <ls_alv>-cell_color.
+    INSERT ls_scol INTO TABLE <lfs_alv>-cell_color.
   ENDLOOP.
 
   " Lưu bảng display để hotspot click dùng lại
@@ -510,7 +630,7 @@ METHOD display_analysis_alv.
 
       lo_columns = mo_alv->get_columns( ).
       lo_columns->set_optimize( abap_true ).
-      lo_columns->set_color_column( 'CELL_COLOR' ).
+      lo_columns->set_color_column( gc_col-cell_color ).
 
       TRY.
           lo_column ?= lo_columns->get_column( gc_col-category ).
@@ -519,153 +639,156 @@ METHOD display_analysis_alv.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'OBJNAME' ).
+          lo_column ?= lo_columns->get_column( gc_col-objname ).
           lo_column->set_visible( abap_false ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'OBJTYPE' ).
+          lo_column ?= lo_columns->get_column( gc_col-objtype ).
           lo_column->set_visible( abap_false ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'INCLUDE' ).
+          lo_column ?= lo_columns->get_column( gc_col-include ).
           lo_column->set_technical( abap_true ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'INCLUDE_TXT' ).
-          lo_column->set_short_text( 'Include' ).
-          lo_column->set_medium_text( 'Include' ).
-          lo_column->set_long_text( 'Include' ).
+          lo_column ?= lo_columns->get_column( gc_col-include_txt ).
+          lo_column->set_short_text( CONV scrtext_s( TEXT-c33 ) ).
+          lo_column->set_medium_text( CONV scrtext_m( TEXT-c33 ) ).
+          lo_column->set_long_text( CONV scrtext_l( TEXT-c33 ) ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'LINE' ).
+          lo_column ?= lo_columns->get_column( gc_col-line ).
           lo_column->set_technical( abap_true ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'LINE_TXT' ).
-          lo_column->set_short_text( 'Line' ).
-          lo_column->set_medium_text( 'Line' ).
-          lo_column->set_long_text( 'Line' ).
+          lo_column ?= lo_columns->get_column( gc_col-line_txt ).
+          lo_column->set_short_text( CONV scrtext_s( TEXT-c34 ) ).
+          lo_column->set_medium_text( CONV scrtext_m( TEXT-c34 ) ).
+          lo_column->set_long_text( CONV scrtext_l( TEXT-c34 ) ).
           lo_column->set_cell_type( if_salv_c_cell_type=>hotspot ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'SEV' ).
+          lo_column ?= lo_columns->get_column( gc_col-sev ).
+          lo_column->set_short_text( CONV scrtext_s( TEXT-c35 ) ).
+          lo_column->set_medium_text( CONV scrtext_m( TEXT-c35 ) ).
+          lo_column->set_long_text( CONV scrtext_l( TEXT-c35 ) ).
           lo_column->set_alignment( if_salv_c_alignment=>centered ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
       "Header
-      DATA(o_grid_header) = NEW cl_salv_form_layout_grid( ).
+      DATA(lo_grid_header) = NEW cl_salv_form_layout_grid( ).
       " Info box bên trái
-      DATA(o_grp_info) = NEW cl_salv_form_groupbox(
-        header = 'Execution Info' ).
+      DATA(lo_grp_info) = NEW cl_salv_form_groupbox(
+        header = CONV string( TEXT-c26 ) ).
 
-      o_grid_header->set_element(
+      lo_grid_header->set_element(
         row       = 1
         column    = 1
-        r_element = o_grp_info ).
+        r_element = lo_grp_info ).
 
-      DATA(o_info_grid) = o_grp_info->create_grid( ).
-      o_info_grid->create_label(
+      DATA(lo_info_grid) = lo_grp_info->create_grid( ).
+      lo_info_grid->create_label(
         row    = 1
         column = 1
-        text   = TEXT-C20 ).
+        text   = TEXT-c20 ).
 
-      o_info_grid->create_text(
+      lo_info_grid->create_text(
         row    = 1
         column = 2
-        text   = lv_object ).
+        text   =  ls_header-object_name  ).
 
-      o_info_grid->create_label(
+      lo_info_grid->create_label(
         row    = 2
         column = 1
-        text   = 'Checked by:' ).
+        text   = TEXT-c19 ).
 
-      o_info_grid->create_text(
+      lo_info_grid->create_text(
         row    = 2
         column = 2
-        text   = CONV string( sy-uname ) ).
+        text   = CONV string( ls_header-checked_by ) ).
 
-      o_info_grid->create_label(
+      lo_info_grid->create_label(
         row    = 3
         column = 1
-        text   = 'Date:' ).
+        text   = TEXT-c21 ).
 
-      o_info_grid->create_text(
+      lo_info_grid->create_text(
         row    = 3
         column = 2
-        text   = |{ sy-datum DATE = USER }| ).
+        text   = ls_header-checked_on ).
 
-      o_info_grid->create_label(
+      lo_info_grid->create_label(
         row    = 4
         column = 1
-        text   = 'Time:' ).
+        text   = TEXT-c22 ).
 
-      o_info_grid->create_text(
+      lo_info_grid->create_text(
         row    = 4
         column = 2
-        text   = |{ lv_vn_t TIME = USER }| ).
+        text   = |{ ls_header-checked_at TIME = USER }| ).
 
       " Summary box bên phải
-      DATA(o_grp_summary) = NEW cl_salv_form_groupbox(
-        header = 'Summary' ).
+      DATA(lo_grp_summary) = NEW cl_salv_form_groupbox(
+        header = CONV string( TEXT-c27 ) ).
 
-      o_grid_header->set_element(
+      lo_grid_header->set_element(
         row       = 1
         column    = 3
-        r_element = o_grp_summary ).
+        r_element = lo_grp_summary ).
 
-      DATA(o_sum_grid) = o_grp_summary->create_grid( ).
-      o_sum_grid->create_label(
+      DATA(lo_sum_grid) = lo_grp_summary->create_grid( ).
+      lo_sum_grid->create_label(
         row    = 1
         column = 1
-        text   = 'View:' ).
+        text   = TEXT-c28 ).
 
-      o_sum_grid->create_text(
+      lo_sum_grid->create_text(
         row    = 1
         column = 2
         text   = mv_current_view ).
-      o_sum_grid->create_label(
+      lo_sum_grid->create_label(
         row    = 2
         column = 1
-        text   = 'Errors:' ).
+        text   = TEXT-c29 ).
 
-      o_sum_grid->create_text(
+      lo_sum_grid->create_text(
         row    = 2
         column = 2
         text   = CONV string( lv_err_count ) ).
 
-      o_sum_grid->create_label(
+      lo_sum_grid->create_label(
         row    = 3
         column = 1
-        text   = 'Warnings:' ).
+        text   = TEXT-c30 ).
 
-      o_sum_grid->create_text(
+      lo_sum_grid->create_text(
         row    = 3
         column = 2
         text   = CONV string( lv_warn_count ) ).
 
-      o_sum_grid->create_label(
+      lo_sum_grid->create_label(
         row    = 4
         column = 1
-        text   = 'Totals:' ).
+        text   =  TEXT-c31 ).
 
-      o_sum_grid->create_text(
+      lo_sum_grid->create_text(
         row    = 4
         column = 2
         text   = CONV string( lv_total_count ) ).
-      mo_alv->set_top_of_list( o_grid_header ).
+      mo_alv->set_top_of_list( lo_grid_header ).
       mo_events = mo_alv->get_event( ).
       SET HANDLER me->on_hotspot_click FOR mo_events.
       SET HANDLER me->on_user_command  FOR mo_events.
@@ -675,11 +798,17 @@ METHOD display_analysis_alv.
       MESSAGE e032(zgsp04_analyzetool).
       RETURN.
   ENDTRY.
-
 ENDMETHOD.
 
 
 METHOD display_where_used_alv.
+types:
+    BEGIN OF lty_where_used_alv,
+        line_no     TYPE i,
+        program     TYPE progname,
+        used_object TYPE string,
+        description TYPE string,
+      END OF lty_where_used_alv .
 
   DATA: lo_alv     TYPE REF TO cl_salv_table,
         lo_columns TYPE REF TO cl_salv_columns_table,
@@ -692,49 +821,44 @@ METHOD display_where_used_alv.
   DATA: lv_short_text  TYPE scrtext_s,
         lv_medium_text TYPE scrtext_m,
         lv_long_text   TYPE scrtext_l,
-        lv_vn_t        TYPE t,
-        lv_object      TYPE string,
-        lv_dyn_name    TYPE string.
+        lv_timestamp   TYPE timestampl,
+        lv_vn_date     TYPE sydatum,
+        lv_vn_time     TYPE syuzeit.
 
-  FIELD-SYMBOLS: <fs_value> TYPE any.
-
-  lv_vn_t = sy-uzeit + ( 6 * 3600 ).
-  mt_wu_disp = me->build_where_used_display( it_data ).
+  mt_wu_disp = me->build_where_used_display( iv_data ).
 
   IF me->mt_wu_disp IS INITIAL.
-    MESSAGE e030(zgsp04_analyzetool) DISPLAY LIKE 'E'.
+    MESSAGE e030(zgsp04_analyzetool).
     RETURN.
   ENDIF.
+"---------------------------------------------------------
+  " Build WUL ALV Header
+  "---------------------------------------------------------
+  GET TIME STAMP FIELD lv_timestamp.
 
-  lv_dyn_name = |({ gc_repo-report_name }){ gc_param-prog }|.
-  ASSIGN (lv_dyn_name) TO <fs_value>.
-  IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-    lv_object = <fs_value>.
-  ELSE.
-    lv_dyn_name = |({ gc_repo-report_name }){ gc_param-func }|.
-    ASSIGN (lv_dyn_name) TO <fs_value>.
-    IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-      lv_object = <fs_value>.
-    ELSE.
-      lv_dyn_name = |({ gc_repo-report_name }){ gc_param-fugr }|.
-      ASSIGN (lv_dyn_name) TO <fs_value>.
-      IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-        lv_object = <fs_value>.
-      ELSE.
-        lv_dyn_name = |({ gc_repo-report_name }){ gc_param-tr }|.
-        ASSIGN (lv_dyn_name) TO <fs_value>.
-        IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-          lv_object = <fs_value>.
-        ELSE.
-          lv_dyn_name = |({ gc_repo-report_name }){ gc_param-class }|.
-          ASSIGN (lv_dyn_name) TO <fs_value>.
-          IF <fs_value> IS ASSIGNED AND <fs_value> IS NOT INITIAL.
-            lv_object = <fs_value>.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-    ENDIF.
+  CONVERT TIME STAMP lv_timestamp
+    TIME ZONE gc_tzone_vn
+    INTO DATE lv_vn_date
+         TIME lv_vn_time.
+
+  DATA(ls_header) = is_header.
+
+  IF ls_header-object_name IS INITIAL.
+    ls_header-object_name = TEXT-c32.
   ENDIF.
+
+  IF ls_header-checked_by IS INITIAL.
+    ls_header-checked_by = sy-uname.
+  ENDIF.
+
+  IF ls_header-checked_on IS INITIAL.
+    ls_header-checked_on = lv_vn_date.
+  ENDIF.
+
+  IF ls_header-checked_at IS INITIAL.
+    ls_header-checked_at = lv_vn_time.
+  ENDIF.
+
 
   TRY.
       cl_salv_table=>factory(
@@ -758,7 +882,7 @@ METHOD display_where_used_alv.
       lo_text  = lo_header->create_text(
                    row    = 1
                    column = 2
-                   text   = CONV string( sy-uname ) ).
+                   text   = ls_header-checked_by ).
 
       lo_label = lo_header->create_label(
                    row    = 1
@@ -768,7 +892,7 @@ METHOD display_where_used_alv.
       lo_text  = lo_header->create_text(
                    row    = 1
                    column = 4
-                   text   = lv_object ).
+                   text   = ls_header-object_name ).
 
       lo_label = lo_header->create_label(
                    row    = 2
@@ -778,7 +902,7 @@ METHOD display_where_used_alv.
       lo_text  = lo_header->create_text(
                    row    = 2
                    column = 2
-                   text   = sy-datum ).
+                   text   = ls_header-checked_on ).
 
       lo_label = lo_header->create_label(
                    row    = 2
@@ -788,7 +912,7 @@ METHOD display_where_used_alv.
       lo_text  = lo_header->create_text(
                    row    = 2
                    column = 4
-                   text   = lv_vn_t ).
+                   text   = ls_header-checked_at ).
 
       lo_alv->set_top_of_list( lo_header ).
 
@@ -966,19 +1090,19 @@ METHOD display_where_used_alv.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'NAV_KIND_RAW' ).
+          lo_column ?= lo_columns->get_column( gc_col-nav_kind_raw ).
           lo_column->set_technical( abap_true ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'USED_CLS_RAW' ).
+          lo_column ?= lo_columns->get_column( gc_col-used_cls_raw ).
           lo_column->set_technical( abap_true ).
         CATCH cx_salv_not_found.
       ENDTRY.
 
       TRY.
-          lo_column ?= lo_columns->get_column( 'USED_OBJ_RAW' ).
+          lo_column ?= lo_columns->get_column( gc_col-used_obj_raw ).
           lo_column->set_technical( abap_true ).
         CATCH cx_salv_not_found.
       ENDTRY.
@@ -1157,21 +1281,176 @@ ENDMETHOD.
 
 
 METHOD navigate_where_used_hit.
+*METHOD navigate_where_used_hit.
+*
+*  DATA: lv_include   TYPE programm,
+*        lv_line      TYPE i,
+*        lv_method_uc TYPE string,
+*        lv_src_uc    TYPE string,
+*        lt_source    TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+*
+*  DATA: lv_pat_method_1 TYPE string,
+*        lv_pat_method_2 TYPE string.
+*
+*  lv_method_uc = gs_hit-nav_method_name.
+*  TRANSLATE lv_method_uc TO UPPER CASE.
+*
+*  lv_pat_method_1 = |*{ gc_token-kw_method }*{ lv_method_uc }*|.
+*  lv_pat_method_2 = |*{ gc_token-kw_method } { lv_method_uc }*|.
+*
+*  CASE iv_column.
+*
+*    WHEN gc_col-object_name
+*      OR gc_col-obj_type
+*      OR gc_col-short_text
+*      OR gc_col-used_in_prog.
+*
+*      IF gs_hit-nav_include IS NOT INITIAL.
+*
+*        IF gs_hit-nav_line > 0.
+*          CALL FUNCTION 'EDITOR_PROGRAM'
+*            EXPORTING
+*              display = abap_true
+*              program = gs_hit-nav_include
+*              line    = gs_hit-nav_line
+*            EXCEPTIONS
+*              OTHERS  = 1.
+*        ELSE.
+*          CALL FUNCTION 'EDITOR_PROGRAM'
+*            EXPORTING
+*              display = abap_true
+*              program = gs_hit-nav_include
+*            EXCEPTIONS
+*              OTHERS  = 1.
+*        ENDIF.
+*
+*        IF sy-subrc = 0.
+*          RETURN.
+*        ENDIF.
+*      ENDIF.
+*
+*      " Fallback riêng cho class method khi chưa có include thật
+*      IF gs_hit-nav_obj_type = gc_objtype-clas
+*         AND gs_hit-nav_obj_name IS NOT INITIAL
+*         AND gs_hit-nav_method_name IS NOT INITIAL.
+*
+*      cl_oo_classname_service=>get_method_include(
+*          EXPORTING
+*            mtdkey              = VALUE seocpdkey(
+*                                    clsname = CONV seoclsname( gs_hit-nav_obj_name )
+*                                    cpdname = CONV seocpdname( gs_hit-nav_method_name ) )
+*          RECEIVING
+*            result              = lv_include
+*          EXCEPTIONS
+*            class_not_existing  = 1
+*            method_not_existing = 2
+*            OTHERS              = 3 ).
+*
+*        IF sy-subrc = 0 AND lv_include IS NOT INITIAL.
+*
+*          READ REPORT lv_include INTO lt_source.
+*          IF sy-subrc = 0.
+*
+*            lv_method_uc = gs_hit-nav_method_name.
+*            TRANSLATE lv_method_uc TO UPPER CASE.
+*
+*            CLEAR lv_line.
+*            LOOP AT lt_source INTO DATA(lv_src).
+*              lv_src_uc = lv_src.
+*              TRANSLATE lv_src_uc TO UPPER CASE.
+*
+*              IF lv_src_uc CP lv_pat_method_1
+*                 OR lv_src_uc CP lv_pat_method_2.
+*                lv_line = sy-tabix.
+*                EXIT.
+*              ENDIF.
+*            ENDLOOP.
+*
+*            IF lv_line > 0.
+*              CALL FUNCTION 'EDITOR_PROGRAM'
+*                EXPORTING
+*                  display = abap_true
+*                  program = lv_include
+*                  line    = lv_line
+*                EXCEPTIONS
+*                  OTHERS  = 1.
+*            ELSE.
+*              CALL FUNCTION 'EDITOR_PROGRAM'
+*                EXPORTING
+*                  display = abap_true
+*                  program = lv_include
+*                EXCEPTIONS
+*                  OTHERS  = 1.
+*            ENDIF.
+*
+*            IF sy-subrc = 0.
+*              RETURN.
+*            ENDIF.
+*          ENDIF.
+*        ENDIF.
+*      ENDIF.
+*
+*      " Fallback cuối: mở object
+*      IF gs_hit-nav_obj_name IS NOT INITIAL
+*         AND gs_hit-nav_obj_type IS NOT INITIAL.
+*
+*        CALL FUNCTION 'RS_TOOL_ACCESS'
+*          EXPORTING
+*            operation   = gc_operation-show
+*            object_name = gs_hit-nav_obj_name
+*            object_type = gs_hit-nav_obj_type
+*            position    = COND i( WHEN gs_hit-nav_line > 0 THEN gs_hit-nav_line ELSE 1 )
+*          EXCEPTIONS
+*            OTHERS      = 1.
+*
+*        IF sy-subrc = 0.
+*          RETURN.
+*        ENDIF.
+*      ENDIF.
+*
+*      " Fallback thêm cho used object
+*      IF gs_hit-nav_used_name IS NOT INITIAL
+*         AND gs_hit-nav_used_type IS NOT INITIAL.
+*
+*        CALL FUNCTION 'RS_TOOL_ACCESS'
+*          EXPORTING
+*            operation   = gc_operation-show
+*            object_name = gs_hit-nav_used_name
+*            object_type = gs_hit-nav_used_type
+*            position    = COND i( WHEN gs_hit-nav_line > 0 THEN gs_hit-nav_line ELSE 1 )
+*          EXCEPTIONS
+*            OTHERS      = 1.
+*
+*        IF sy-subrc = 0.
+*          RETURN.
+*        ENDIF.
+*      ENDIF.
+*
+*    WHEN gc_col-package.
+*
+*      IF gs_hit-package IS NOT INITIAL.
+*        CALL FUNCTION 'RS_TOOL_ACCESS'
+*          EXPORTING
+*            operation   = gc_operation-show
+*            object_name = CONV sobj_name( gs_hit-package )
+*            object_type = gc_objtype-devc
+*            position    = 1
+*          EXCEPTIONS
+*            OTHERS      = 1.
+*
+*        IF sy-subrc = 0.
+*          RETURN.
+*        ENDIF.
+*      ENDIF.
+*
+*  ENDCASE.
+*
+*  MESSAGE e033(zgsp04_analyzetool).
+*
+*ENDMETHOD.
 
-  DATA: lv_include   TYPE programm,
-        lv_line      TYPE i,
-        lv_method_uc TYPE string,
-        lv_src_uc    TYPE string,
-        lt_source    TYPE STANDARD TABLE OF string WITH EMPTY KEY.
 
-  DATA: lv_pat_method_1 TYPE string,
-        lv_pat_method_2 TYPE string.
-
-  lv_method_uc = ls_hit-nav_method_name.
-  TRANSLATE lv_method_uc TO UPPER CASE.
-
-  lv_pat_method_1 = |*{ gc_token-kw_method }*{ lv_method_uc }*|.
-  lv_pat_method_2 = |*{ gc_token-kw_method } { lv_method_uc }*|.
+  DATA lv_include TYPE programm.
 
   CASE iv_column.
 
@@ -1180,21 +1459,24 @@ METHOD navigate_where_used_hit.
       OR gc_col-short_text
       OR gc_col-used_in_prog.
 
-      IF ls_hit-nav_include IS NOT INITIAL.
+      "--------------------------------------------------
+      " 1. Open exact include + line if available
+      "--------------------------------------------------
+      IF is_hit-nav_include IS NOT INITIAL.
 
-        IF ls_hit-nav_line > 0.
+        IF is_hit-nav_line > 0.
           CALL FUNCTION 'EDITOR_PROGRAM'
             EXPORTING
               display = abap_true
-              program = ls_hit-nav_include
-              line    = ls_hit-nav_line
+              program = is_hit-nav_include
+              line    = is_hit-nav_line
             EXCEPTIONS
               OTHERS  = 1.
         ELSE.
           CALL FUNCTION 'EDITOR_PROGRAM'
             EXPORTING
               display = abap_true
-              program = ls_hit-nav_include
+              program = is_hit-nav_include
             EXCEPTIONS
               OTHERS  = 1.
         ENDIF.
@@ -1204,77 +1486,59 @@ METHOD navigate_where_used_hit.
         ENDIF.
       ENDIF.
 
-      " Fallback riêng cho class method khi chưa có include thật
-      IF ls_hit-nav_obj_type = gc_objtype-clas
-         AND ls_hit-nav_obj_name IS NOT INITIAL
-         AND ls_hit-nav_method_name IS NOT INITIAL.
+      "--------------------------------------------------
+      " 2. Fallback for class method
+      "    get_method_include returns the real method include
+      "--------------------------------------------------
+      IF is_hit-nav_obj_type = gc_objtype-clas
+         AND is_hit-nav_obj_name IS NOT INITIAL
+         AND is_hit-nav_method_name IS NOT INITIAL.
 
-        CALL METHOD cl_oo_classname_service=>get_method_include
+        CLEAR lv_include.
+
+        cl_oo_classname_service=>get_method_include(
           EXPORTING
-            mtdkey              = VALUE seocpdkey(
-                                    clsname = CONV seoclsname( ls_hit-nav_obj_name )
-                                    cpdname = CONV seocpdname( ls_hit-nav_method_name ) )
+            mtdkey = VALUE seocpdkey(
+                       clsname = CONV seoclsname( is_hit-nav_obj_name )
+                       cpdname = CONV seocpdname( is_hit-nav_method_name ) )
           RECEIVING
-            result              = lv_include
+            result = lv_include
           EXCEPTIONS
             class_not_existing  = 1
             method_not_existing = 2
-            OTHERS              = 3.
+            OTHERS              = 3 ).
 
         IF sy-subrc = 0 AND lv_include IS NOT INITIAL.
 
-          READ REPORT lv_include INTO lt_source.
+          CALL FUNCTION 'EDITOR_PROGRAM'
+            EXPORTING
+              display = abap_true
+              program = lv_include
+              line    = 1
+            EXCEPTIONS
+              OTHERS  = 1.
+
           IF sy-subrc = 0.
-
-            lv_method_uc = ls_hit-nav_method_name.
-            TRANSLATE lv_method_uc TO UPPER CASE.
-
-            CLEAR lv_line.
-            LOOP AT lt_source INTO DATA(lv_src).
-              lv_src_uc = lv_src.
-              TRANSLATE lv_src_uc TO UPPER CASE.
-
-              IF lv_src_uc CP lv_pat_method_1
-                 OR lv_src_uc CP lv_pat_method_2.
-                lv_line = sy-tabix.
-                EXIT.
-              ENDIF.
-            ENDLOOP.
-
-            IF lv_line > 0.
-              CALL FUNCTION 'EDITOR_PROGRAM'
-                EXPORTING
-                  display = abap_true
-                  program = lv_include
-                  line    = lv_line
-                EXCEPTIONS
-                  OTHERS  = 1.
-            ELSE.
-              CALL FUNCTION 'EDITOR_PROGRAM'
-                EXPORTING
-                  display = abap_true
-                  program = lv_include
-                EXCEPTIONS
-                  OTHERS  = 1.
-            ENDIF.
-
-            IF sy-subrc = 0.
-              RETURN.
-            ENDIF.
+            RETURN.
           ENDIF.
         ENDIF.
       ENDIF.
 
-      " Fallback cuối: mở object
-      IF ls_hit-nav_obj_name IS NOT INITIAL
-         AND ls_hit-nav_obj_type IS NOT INITIAL.
+      "--------------------------------------------------
+      " 3. Fallback: open owner object
+      "--------------------------------------------------
+      IF is_hit-nav_obj_name IS NOT INITIAL
+         AND is_hit-nav_obj_type IS NOT INITIAL.
 
         CALL FUNCTION 'RS_TOOL_ACCESS'
           EXPORTING
             operation   = gc_operation-show
-            object_name = ls_hit-nav_obj_name
-            object_type = ls_hit-nav_obj_type
-            position    = COND i( WHEN ls_hit-nav_line > 0 THEN ls_hit-nav_line ELSE 1 )
+            object_name = is_hit-nav_obj_name
+            object_type = is_hit-nav_obj_type
+            position    = COND i(
+                            WHEN is_hit-nav_line > 0
+                            THEN is_hit-nav_line
+                            ELSE 1 )
           EXCEPTIONS
             OTHERS      = 1.
 
@@ -1283,16 +1547,21 @@ METHOD navigate_where_used_hit.
         ENDIF.
       ENDIF.
 
-      " Fallback thêm cho used object
-      IF ls_hit-nav_used_name IS NOT INITIAL
-         AND ls_hit-nav_used_type IS NOT INITIAL.
+      "--------------------------------------------------
+      " 4. Fallback: open used object
+      "--------------------------------------------------
+      IF is_hit-nav_used_name IS NOT INITIAL
+         AND is_hit-nav_used_type IS NOT INITIAL.
 
         CALL FUNCTION 'RS_TOOL_ACCESS'
           EXPORTING
             operation   = gc_operation-show
-            object_name = ls_hit-nav_used_name
-            object_type = ls_hit-nav_used_type
-            position    = COND i( WHEN ls_hit-nav_line > 0 THEN ls_hit-nav_line ELSE 1 )
+            object_name = is_hit-nav_used_name
+            object_type = is_hit-nav_used_type
+            position    = COND i(
+                            WHEN is_hit-nav_line > 0
+                            THEN is_hit-nav_line
+                            ELSE 1 )
           EXCEPTIONS
             OTHERS      = 1.
 
@@ -1303,11 +1572,15 @@ METHOD navigate_where_used_hit.
 
     WHEN gc_col-package.
 
-      IF ls_hit-package IS NOT INITIAL.
+      "--------------------------------------------------
+      " 5. Open package
+      "--------------------------------------------------
+      IF is_hit-package IS NOT INITIAL.
+
         CALL FUNCTION 'RS_TOOL_ACCESS'
           EXPORTING
             operation   = gc_operation-show
-            object_name = CONV sobj_name( ls_hit-package )
+            object_name = CONV sobj_name( is_hit-package )
             object_type = gc_objtype-devc
             position    = 1
           EXCEPTIONS
@@ -1320,46 +1593,14 @@ METHOD navigate_where_used_hit.
 
   ENDCASE.
 
-  MESSAGE e033(zgsp04_analyzetool) DISPLAY LIKE 'E'.
+  MESSAGE e033(zgsp04_analyzetool).
 
 ENDMETHOD.
 
 
 METHOD on_hotspot_click.
-*METHOD on_hotspot_click.
-*  DATA ls_data TYPE zst_error.
-*
-*  READ TABLE mt_data
-*  INTO ls_data INDEX row.
-*
-*  IF sy-subrc <> 0.
-*    RETURN.
-*  ENDIF.
-*
-**  DATA(lv_technical_include) = ls_data-param2.
-*  DATA(lv_technical_include) = ls_data-include.
-*
-**  IF lv_technical_include IS INITIAL.
-**    " Phòng hờ trường hợp PARAM2 trống thì lấy ngược lại INCLUDE
-**    lv_technical_include = ls_data-include.
-**  ENDIF.
-*
-*  " 3. Điều hướng bằng tên kỹ thuật
-*  IF lv_technical_include IS NOT INITIAL.
-*    CALL FUNCTION 'RS_TOOL_ACCESS'
-*      EXPORTING
-*        operation   = gc_operation-show
-*        object_name = lv_technical_include
-*        object_type = gc_objtype-prog
-*        position    = ls_data-line
-*      EXCEPTIONS
-*        OTHERS      = 3.
-*  ENDIF.
-*ENDMETHOD.
 
-
-
-  DATA ls_hit TYPE ty_error_alv.
+ DATA ls_hit TYPE gty_error_alv.
 
   READ TABLE mt_analysis_disp INTO ls_hit INDEX row.
   IF sy-subrc <> 0.
@@ -1367,8 +1608,8 @@ METHOD on_hotspot_click.
   ENDIF.
 
   CASE column.
-    WHEN 'LINE_TXT' OR gc_col-line.
-      me->navigate_analysis_hit( ls_hit = ls_hit ).
+    WHEN gc_col-line_txt OR gc_col-line.
+      me->navigate_analysis_hit( is_hit = ls_hit ).
     WHEN OTHERS.
       RETURN.
   ENDCASE.
@@ -1377,7 +1618,8 @@ ENDMETHOD.
 
 
 METHOD on_salv_link_click.
-  DATA ls_hit TYPE ty_wu_hit.
+
+  DATA ls_hit TYPE gty_wu_hit.
   READ TABLE mt_wu_disp INTO ls_hit INDEX row.
   IF sy-subrc <> 0.
     RETURN.
@@ -1391,7 +1633,7 @@ METHOD on_salv_link_click.
       OR  gc_col-package.
 
       me->navigate_where_used_hit(
-        ls_hit    = ls_hit
+        is_hit    = ls_hit
         iv_column = column ).
 
     WHEN OTHERS.
@@ -1668,7 +1910,7 @@ METHOD filter_analysis_by_category.
 
   IF iv_category IS INITIAL.
     lt_filtered = mt_analysis_all.
-    mv_current_view = 'ALL'.
+    mv_current_view = gc_view-all.
   ELSE.
     LOOP AT mt_analysis_all INTO DATA(ls_err)
          WHERE category = iv_category.
@@ -1689,17 +1931,17 @@ METHOD get_class_include_text.
   DATA: lo_fetch      TYPE REF TO zcl_program_fetch,
         lt_class_data TYPE zcl_program_fetch=>gty_t_class_source.
 
-  re_text = im_include.
+  rt_text = iv_include.
 
   CREATE OBJECT lo_fetch.
 
-  lt_class_data = lo_fetch->get_class( im_class_name ).
+  lt_class_data = lo_fetch->get_class( iv_class_name ).
 
   READ TABLE lt_class_data INTO DATA(ls_item)
-    WITH KEY include = im_include.
+    WITH KEY include = iv_include.
 
   IF sy-subrc = 0 AND ls_item-method_name IS NOT INITIAL.
-    re_text = ls_item-method_name.
+    rt_text = ls_item-method_name.
   ENDIF.
 
 ENDMETHOD.
@@ -1707,18 +1949,16 @@ ENDMETHOD.
 
 METHOD navigate_analysis_hit.
 
-  " Không navigate nếu không có line thật
-  IF ls_hit-line IS INITIAL OR ls_hit-line <= 0.
+  IF is_hit-line IS INITIAL OR is_hit-line <= 0.
     RETURN.
   ENDIF.
 
-  " Ưu tiên mở trực tiếp include thật tại đúng line
-  IF ls_hit-include IS NOT INITIAL.
+  IF is_hit-include IS NOT INITIAL.
     CALL FUNCTION 'EDITOR_PROGRAM'
       EXPORTING
         display = abap_true
-        program = ls_hit-include
-        line    = ls_hit-line
+        program = is_hit-include
+        line    = is_hit-line
       EXCEPTIONS
         OTHERS  = 1.
 
@@ -1727,24 +1967,24 @@ METHOD navigate_analysis_hit.
     ENDIF.
   ENDIF.
 
-  " Fallback cuối: mở object nếu có
-  IF ls_hit-objname IS NOT INITIAL
-     AND ls_hit-objtype IS NOT INITIAL.
-    CALL FUNCTION 'RS_TOOL_ACCESS'
-      EXPORTING
-        operation   = gc_operation-show
-        object_name = ls_hit-objname
-        object_type = ls_hit-objtype
-        position    = COND i( WHEN ls_hit-line > 0 THEN ls_hit-line ELSE 1 )
-      EXCEPTIONS
-        OTHERS      = 1.
+*  " Fallback cuối: mở object nếu có
+*  IF is_hit-objname IS NOT INITIAL
+*     AND is_hit-objtype IS NOT INITIAL.
+*    CALL FUNCTION 'RS_TOOL_ACCESS'
+*      EXPORTING
+*        operation   = gc_operation-show
+*        object_name = is_hit-objname
+*        object_type = is_hit-objtype
+*        position    = COND i( WHEN is_hit-line > 0 THEN is_hit-line ELSE 1 )
+*      EXCEPTIONS
+*        OTHERS      = 1.
+*
+*    IF sy-subrc = 0.
+*      RETURN.
+*    ENDIF.
+*  ENDIF.
 
-    IF sy-subrc = 0.
-      RETURN.
-    ENDIF.
-  ENDIF.
-
-  MESSAGE e033(zgsp04_analyzetool) DISPLAY LIKE 'E'.
+  MESSAGE e033(zgsp04_analyzetool).
 
 ENDMETHOD.
 
@@ -1752,7 +1992,7 @@ ENDMETHOD.
 METHOD on_user_command.
 
   CASE e_salv_function.
-    WHEN 'ALL'.
+    WHEN gc_view-all.
       me->filter_analysis_by_category( ).
 
     WHEN gc_category-hardcode.

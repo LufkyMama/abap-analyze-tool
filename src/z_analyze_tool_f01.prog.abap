@@ -158,6 +158,7 @@ FORM start_of_selection_main.
 
   DATA: lo_report      TYPE REF TO zcl_program_report,
         lt_errors_disp TYPE ztt_error,
+        ls_header      TYPE zcl_program_alv=>gty_alv_header,
         lv_obj_label   TYPE string,
         lv_obj_name    TYPE string.
 
@@ -266,14 +267,22 @@ FORM start_of_selection_main.
     lv_obj_label = 'Class'.
     lv_obj_name  = p_class.
   ENDIF.
+  "--------------------------------------------------
+  " Build ALV header
+  "--------------------------------------------------
+  CLEAR ls_header.
 
+  ls_header-object_name = lv_obj_name.
+  ls_header-object_type = lv_obj_label.
+  ls_header-checked_by  = sy-uname.
   "--------------------------------------------------
   " Display Analyze result
   "--------------------------------------------------
   IF rb_check = abap_true.
     IF lt_errors_disp IS NOT INITIAL.
       go_alv->display_analysis_alv(
-        it_data = lt_errors_disp ).
+        it_data   = lt_errors_disp
+        is_header = ls_header ).
     ELSE.
       MESSAGE s021(z_gsp04_message) WITH lv_obj_label lv_obj_name.
     ENDIF.
@@ -284,7 +293,8 @@ FORM start_of_selection_main.
   "--------------------------------------------------
   IF rb_used = abap_true AND lt_founds IS NOT INITIAL.
     go_alv->display_where_used_alv(
-      it_data = lt_founds ).
+      iv_data   = lt_founds
+      is_header = ls_header ).
   ENDIF.
 
 ENDFORM.

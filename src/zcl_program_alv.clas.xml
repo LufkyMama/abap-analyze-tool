@@ -162,6 +162,66 @@
      <ENTRY>Where-Used Hit Source</ENTRY>
      <LENGTH>42</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C26</KEY>
+     <ENTRY>Execution Info</ENTRY>
+     <LENGTH>24</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C27</KEY>
+     <ENTRY>Summary</ENTRY>
+     <LENGTH>17</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C28</KEY>
+     <ENTRY>View</ENTRY>
+     <LENGTH>14</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C29</KEY>
+     <ENTRY>Errors:</ENTRY>
+     <LENGTH>17</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C30</KEY>
+     <ENTRY>Warnings:</ENTRY>
+     <LENGTH>19</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C31</KEY>
+     <ENTRY>Totals:</ENTRY>
+     <LENGTH>17</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C32</KEY>
+     <ENTRY>N/A</ENTRY>
+     <LENGTH>13</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C33</KEY>
+     <ENTRY>Include</ENTRY>
+     <LENGTH>17</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C34</KEY>
+     <ENTRY>Line</ENTRY>
+     <LENGTH>14</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C35</KEY>
+     <ENTRY>Severity</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
@@ -232,38 +292,14 @@
    </DESCRIPTIONS>
    <DESCRIPTIONS_SUB>
     <SEOSUBCOTX>
-     <CMPNAME>DISPLAY_ANALYSIS_ALV</CMPNAME>
-     <SCONAME>IT_DATA</SCONAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Error Result Table</DESCRIPT>
-    </SEOSUBCOTX>
-    <SEOSUBCOTX>
-     <CMPNAME>DISPLAY_ANALYSIS_ALV</CMPNAME>
-     <SCONAME>IV_DATE</SCONAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Date</DESCRIPT>
-    </SEOSUBCOTX>
-    <SEOSUBCOTX>
-     <CMPNAME>DISPLAY_ANALYSIS_ALV</CMPNAME>
-     <SCONAME>IV_TIME</SCONAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Time</DESCRIPT>
-    </SEOSUBCOTX>
-    <SEOSUBCOTX>
-     <CMPNAME>DISPLAY_ANALYSIS_ALV</CMPNAME>
-     <SCONAME>IV_USER</SCONAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>User Name</DESCRIPT>
-    </SEOSUBCOTX>
-    <SEOSUBCOTX>
      <CMPNAME>GET_CLASS_INCLUDE_TEXT</CMPNAME>
-     <SCONAME>IM_CLASS_NAME</SCONAME>
+     <SCONAME>IV_CLASS_NAME</SCONAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Object Type Name</DESCRIPT>
     </SEOSUBCOTX>
     <SEOSUBCOTX>
      <CMPNAME>GET_CLASS_INCLUDE_TEXT</CMPNAME>
-     <SCONAME>IM_INCLUDE</SCONAME>
+     <SCONAME>IV_INCLUDE</SCONAME>
      <LANGU>E</LANGU>
      <DESCRIPT>ABAP Program Name</DESCRIPT>
     </SEOSUBCOTX>

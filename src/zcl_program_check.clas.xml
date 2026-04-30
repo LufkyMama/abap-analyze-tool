@@ -18,12 +18,6 @@
      <ENTRY>Hardcoded literal(s) in MESSAGE:</ENTRY>
      <LENGTH>64</LENGTH>
     </item>
-    <item>
-     <ID>I</ID>
-     <KEY>002</KEY>
-     <ENTRY>TEST</ENTRY>
-     <LENGTH>14</LENGTH>
-    </item>
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
@@ -52,9 +46,39 @@
      <DESCRIPT>Performance check</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
+     <CMPNAME>CC_ADD_USAGE_COUNT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Add usage count</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>CC_PREPROCESS_SOURCE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Preprocess source code</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
      <CMPNAME>GET_OBJECT_AUTHOR</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Specified Object Type</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>NM_ADDITIONAL_NAMING_CHECKS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Check extended naming rules</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>NM_DATA_CHECKS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Check DATA and inline prefixes</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>NM_RESOLVE_SIG_KIND</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Resolve signature kind</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>NM_RESOLVE_TYPE_KIND</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Resolve type kind</DESCRIPT>
     </SEOCOMPOTX>
    </DESCRIPTIONS>
   </asx:values>

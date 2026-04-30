@@ -179,7 +179,9 @@ METHOD run_check_fm.
   ensure_objects( ).
   CLEAR rt_errors.
 
-  DATA: lv_pname     TYPE progname,
+  DATA: lv_funcname  TYPE rs38l-name,
+        lv_fugr      TYPE rs38l-area,
+        lv_pname     TYPE progname,
         lv_include   TYPE progname,
         lv_last_user TYPE reposrc-unam,
         lv_last_date TYPE reposrc-udat,
@@ -187,58 +189,134 @@ METHOD run_check_fm.
 
   DATA: lt_sources             TYPE zcl_program_fetch=>gty_t_program_source,
         lt_source              TYPE string_table,
+        lt_clean_usage_source  TYPE string_table,
         ls_src                 TYPE zcl_program_fetch=>gty_program_source,
         lv_text_symbol_checked TYPE abap_bool VALUE abap_false.
 
   DATA lv_msg TYPE string.
 
-  " 1) Fetch
+  lv_funcname = iv_funcname.
+  TRANSLATE lv_funcname TO UPPER CASE.
+  CONDENSE lv_funcname NO-GAPS.
+
+  "------------------------------------------------------------
+  " 1) Get FM metadata
+  "------------------------------------------------------------
+  SELECT SINGLE pname, include
+    FROM tfdir
+    INTO (@lv_pname, @lv_include)
+    WHERE funcname = @lv_funcname.
+
+  SELECT SINGLE area
+    FROM enlfdir
+    INTO @lv_fugr
+    WHERE funcname = @lv_funcname.
+
+  "------------------------------------------------------------
+  " 2) Fetch current FM source as fallback
+  "------------------------------------------------------------
   lt_sources = go_fetch->get_function_module(
-    iv_funcname = iv_funcname ).
+    iv_funcname = lv_funcname ).
 
   IF lt_sources IS INITIAL.
-    MESSAGE e034(z_gsp04_message) WITH iv_funcname INTO lv_msg.
+    MESSAGE e034(z_gsp04_message) WITH lv_funcname INTO lv_msg.
+
     APPEND VALUE zst_error(
       objtype = gc_objtype_fm
-      objname = iv_funcname
+      objname = lv_funcname
       include = ''
       line    = 0
       sev     = gc_sev_error
       msg     = lv_msg
       chk_usr = gc_user_unknown
     ) TO rt_errors.
+
     RETURN.
   ENDIF.
 
-  CLEAR: lv_pname, lv_include, lt_source, ls_src, lv_last_user.
-
-  " Dòng 1 = main program
-  READ TABLE lt_sources INTO ls_src INDEX 1.
-  IF sy-subrc = 0.
-    lv_pname = ls_src-include.
+  "Fallback nếu TFDIR chưa trả đủ.
+  IF lv_pname IS INITIAL.
+    READ TABLE lt_sources INTO ls_src INDEX 1.
+    IF sy-subrc = 0.
+      lv_pname = ls_src-include.
+    ENDIF.
   ENDIF.
 
-  " Dòng 2 = include chứa FM
-  CLEAR ls_src.
-  READ TABLE lt_sources INTO ls_src INDEX 2.
-  IF sy-subrc = 0 AND ls_src-source_code IS NOT INITIAL.
-    lv_include = ls_src-include.
-    lt_source  = ls_src-source_code.
+  IF lv_include IS INITIAL.
+    READ TABLE lt_sources INTO ls_src INDEX 2.
+    IF sy-subrc = 0.
+      lv_include = ls_src-include.
+    ENDIF.
+  ENDIF.
+
+  "------------------------------------------------------------
+  " 3) Fetch full function group source
+  "------------------------------------------------------------
+  DATA(lt_fg_sources) = go_fetch->get_function_group( iv_fg_name = lv_fugr ).
+
+  "Nếu không lấy được FG source thì fallback về source của FM.
+  IF lt_fg_sources IS INITIAL.
+    lt_fg_sources = CORRESPONDING #( lt_sources ).
+  ENDIF.
+
+  "------------------------------------------------------------
+  " 4) Get current FM include source
+  "------------------------------------------------------------
+  CLEAR: lt_source,
+         ls_src.
+
+  READ TABLE lt_fg_sources INTO DATA(ls_fg_src)
+  WITH KEY include = lv_include.
+
+  IF sy-subrc = 0 AND ls_fg_src-source_code IS NOT INITIAL.
+    lt_source = ls_fg_src-source_code.
   ELSE.
-    MESSAGE e035(z_gsp04_message) WITH iv_funcname INTO lv_msg.
+    READ TABLE lt_sources INTO ls_src INDEX 2.
+    IF sy-subrc = 0 AND ls_src-source_code IS NOT INITIAL.
+      lv_include = ls_src-include.
+      lt_source  = ls_src-source_code.
+    ENDIF.
+  ENDIF.
+
+  IF lt_source IS INITIAL.
+    MESSAGE e035(z_gsp04_message) WITH lv_funcname INTO lv_msg.
+
     APPEND VALUE zst_error(
       objtype = gc_objtype_fm
-      objname = iv_funcname
+      objname = lv_funcname
       include = ''
       line    = 0
       sev     = gc_sev_error
       msg     = lv_msg
       chk_usr = gc_user_unknown
     ) TO rt_errors.
+
     RETURN.
   ENDIF.
 
-  " Lấy user theo include source của FM
+  "------------------------------------------------------------
+  " 5) Build clean usage source
+  "------------------------------------------------------------
+  CLEAR lt_clean_usage_source.
+
+  "Current FM include phải đứng đầu để row của current source map đúng.
+  APPEND LINES OF lt_source TO lt_clean_usage_source.
+
+  LOOP AT lt_fg_sources INTO DATA(ls_usage_src).
+    IF ls_usage_src-include = lv_include.
+      CONTINUE.
+    ENDIF.
+
+    IF ls_usage_src-source_code IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    APPEND LINES OF ls_usage_src-source_code TO lt_clean_usage_source.
+  ENDLOOP.
+
+  "------------------------------------------------------------
+  " 6) Read metadata
+  "------------------------------------------------------------
   SELECT SINGLE unam, udat
     FROM reposrc
     INTO (@lv_last_user, @lv_last_date)
@@ -251,13 +329,11 @@ METHOD run_check_fm.
 
   CLEAR lt_all_err.
 
-  " Context chung cho FM
   DATA(ls_ctx) = VALUE zcl_program_check=>gty_naming_ctx(
     obj_type  = gc_objtype_fm
-    obj_name  = iv_funcname
+    obj_name  = lv_funcname
     main_prog = lv_pname
-    include   = lv_include
-  ).
+    include   = lv_include ).
 
   IF iv_check_naming = abap_true.
     APPEND LINES OF go_check->analyze_naming(
@@ -269,11 +345,11 @@ METHOD run_check_fm.
     APPEND LINES OF go_check->analyze_clean_code(
       is_ctx               = ls_ctx
       it_source            = lt_source
+      it_usage_source      = lt_clean_usage_source
       iv_check_unused_text = COND abap_bool(
         WHEN lv_text_symbol_checked = abap_false
         THEN abap_true
         ELSE abap_false ) ) TO lt_all_err.
-
     lv_text_symbol_checked = abap_true.
   ENDIF.
 
@@ -295,16 +371,150 @@ METHOD run_check_fm.
       it_source = lt_source ) TO lt_all_err.
   ENDIF.
 
-  " Chuẩn hóa thông tin object cho ALV
   LOOP AT lt_all_err ASSIGNING FIELD-SYMBOL(<ls_err>).
     <ls_err>-objtype  = ls_ctx-obj_type.
-    <ls_err>-objname  = iv_funcname.
+    <ls_err>-objname  = lv_funcname.
     <ls_err>-include  = lv_include.
     <ls_err>-chk_usr  = lv_last_user.
     <ls_err>-chk_date = lv_last_date.
   ENDLOOP.
 
+  SORT lt_all_err BY objtype objname include line msg.
+  DELETE ADJACENT DUPLICATES FROM lt_all_err
+    COMPARING objtype objname include line msg.
+
   APPEND LINES OF lt_all_err TO rt_errors.
+*METHOD run_check_fm.
+*  ensure_objects( ).
+*  CLEAR rt_errors.
+*
+*  DATA: lv_pname     TYPE progname,
+*        lv_include   TYPE progname,
+*        lv_last_user TYPE reposrc-unam,
+*        lv_last_date TYPE reposrc-udat,
+*        lt_all_err   TYPE ztt_error.
+*
+*  DATA: lt_sources             TYPE zcl_program_fetch=>gty_t_program_source,
+*        lt_source              TYPE string_table,
+*        ls_src                 TYPE zcl_program_fetch=>gty_program_source,
+*        lv_text_symbol_checked TYPE abap_bool VALUE abap_false.
+*
+*  DATA lv_msg TYPE string.
+*
+*  " 1) Fetch
+*  lt_sources = go_fetch->get_function_module(
+*    iv_funcname = iv_funcname ).
+*
+*  IF lt_sources IS INITIAL.
+*    MESSAGE e034(z_gsp04_message) WITH iv_funcname INTO lv_msg.
+*    APPEND VALUE zst_error(
+*      objtype = gc_objtype_fm
+*      objname = iv_funcname
+*      include = ''
+*      line    = 0
+*      sev     = gc_sev_error
+*      msg     = lv_msg
+*      chk_usr = gc_user_unknown
+*    ) TO rt_errors.
+*    RETURN.
+*  ENDIF.
+*
+*  CLEAR: lv_pname, lv_include, lt_source, ls_src, lv_last_user.
+*
+*  " Dòng 1 = main program
+*  READ TABLE lt_sources INTO ls_src INDEX 1.
+*  IF sy-subrc = 0.
+*    lv_pname = ls_src-include.
+*  ENDIF.
+*
+*  " Dòng 2 = include chứa FM
+*  CLEAR ls_src.
+*  READ TABLE lt_sources INTO ls_src INDEX 2.
+*  IF sy-subrc = 0 AND ls_src-source_code IS NOT INITIAL.
+*    lv_include = ls_src-include.
+*    lt_source  = ls_src-source_code.
+*  ELSE.
+*    MESSAGE e035(z_gsp04_message) WITH iv_funcname INTO lv_msg.
+*    APPEND VALUE zst_error(
+*      objtype = gc_objtype_fm
+*      objname = iv_funcname
+*      include = ''
+*      line    = 0
+*      sev     = gc_sev_error
+*      msg     = lv_msg
+*      chk_usr = gc_user_unknown
+*    ) TO rt_errors.
+*    RETURN.
+*  ENDIF.
+*
+*  " Lấy user theo include source của FM
+*  SELECT SINGLE unam, udat
+*    FROM reposrc
+*    INTO (@lv_last_user, @lv_last_date)
+*    WHERE progname = @lv_include.
+*
+*  IF sy-subrc <> 0.
+*    lv_last_user = gc_user_unknown.
+*    lv_last_date = sy-datum.
+*  ENDIF.
+*
+*  CLEAR lt_all_err.
+*
+*  " Context chung cho FM
+*  DATA(ls_ctx) = VALUE zcl_program_check=>gty_naming_ctx(
+*    obj_type  = gc_objtype_fm
+*    obj_name  = iv_funcname
+*    main_prog = lv_pname
+*    include   = lv_include
+*  ).
+*
+*  IF iv_check_naming = abap_true.
+*    APPEND LINES OF go_check->analyze_naming(
+*      is_ctx    = ls_ctx
+*      it_source = lt_source ) TO lt_all_err.
+*  ENDIF.
+*
+*  IF iv_check_clean = abap_true.
+*    APPEND LINES OF go_check->analyze_clean_code(
+*      is_ctx               = ls_ctx
+*      it_source            = lt_source
+*      iv_check_unused_text = COND abap_bool(
+*        WHEN lv_text_symbol_checked = abap_false
+*        THEN abap_true
+*        ELSE abap_false ) ) TO lt_all_err.
+*
+*    lv_text_symbol_checked = abap_true.
+*  ENDIF.
+*
+*  IF iv_check_hardcode = abap_true.
+*    APPEND LINES OF go_check->analyze_hardcode(
+*      is_ctx    = ls_ctx
+*      it_source = lt_source ) TO lt_all_err.
+*  ENDIF.
+*
+*  IF iv_check_obsolete = abap_true.
+*    APPEND LINES OF go_check->analyze_obsolete(
+*      is_ctx    = ls_ctx
+*      it_source = lt_source ) TO lt_all_err.
+*  ENDIF.
+*
+*  IF iv_check_perf = abap_true.
+*    APPEND LINES OF go_check->analyze_performance(
+*      is_ctx    = ls_ctx
+*      it_source = lt_source ) TO lt_all_err.
+*  ENDIF.
+*
+*  " Chuẩn hóa thông tin object cho ALV
+*  LOOP AT lt_all_err ASSIGNING FIELD-SYMBOL(<ls_err>).
+*    <ls_err>-objtype  = ls_ctx-obj_type.
+*    <ls_err>-objname  = iv_funcname.
+*    <ls_err>-include  = lv_include.
+*    <ls_err>-chk_usr  = lv_last_user.
+*    <ls_err>-chk_date = lv_last_date.
+*  ENDLOOP.
+*
+*  APPEND LINES OF lt_all_err TO rt_errors.
+*ENDMETHOD.
 ENDMETHOD.
 
 
@@ -330,11 +540,11 @@ METHOD run_check_fugr.
         lv_last_date           TYPE reposrc-udat,
         lv_text_symbol_checked TYPE abap_bool VALUE abap_false.
 
-  DATA: lt_all_err   TYPE ztt_error,
-        lt_fg_err    TYPE ztt_error,
-        lt_src_keys  TYPE SORTED TABLE OF reposrc-progname WITH UNIQUE KEY table_line,
-        lt_repo_meta TYPE gty_t_reposrc_meta,
-        lt_fm_map    TYPE gty_t_fm_map.
+  DATA: lt_all_err            TYPE ztt_error,
+        lt_src_keys           TYPE SORTED TABLE OF reposrc-progname WITH UNIQUE KEY table_line,
+        lt_repo_meta          TYPE gty_t_reposrc_meta,
+        lt_fm_map             TYPE gty_t_fm_map,
+        lt_clean_usage_source TYPE string_table.
 
   FIELD-SYMBOLS: <ls_err> TYPE zst_error.
 
@@ -357,6 +567,7 @@ METHOD run_check_fugr.
 
   IF sy-subrc <> 0.
     MESSAGE e007(z_gsp04_message) WITH lv_fugr INTO lv_msg.
+
     APPEND VALUE zst_error(
       objtype  = gc_objtype_fugr
       objname  = lv_fugr
@@ -367,6 +578,7 @@ METHOD run_check_fugr.
       chk_usr  = gc_user_unknown
       chk_date = sy-datum
     ) TO rt_errors.
+
     RETURN.
   ENDIF.
 
@@ -377,6 +589,7 @@ METHOD run_check_fugr.
 
   IF lt_sources IS INITIAL.
     MESSAGE e005(z_gsp04_message) WITH lv_fugr INTO lv_msg.
+
     APPEND VALUE zst_error(
       objtype  = gc_objtype_fugr
       objname  = lv_fugr
@@ -387,12 +600,12 @@ METHOD run_check_fugr.
       chk_usr  = gc_user_unknown
       chk_date = sy-datum
     ) TO rt_errors.
+
     RETURN.
   ENDIF.
 
   "------------------------------------------------------------
   " 3) Read function module <-> include mapping
-  "    Dùng lại cách cũ: ENLFDIR + TFDIR
   "------------------------------------------------------------
   SELECT a~funcname, b~include
     FROM enlfdir AS a
@@ -423,11 +636,18 @@ METHOD run_check_fugr.
   ENDIF.
 
   "------------------------------------------------------------
-  " 6) Run source-based checks include by include
+  " 5) Run source-based checks include by include
   "------------------------------------------------------------
   LOOP AT lt_sources INTO DATA(ls_src).
 
-    CLEAR: lt_all_err, lv_last_user, lv_last_date.
+    IF ls_src-source_code IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    CLEAR: lt_all_err,
+           lt_clean_usage_source,
+           lv_last_user,
+           lv_last_date.
 
     READ TABLE lt_repo_meta
       WITH TABLE KEY progname = ls_src-include
@@ -440,6 +660,21 @@ METHOD run_check_fugr.
       lv_last_user = gc_user_unknown.
       lv_last_date = sy-datum.
     ENDIF.
+
+    "Current include phải đứng đầu để row của current source map đúng.
+    APPEND LINES OF ls_src-source_code TO lt_clean_usage_source.
+
+    LOOP AT lt_sources INTO DATA(ls_usage_src).
+      IF ls_usage_src-include = ls_src-include.
+        CONTINUE.
+      ENDIF.
+
+      IF ls_usage_src-source_code IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      APPEND LINES OF ls_usage_src-source_code TO lt_clean_usage_source.
+    ENDLOOP.
 
     DATA(ls_ctx) = VALUE zcl_program_check=>gty_naming_ctx(
       obj_type  = gc_objtype_fugr
@@ -458,12 +693,11 @@ METHOD run_check_fugr.
       APPEND LINES OF go_check->analyze_clean_code(
         is_ctx               = ls_ctx
         it_source            = ls_src-source_code
+        it_usage_source      = lt_clean_usage_source
         iv_check_unused_text = COND abap_bool(
           WHEN lv_text_symbol_checked = abap_false
           THEN abap_true
-          ELSE abap_false )
-      ) TO lt_all_err.
-
+          ELSE abap_false ) ) TO lt_all_err.
       lv_text_symbol_checked = abap_true.
     ENDIF.
 
@@ -489,7 +723,8 @@ METHOD run_check_fugr.
     ENDIF.
 
     LOOP AT lt_all_err ASSIGNING <ls_err>.
-      <ls_err>-objtype = gc_objtype_fugr.
+      <ls_err>-objtype  = gc_objtype_fugr.
+      <ls_err>-objname  = lv_fugr.
       <ls_err>-include  = ls_src-include.
       <ls_err>-chk_usr  = lv_last_user.
       <ls_err>-chk_date = lv_last_date.
@@ -504,12 +739,215 @@ METHOD run_check_fugr.
   ENDLOOP.
 
   "------------------------------------------------------------
-  " 8) Final de-dup
+  " 6) Final de-dup
   "------------------------------------------------------------
   SORT rt_errors BY objtype objname include line msg.
   DELETE ADJACENT DUPLICATES FROM rt_errors
     COMPARING objtype objname include line msg.
 
+*METHOD run_check_fugr.
+*
+*  TYPES: BEGIN OF gty_reposrc_meta,
+*           progname TYPE reposrc-progname,
+*           unam     TYPE reposrc-unam,
+*           udat     TYPE reposrc-udat,
+*         END OF gty_reposrc_meta,
+*         gty_t_reposrc_meta TYPE HASHED TABLE OF gty_reposrc_meta WITH UNIQUE KEY progname.
+*
+*  TYPES: BEGIN OF gty_fm_map,
+*           funcname TYPE tfdir-funcname,
+*           include  TYPE progname,
+*         END OF gty_fm_map,
+*         gty_t_fm_map TYPE STANDARD TABLE OF gty_fm_map WITH EMPTY KEY.
+*
+*  DATA: lv_msg                 TYPE string,
+*        lv_fugr                TYPE rs38l-area,
+*        lv_main_prog           TYPE progname,
+*        lv_last_user           TYPE reposrc-unam,
+*        lv_last_date           TYPE reposrc-udat,
+*        lv_text_symbol_checked TYPE abap_bool VALUE abap_false.
+*
+*  DATA: lt_all_err   TYPE ztt_error,
+*        lt_fg_err    TYPE ztt_error,
+*        lt_src_keys  TYPE SORTED TABLE OF reposrc-progname WITH UNIQUE KEY table_line,
+*        lt_repo_meta TYPE gty_t_reposrc_meta,
+*        lt_fm_map    TYPE gty_t_fm_map.
+*
+*  FIELD-SYMBOLS: <ls_err> TYPE zst_error.
+*
+*  ensure_objects( ).
+*  CLEAR rt_errors.
+*
+*  lv_fugr = iv_fugr.
+*  TRANSLATE lv_fugr TO UPPER CASE.
+*  CONDENSE lv_fugr NO-GAPS.
+*
+*  lv_main_prog = |SAPL{ lv_fugr }|.
+*
+*  "------------------------------------------------------------
+*  " 1) Validate function group
+*  "------------------------------------------------------------
+*  SELECT SINGLE area
+*    FROM tlibg
+*    INTO @DATA(lv_fugr_exists)
+*    WHERE area = @lv_fugr.
+*
+*  IF sy-subrc <> 0.
+*    MESSAGE e007(z_gsp04_message) WITH lv_fugr INTO lv_msg.
+*    APPEND VALUE zst_error(
+*      objtype  = gc_objtype_fugr
+*      objname  = lv_fugr
+*      include  = ''
+*      line     = 0
+*      sev      = gc_sev_error
+*      msg      = lv_msg
+*      chk_usr  = gc_user_unknown
+*      chk_date = sy-datum
+*    ) TO rt_errors.
+*    RETURN.
+*  ENDIF.
+*
+*  "------------------------------------------------------------
+*  " 2) Load all includes/source of function group
+*  "------------------------------------------------------------
+*  DATA(lt_sources) = go_fetch->get_function_group( iv_fg_name = lv_fugr ).
+*
+*  IF lt_sources IS INITIAL.
+*    MESSAGE e005(z_gsp04_message) WITH lv_fugr INTO lv_msg.
+*    APPEND VALUE zst_error(
+*      objtype  = gc_objtype_fugr
+*      objname  = lv_fugr
+*      include  = ''
+*      line     = 0
+*      sev      = gc_sev_error
+*      msg      = lv_msg
+*      chk_usr  = gc_user_unknown
+*      chk_date = sy-datum
+*    ) TO rt_errors.
+*    RETURN.
+*  ENDIF.
+*
+*  "------------------------------------------------------------
+*  " 3) Read function module <-> include mapping
+*  "    Dùng lại cách cũ: ENLFDIR + TFDIR
+*  "------------------------------------------------------------
+*  SELECT a~funcname, b~include
+*    FROM enlfdir AS a
+*    INNER JOIN tfdir AS b
+*      ON b~funcname = a~funcname
+*    INTO TABLE @lt_fm_map
+*    WHERE a~area = @lv_fugr.
+*
+*  "------------------------------------------------------------
+*  " 4) Prepare include metadata in one DB hit
+*  "------------------------------------------------------------
+*  LOOP AT lt_sources INTO DATA(ls_src_key).
+*    IF ls_src_key-include IS NOT INITIAL.
+*      INSERT ls_src_key-include INTO TABLE lt_src_keys.
+*    ENDIF.
+*  ENDLOOP.
+*
+*  IF lt_src_keys IS NOT INITIAL.
+*    SELECT progname, unam, udat
+*      FROM reposrc
+*      INTO TABLE @DATA(lt_repo_raw)
+*      FOR ALL ENTRIES IN @lt_src_keys
+*      WHERE progname = @lt_src_keys-table_line.
+*
+*    IF sy-subrc = 0.
+*      lt_repo_meta = CORRESPONDING #( lt_repo_raw ).
+*    ENDIF.
+*  ENDIF.
+*
+*  "------------------------------------------------------------
+*  " 6) Run source-based checks include by include
+*  "------------------------------------------------------------
+*  LOOP AT lt_sources INTO DATA(ls_src).
+*
+*    CLEAR: lt_all_err, lv_last_user, lv_last_date.
+*
+*    READ TABLE lt_repo_meta
+*      WITH TABLE KEY progname = ls_src-include
+*      INTO DATA(ls_meta).
+*
+*    IF sy-subrc = 0.
+*      lv_last_user = ls_meta-unam.
+*      lv_last_date = ls_meta-udat.
+*    ELSE.
+*      lv_last_user = gc_user_unknown.
+*      lv_last_date = sy-datum.
+*    ENDIF.
+*
+*    DATA(ls_ctx) = VALUE zcl_program_check=>gty_naming_ctx(
+*      obj_type  = gc_objtype_fugr
+*      obj_name  = lv_fugr
+*      main_prog = lv_main_prog
+*      include   = ls_src-include ).
+*
+*    IF iv_check_naming = abap_true.
+*      APPEND LINES OF go_check->analyze_naming(
+*        is_ctx    = ls_ctx
+*        it_source = ls_src-source_code
+*      ) TO lt_all_err.
+*    ENDIF.
+*
+*    IF iv_check_clean = abap_true.
+*      APPEND LINES OF go_check->analyze_clean_code(
+*        is_ctx               = ls_ctx
+*        it_source            = ls_src-source_code
+*        iv_check_unused_text = COND abap_bool(
+*          WHEN lv_text_symbol_checked = abap_false
+*          THEN abap_true
+*          ELSE abap_false )
+*      ) TO lt_all_err.
+*
+*      lv_text_symbol_checked = abap_true.
+*    ENDIF.
+*
+*    IF iv_check_hardcode = abap_true.
+*      APPEND LINES OF go_check->analyze_hardcode(
+*        is_ctx    = ls_ctx
+*        it_source = ls_src-source_code
+*      ) TO lt_all_err.
+*    ENDIF.
+*
+*    IF iv_check_obsolete = abap_true.
+*      APPEND LINES OF go_check->analyze_obsolete(
+*        is_ctx    = ls_ctx
+*        it_source = ls_src-source_code
+*      ) TO lt_all_err.
+*    ENDIF.
+*
+*    IF iv_check_perf = abap_true.
+*      APPEND LINES OF go_check->analyze_performance(
+*        is_ctx    = ls_ctx
+*        it_source = ls_src-source_code
+*      ) TO lt_all_err.
+*    ENDIF.
+*
+*    LOOP AT lt_all_err ASSIGNING <ls_err>.
+*      <ls_err>-objtype = gc_objtype_fugr.
+*      <ls_err>-include  = ls_src-include.
+*      <ls_err>-chk_usr  = lv_last_user.
+*      <ls_err>-chk_date = lv_last_date.
+*    ENDLOOP.
+*
+*    SORT lt_all_err BY objtype objname include line msg.
+*    DELETE ADJACENT DUPLICATES FROM lt_all_err
+*      COMPARING objtype objname include line msg.
+*
+*    APPEND LINES OF lt_all_err TO rt_errors.
+*
+*  ENDLOOP.
+*
+*  "------------------------------------------------------------
+*  " 8) Final de-dup
+*  "------------------------------------------------------------
+*  SORT rt_errors BY objtype objname include line msg.
+*  DELETE ADJACENT DUPLICATES FROM rt_errors
+*    COMPARING objtype objname include line msg.
+*
+*ENDMETHOD.
 ENDMETHOD.
 
 
@@ -649,22 +1087,27 @@ METHOD run_check_program.
 ENDMETHOD.
 
 
- METHOD run_check_tr.
+METHOD run_check_tr.
   ensure_objects( ).
   CLEAR rt_errors.
 
-  DATA: lt_e071  TYPE STANDARD TABLE OF gty_e071,
-        ls_e071  TYPE gty_e071,
-        lv_prog  TYPE progname,
-        lv_fugr  TYPE rs38l-area,
-        lv_func  TYPE rs38l-name,
-        lv_class TYPE seoclsname,
-        lt_new   TYPE ztt_error,
-        ls_err   TYPE zst_error,
-        lv_msg   TYPE string.
+  DATA: lt_e071        TYPE STANDARD TABLE OF gty_e071,
+        ls_e071        TYPE gty_e071,
+        lv_prog        TYPE progname,
+        lv_master_prog TYPE progname,
+        lv_fugr        TYPE rs38l-area,
+        lv_func        TYPE rs38l-name,
+        lv_class       TYPE seoclsname,
+        lt_new         TYPE ztt_error,
+        lv_msg         TYPE string.
 
   DATA: lt_class_keys TYPE SORTED TABLE OF seoclass-clsname WITH UNIQUE KEY table_line,
         lt_seoclass   TYPE gty_t_seoclass_key.
+
+  DATA: lt_prog_done  TYPE SORTED TABLE OF progname   WITH UNIQUE KEY table_line,
+        lt_class_done TYPE SORTED TABLE OF seoclsname WITH UNIQUE KEY table_line,
+        lt_fugr_done  TYPE SORTED TABLE OF rs38l-area WITH UNIQUE KEY table_line,
+        lt_func_done  TYPE SORTED TABLE OF rs38l-name WITH UNIQUE KEY table_line.
 
   " 1) Lấy danh sách object trong TR
   SELECT pgmid, object, obj_name
@@ -677,13 +1120,15 @@ ENDMETHOD.
     RETURN.
   ENDIF.
 
-  " 2) Tránh trùngx
-  SORT lt_e071 BY object obj_name.
-  DELETE ADJACENT DUPLICATES FROM lt_e071 COMPARING object obj_name.
+  " 2) Tránh trùng object thô trong TR
+  SORT lt_e071 BY pgmid object obj_name.
+  DELETE ADJACENT DUPLICATES FROM lt_e071
+    COMPARING pgmid object obj_name.
 
   " 3) Gom class name trước
   LOOP AT lt_e071 INTO ls_e071 WHERE object = gc_objtype_clas.
     lv_class = ls_e071-obj_name.
+    TRANSLATE lv_class TO UPPER CASE.
     CONDENSE lv_class NO-GAPS.
 
     IF lv_class IS NOT INITIAL.
@@ -709,10 +1154,42 @@ ENDMETHOD.
     CASE ls_e071-object.
 
       WHEN gc_objtype_prog.
-        CLEAR lv_prog.
-        lv_prog = ls_e071-obj_name.
 
-        CLEAR lt_new.
+        CLEAR: lv_prog,
+               lv_master_prog,
+               lt_new.
+
+        lv_prog = ls_e071-obj_name.
+        TRANSLATE lv_prog TO UPPER CASE.
+        CONDENSE lv_prog NO-GAPS.
+
+        IF lv_prog IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        "Nếu lv_prog là INCLUDE như *_T01, *_F00, *_F01
+        "thì map về master program để run_check_program gom đủ source.
+        SELECT SINGLE master
+          FROM d010inc
+          INTO @lv_master_prog
+          WHERE include = @lv_prog.
+
+        IF sy-subrc = 0 AND lv_master_prog IS NOT INITIAL.
+          lv_prog = lv_master_prog.
+          TRANSLATE lv_prog TO UPPER CASE.
+          CONDENSE lv_prog NO-GAPS.
+        ENDIF.
+
+        "Chỉ check một lần cho cùng master program.
+        READ TABLE lt_prog_done
+          WITH TABLE KEY table_line = lv_prog
+          TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          CONTINUE.
+        ENDIF.
+
+        INSERT lv_prog INTO TABLE lt_prog_done.
+
         lt_new = me->run_check_program(
                    iv_prog_name       = lv_prog
                    iv_check_naming    = iv_check_naming
@@ -720,31 +1197,68 @@ ENDMETHOD.
                    iv_check_clean     = iv_check_clean
                    iv_check_hardcode  = iv_check_hardcode
                    iv_check_obsolete  = iv_check_obsolete ).
+
         APPEND LINES OF lt_new TO rt_errors.
 
       WHEN gc_objtype_clas.
+
+        CLEAR lv_class.
+
         lv_class = ls_e071-obj_name.
+        TRANSLATE lv_class TO UPPER CASE.
         CONDENSE lv_class NO-GAPS.
+
+        IF lv_class IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        READ TABLE lt_class_done
+          WITH TABLE KEY table_line = lv_class
+          TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          CONTINUE.
+        ENDIF.
 
         READ TABLE lt_seoclass
           WITH TABLE KEY clsname = lv_class
           TRANSPORTING NO FIELDS.
 
-        IF sy-subrc = 0.
-          APPEND LINES OF me->run_check_class(
-                   iv_class_name      = lv_class
-                   iv_check_naming    = iv_check_naming
-                   iv_check_perf      = iv_check_perf
-                   iv_check_clean     = iv_check_clean
-                   iv_check_hardcode  = iv_check_hardcode
-                   iv_check_obsolete  = iv_check_obsolete ) TO rt_errors.
+        IF sy-subrc <> 0.
+          CONTINUE.
         ENDIF.
 
-      WHEN gc_objtype_fugr.
-        CLEAR lv_fugr.
-        lv_fugr = ls_e071-obj_name.
+        INSERT lv_class INTO TABLE lt_class_done.
 
-        CLEAR lt_new.
+        APPEND LINES OF me->run_check_class(
+                 iv_class_name      = lv_class
+                 iv_check_naming    = iv_check_naming
+                 iv_check_perf      = iv_check_perf
+                 iv_check_clean     = iv_check_clean
+                 iv_check_hardcode  = iv_check_hardcode
+                 iv_check_obsolete  = iv_check_obsolete ) TO rt_errors.
+
+      WHEN gc_objtype_fugr.
+
+        CLEAR: lv_fugr,
+               lt_new.
+
+        lv_fugr = ls_e071-obj_name.
+        TRANSLATE lv_fugr TO UPPER CASE.
+        CONDENSE lv_fugr NO-GAPS.
+
+        IF lv_fugr IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        READ TABLE lt_fugr_done
+          WITH TABLE KEY table_line = lv_fugr
+          TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          CONTINUE.
+        ENDIF.
+
+        INSERT lv_fugr INTO TABLE lt_fugr_done.
+
         lt_new = me->run_check_fugr(
                    iv_fugr            = lv_fugr
                    iv_check_naming    = iv_check_naming
@@ -755,10 +1269,27 @@ ENDMETHOD.
         APPEND LINES OF lt_new TO rt_errors.
 
       WHEN gc_objtype_func.
-        CLEAR lv_func.
-        lv_func = ls_e071-obj_name.
 
-        CLEAR lt_new.
+        CLEAR: lv_func,
+               lt_new.
+
+        lv_func = ls_e071-obj_name.
+        TRANSLATE lv_func TO UPPER CASE.
+        CONDENSE lv_func NO-GAPS.
+
+        IF lv_func IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        READ TABLE lt_func_done
+          WITH TABLE KEY table_line = lv_func
+          TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          CONTINUE.
+        ENDIF.
+
+        INSERT lv_func INTO TABLE lt_func_done.
+
         lt_new = me->run_check_fm(
                    iv_funcname        = lv_func
                    iv_check_naming    = iv_check_naming
@@ -774,6 +1305,132 @@ ENDMETHOD.
     ENDCASE.
   ENDLOOP.
 
+* METHOD run_check_tr.
+*  ensure_objects( ).
+*  CLEAR rt_errors.
+*
+*  DATA: lt_e071  TYPE STANDARD TABLE OF gty_e071,
+*        ls_e071  TYPE gty_e071,
+*        lv_prog  TYPE progname,
+*        lv_fugr  TYPE rs38l-area,
+*        lv_func  TYPE rs38l-name,
+*        lv_class TYPE seoclsname,
+*        lt_new   TYPE ztt_error,
+*        ls_err   TYPE zst_error,
+*        lv_msg   TYPE string.
+*
+*  DATA: lt_class_keys TYPE SORTED TABLE OF seoclass-clsname WITH UNIQUE KEY table_line,
+*        lt_seoclass   TYPE gty_t_seoclass_key.
+*
+*  " 1) Lấy danh sách object trong TR
+*  SELECT pgmid, object, obj_name
+*    FROM e071
+*    INTO TABLE @lt_e071
+*    WHERE trkorr = @iv_tr.
+*
+*  IF lt_e071 IS INITIAL.
+*    MESSAGE e036(z_gsp04_message) WITH iv_tr INTO lv_msg.
+*    RETURN.
+*  ENDIF.
+*
+*  " 2) Tránh trùngx
+*  SORT lt_e071 BY object obj_name.
+*  DELETE ADJACENT DUPLICATES FROM lt_e071 COMPARING object obj_name.
+*
+*  " 3) Gom class name trước
+*  LOOP AT lt_e071 INTO ls_e071 WHERE object = gc_objtype_clas.
+*    lv_class = ls_e071-obj_name.
+*    CONDENSE lv_class NO-GAPS.
+*
+*    IF lv_class IS NOT INITIAL.
+*      INSERT lv_class INTO TABLE lt_class_keys.
+*    ENDIF.
+*  ENDLOOP.
+*
+*  " 4) Select class tồn tại một lần
+*  IF lt_class_keys IS NOT INITIAL.
+*    SELECT clsname
+*      FROM seoclass
+*      INTO TABLE @DATA(lt_seoclass_raw)
+*      FOR ALL ENTRIES IN @lt_class_keys
+*      WHERE clsname = @lt_class_keys-table_line.
+*
+*    IF sy-subrc = 0.
+*      lt_seoclass = CORRESPONDING #( lt_seoclass_raw ).
+*    ENDIF.
+*  ENDIF.
+*
+*  " 5) Xử lý từng object trong TR
+*  LOOP AT lt_e071 INTO ls_e071.
+*    CASE ls_e071-object.
+*
+*      WHEN gc_objtype_prog.
+*        CLEAR lv_prog.
+*        lv_prog = ls_e071-obj_name.
+*
+*        CLEAR lt_new.
+*        lt_new = me->run_check_program(
+*                   iv_prog_name       = lv_prog
+*                   iv_check_naming    = iv_check_naming
+*                   iv_check_perf      = iv_check_perf
+*                   iv_check_clean     = iv_check_clean
+*                   iv_check_hardcode  = iv_check_hardcode
+*                   iv_check_obsolete  = iv_check_obsolete ).
+*        APPEND LINES OF lt_new TO rt_errors.
+*
+*      WHEN gc_objtype_clas.
+*        lv_class = ls_e071-obj_name.
+*        CONDENSE lv_class NO-GAPS.
+*
+*        READ TABLE lt_seoclass
+*          WITH TABLE KEY clsname = lv_class
+*          TRANSPORTING NO FIELDS.
+*
+*        IF sy-subrc = 0.
+*          APPEND LINES OF me->run_check_class(
+*                   iv_class_name      = lv_class
+*                   iv_check_naming    = iv_check_naming
+*                   iv_check_perf      = iv_check_perf
+*                   iv_check_clean     = iv_check_clean
+*                   iv_check_hardcode  = iv_check_hardcode
+*                   iv_check_obsolete  = iv_check_obsolete ) TO rt_errors.
+*        ENDIF.
+*
+*      WHEN gc_objtype_fugr.
+*        CLEAR lv_fugr.
+*        lv_fugr = ls_e071-obj_name.
+*
+*        CLEAR lt_new.
+*        lt_new = me->run_check_fugr(
+*                   iv_fugr            = lv_fugr
+*                   iv_check_naming    = iv_check_naming
+*                   iv_check_perf      = iv_check_perf
+*                   iv_check_clean     = iv_check_clean
+*                   iv_check_hardcode  = iv_check_hardcode
+*                   iv_check_obsolete  = iv_check_obsolete ).
+*        APPEND LINES OF lt_new TO rt_errors.
+*
+*      WHEN gc_objtype_func.
+*        CLEAR lv_func.
+*        lv_func = ls_e071-obj_name.
+*
+*        CLEAR lt_new.
+*        lt_new = me->run_check_fm(
+*                   iv_funcname        = lv_func
+*                   iv_check_naming    = iv_check_naming
+*                   iv_check_perf      = iv_check_perf
+*                   iv_check_clean     = iv_check_clean
+*                   iv_check_hardcode  = iv_check_hardcode
+*                   iv_check_obsolete  = iv_check_obsolete ).
+*        APPEND LINES OF lt_new TO rt_errors.
+*
+*      WHEN OTHERS.
+*        CONTINUE.
+*
+*    ENDCASE.
+*  ENDLOOP.
+*
+*ENDMETHOD.
 ENDMETHOD.
 
 
@@ -1504,6 +2161,7 @@ METHOD run_check_class.
   DATA(lt_class_data) = go_fetch->get_class( iv_class_name ).
 
   DATA: lt_temp_errors         TYPE ztt_error,
+        lt_clean_usage_source  TYPE string_table,
         lv_last_user           TYPE reposrc-unam,
         lv_last_date           TYPE reposrc-udat,
         lv_text_symbol_checked TYPE abap_bool VALUE abap_false.
@@ -1528,12 +2186,27 @@ METHOD run_check_class.
       CONTINUE.
     ENDIF.
 
-    CLEAR lt_temp_errors.
-
     DATA(ls_ctx) = VALUE zcl_program_check=>gty_naming_ctx(
       obj_type = gc_objtype_clas
       obj_name = iv_class_name
       include  = ls_item-include ).
+
+    CLEAR lt_clean_usage_source.
+    APPEND LINES OF ls_item-source_code TO lt_clean_usage_source.
+
+    LOOP AT lt_class_data INTO DATA(ls_usage_item).
+      IF ls_usage_item-include = ls_item-include.
+        CONTINUE.
+      ENDIF.
+
+      IF ls_usage_item-source_code IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      APPEND LINES OF ls_usage_item-source_code TO lt_clean_usage_source.
+    ENDLOOP.
+
+    CLEAR lt_temp_errors.
 
     IF iv_check_naming = abap_true.
       APPEND LINES OF go_check->analyze_naming(
@@ -1551,11 +2224,11 @@ METHOD run_check_class.
       APPEND LINES OF go_check->analyze_clean_code(
         is_ctx               = ls_ctx
         it_source            = ls_item-source_code
+        it_usage_source      = lt_clean_usage_source
         iv_check_unused_text = COND abap_bool(
           WHEN lv_text_symbol_checked = abap_false
           THEN abap_true
           ELSE abap_false ) ) TO lt_temp_errors.
-
       lv_text_symbol_checked = abap_true.
     ENDIF.
 
@@ -1583,8 +2256,9 @@ METHOD run_check_class.
   ENDLOOP.
 
   SORT rt_errors
-  BY objname include line rule msg.
+    BY objname include line rule msg.
 
-  DELETE ADJACENT DUPLICATES FROM rt_errors COMPARING objname include line rule msg.
+  DELETE ADJACENT DUPLICATES FROM rt_errors
+    COMPARING objname include line rule msg.
 ENDMETHOD.
 ENDCLASS.

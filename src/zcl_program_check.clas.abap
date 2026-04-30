@@ -1,58 +1,62 @@
-CLASS zcl_program_check DEFINITION
-  PUBLIC
-  FINAL
-  CREATE PUBLIC .
+class ZCL_PROGRAM_CHECK definition
+  public
+  final
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    TYPES:
-      BEGIN OF gty_naming_ctx,
+  types:
+    BEGIN OF gty_naming_ctx,
         obj_type  TYPE tadir-object,
         obj_name  TYPE sobj_name,
         main_prog TYPE progname,
         include   TYPE progname,
       END OF gty_naming_ctx .
 
-    METHODS analyze_clean_code
-      IMPORTING
-        !is_ctx               TYPE gty_naming_ctx
-        !it_source            TYPE string_table
-        !iv_check_unused_text TYPE abap_bool DEFAULT abap_true
-        !it_usage_source      TYPE string_table OPTIONAL
-      RETURNING
-        VALUE(rt_errors)      TYPE ztt_error .
-    METHODS analyze_hardcode
-      IMPORTING
-        !is_ctx          TYPE gty_naming_ctx
-        !it_source       TYPE string_table
-      RETURNING
-        VALUE(rt_errors) TYPE ztt_error .
-    METHODS analyze_obsolete
-      IMPORTING
-        !is_ctx          TYPE gty_naming_ctx
-        !it_source       TYPE string_table
-      RETURNING
-        VALUE(rt_errors) TYPE ztt_error .
-    METHODS analyze_naming
-      IMPORTING
-        !is_ctx          TYPE gty_naming_ctx
-        !it_source       TYPE string_table
-      RETURNING
-        VALUE(rt_errors) TYPE ztt_error .
-    METHODS analyze_performance
-      IMPORTING
-        !is_ctx          TYPE gty_naming_ctx
-        !it_source       TYPE string_table
-      RETURNING
-        VALUE(rt_errors) TYPE ztt_error .
+  methods ANALYZE_CLEAN_CODE
+    importing
+      !IS_CTX type GTY_NAMING_CTX
+      !IT_SOURCE type STRING_TABLE
+      !IV_CHECK_UNUSED_TEXT type ABAP_BOOL default ABAP_TRUE
+      !IT_USAGE_SOURCE type STRING_TABLE optional
+    returning
+      value(RT_ERRORS) type ZTT_ERROR .
+  methods ANALYZE_HARDCODE
+    importing
+      !IS_CTX type GTY_NAMING_CTX
+      !IT_SOURCE type STRING_TABLE
+    returning
+      value(RT_ERRORS) type ZTT_ERROR .
+  methods ANALYZE_OBSOLETE
+    importing
+      !IS_CTX type GTY_NAMING_CTX
+      !IT_SOURCE type STRING_TABLE
+    returning
+      value(RT_ERRORS) type ZTT_ERROR .
+  methods ANALYZE_NAMING
+    importing
+      !IS_CTX type GTY_NAMING_CTX
+      !IT_SOURCE type STRING_TABLE
+    returning
+      value(RT_ERRORS) type ZTT_ERROR .
+  methods ANALYZE_PERFORMANCE
+    importing
+      !IS_CTX type GTY_NAMING_CTX
+      !IT_SOURCE type STRING_TABLE
+    returning
+      value(RT_ERRORS) type ZTT_ERROR .
   PROTECTED SECTION.
-PRIVATE SECTION.
+private section.
 
-  TYPES: gty_t_tok_tab         TYPE STANDARD TABLE OF stokex WITH DEFAULT KEY .
-  TYPES: gty_t_stmt_tab        TYPE STANDARD TABLE OF sstmnt WITH DEFAULT KEY .
-  TYPES: gty_t_single_keywords TYPE SORTED TABLE OF   string WITH UNIQUE KEY table_line .
-
-  TYPES: BEGIN OF gty_src_line,
+  types:
+  "------------------------------------------------------------
+  " Shared technical TYPES
+  "------------------------------------------------------------
+    gty_t_tok_tab         TYPE STANDARD TABLE OF stokex WITH DEFAULT KEY .
+  types:
+    gty_t_stmt_tab        TYPE STANDARD TABLE OF sstmnt WITH DEFAULT KEY .
+  types:
+    BEGIN OF gty_src_line,
            row        TYPE i,
            no_comment TYPE string,
            upper      TYPE string,
@@ -60,38 +64,47 @@ PRIVATE SECTION.
            is_star    TYPE abap_bool,
            is_quote   TYPE abap_bool,
          END OF gty_src_line .
-  TYPES: gty_t_src_line TYPE STANDARD TABLE OF gty_src_line WITH EMPTY KEY .
-
-  TYPES: BEGIN OF gty_cnt,
+  types:
+    gty_t_src_line TYPE STANDARD TABLE OF gty_src_line WITH EMPTY KEY .
+  types:
+    BEGIN OF gty_cnt,
            name TYPE string,
            cnt  TYPE i,
          END OF gty_cnt .
-  TYPES: gty_t_cnt TYPE HASHED TABLE OF gty_cnt WITH UNIQUE KEY name .
-
-  TYPES: BEGIN OF gty_global_decl,
+  types:
+    gty_t_cnt TYPE HASHED TABLE OF gty_cnt WITH UNIQUE KEY name .
+  types:
+  "------------------------------------------------------------
+  " Shared Naming TYPES
+  "------------------------------------------------------------
+    BEGIN OF gty_global_decl,
            name_u TYPE string,
            name   TYPE string,
            row    TYPE i,
          END OF gty_global_decl .
-  TYPES: gty_t_global_decl TYPE HASHED TABLE OF gty_global_decl WITH UNIQUE KEY name_u .
-  TYPES: gty_t_routine_set TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line .
-
-  TYPES: BEGIN OF gty_use,
+  types:
+    gty_t_global_decl TYPE HASHED TABLE OF gty_global_decl WITH UNIQUE KEY name_u .
+  types:
+    gty_t_routine_set TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line .
+  types:
+    BEGIN OF gty_use,
            name_u   TYPE string,
            routines TYPE gty_t_routine_set,
          END OF gty_use .
-  TYPES: gty_t_use TYPE HASHED TABLE OF gty_use WITH UNIQUE KEY name_u .
-
-  TYPES: BEGIN OF gty_pending,
+  types:
+    gty_t_use TYPE HASHED TABLE OF gty_use WITH UNIQUE KEY name_u .
+  types:
+    BEGIN OF gty_pending,
            name_u          TYPE string,
            name            TYPE string,
            row             TYPE i,
            msg             TYPE string,
            is_local_prefix TYPE abap_bool,
          END OF gty_pending .
-  TYPES: gty_t_pending TYPE STANDARD TABLE OF gty_pending WITH EMPTY KEY .
-
-  TYPES: BEGIN OF gty_stmt_info,
+  types:
+    gty_t_pending TYPE STANDARD TABLE OF gty_pending WITH EMPTY KEY .
+  types:
+    BEGIN OF gty_stmt_info,
            from            TYPE i,
            to              TYPE i,
            first_u         TYPE string,
@@ -99,99 +112,34 @@ PRIVATE SECTION.
            is_data_stmt    TYPE abap_bool,
            current_routine TYPE string,
          END OF gty_stmt_info .
-  TYPES: gty_t_stmt_info TYPE STANDARD TABLE OF gty_stmt_info WITH EMPTY KEY .
-
-  TYPES: BEGIN OF gty_nm_scope_state,
-           depth           TYPE i,
-           in_event_local  TYPE abap_bool,
-           current_routine TYPE string,
-         END OF gty_nm_scope_state .
-
-  TYPES gty_nm_kind TYPE c LENGTH 1 .
-
-  TYPES: BEGIN OF gty_name_kind,
+  types:
+    gty_t_stmt_info TYPE STANDARD TABLE OF gty_stmt_info WITH EMPTY KEY .
+  types:
+    gty_nm_kind TYPE c LENGTH 1 .
+  types:
+    BEGIN OF gty_name_kind,
            name_u    TYPE string,
            kind      TYPE gty_nm_kind,
            line_kind TYPE gty_nm_kind,
          END OF gty_name_kind .
+  types:
+    gty_t_name_kind TYPE HASHED TABLE OF gty_name_kind WITH UNIQUE KEY name_u .
 
-  TYPES gty_t_name_kind TYPE HASHED TABLE OF gty_name_kind WITH UNIQUE KEY name_u .
-
-  DATA rt_errors TYPE ztt_error .
-
-  METHODS nm_build_stmt
-    IMPORTING
-      !it_tokens          TYPE gty_t_tok_tab
-      !it_stmts           TYPE gty_t_stmt_tab
-    RETURNING
-      VALUE(rt_stmt_info) TYPE gty_t_stmt_info .
-
-  METHODS nm_data_checks
-    IMPORTING
-      !it_tokens         TYPE gty_t_tok_tab
-      !it_stmt_info      TYPE gty_t_stmt_info
-      !iv_curr_src_lines TYPE i
-    CHANGING
-      !ct_global_decl    TYPE gty_t_global_decl
-      !ct_use            TYPE gty_t_use
-      !ct_pending        TYPE gty_t_pending
-      !ct_errors         TYPE ztt_error .
-
-  METHODS nm_additional_naming_checks
-    IMPORTING
-      !it_source         TYPE string_table
-      !it_tokens         TYPE gty_t_tok_tab
-      !it_stmts          TYPE gty_t_stmt_tab
-      !it_stmt_info      TYPE gty_t_stmt_info
-      !it_global_decl    TYPE gty_t_global_decl
-      !it_use            TYPE gty_t_use
-      !it_pending        TYPE gty_t_pending
-      !iv_curr_src_lines TYPE i
-    CHANGING
-      !ct_errors         TYPE ztt_error .
-
-  METHODS nm_resolve_type_kind
-    IMPORTING
-      !iv_type_name  TYPE string
-    EXPORTING
-      !ev_kind       TYPE gty_nm_kind
-      !ev_line_kind  TYPE gty_nm_kind
-    CHANGING
-      !ct_type_cache TYPE gty_t_name_kind .
-
-  METHODS cc_preprocess_source
-    IMPORTING
-      !it_source    TYPE string_table
-    RETURNING
-      VALUE(rt_src) TYPE gty_t_src_line .
-
-  METHODS cc_add_usage_count
-    IMPORTING
-      !iv_name TYPE string
-    CHANGING
-      !ct_cnt  TYPE gty_t_cnt .
-
-  METHODS get_object_author
-    IMPORTING
-      !iv_obj_type     TYPE tadir-object
-      !iv_obj_name     TYPE sobj_name
-    RETURNING
-      VALUE(rt_author) TYPE syuname .
-
+  data RT_ERRORS type ZTT_ERROR .
+  constants:
   "------------------------------------------------------------
   "     CONSTANTS
   "------------------------------------------------------------
-  CONSTANTS:
     BEGIN OF gc_severity,
       error   TYPE symsgty VALUE 'E',
       warning TYPE symsgty VALUE 'W',
-    END OF gc_severity,
-
+    END OF gc_severity .
+  constants:
     BEGIN OF gc_token_type,
       identifier TYPE c LENGTH 1 VALUE 'I',
       list       TYPE c LENGTH 1 VALUE ':',
-    END OF gc_token_type,
-
+    END OF gc_token_type .
+  constants:
     BEGIN OF gc_obj_type,
       prog    TYPE tadir-object VALUE 'PROG',
       clas    TYPE tadir-object VALUE 'CLAS',
@@ -202,76 +150,18 @@ PRIVATE SECTION.
       fm      TYPE tadir-object VALUE 'FM',
       r3tr    TYPE tadir-pgmid  VALUE 'R3TR',
       unknown TYPE syuname      VALUE 'UNKNOWN',
-      sapl    TYPE string       VALUE 'SAPL',
-    END OF gc_obj_type,
-
+    END OF gc_obj_type .
+  constants:
     BEGIN OF gc_category,
       hardcode    TYPE string VALUE 'HARDCODE',
       naming      TYPE string VALUE 'NAMING',
       performance TYPE string VALUE 'PERFORMANCE',
       obsolete    TYPE string VALUE 'OBSOLETE',
       clean_code  TYPE string VALUE 'CLEAN_CODE',
-    END OF gc_category,
-
-    BEGIN OF gc_pat_local,
-      lc    TYPE string VALUE 'LC_*',
-      lv    TYPE string VALUE 'LV_*',
-      ls    TYPE string VALUE 'LS_*',
-      lt    TYPE string VALUE 'LT_*',
-      lr    TYPE string VALUE 'LR_*',
-      lm    TYPE string VALUE 'LM_*',
-      lty   TYPE string VALUE 'LTY_*',
-      lty_t TYPE string VALUE 'LTY_T_*',
-      lfs   TYPE string VALUE '<LFS_*>',
-    END OF gc_pat_local,
-
-    BEGIN OF gc_pat_global,
-      gc    TYPE string VALUE 'GC_*',
-      gv    TYPE string VALUE 'GV_*',
-      gs    TYPE string VALUE 'GS_*',
-      gt    TYPE string VALUE 'GT_*',
-      gr    TYPE string VALUE 'GR_*',
-      gm    TYPE string VALUE 'GM_*',
-      gty   TYPE string VALUE 'GTY_*',
-      gty_t TYPE string VALUE 'GTY_T_*',
-      gfs   TYPE string VALUE '<GFS_*>',
-    END OF gc_pat_global,
-
-    BEGIN OF gc_pat_special,
-      st TYPE string VALUE 'ST_*',
-    END OF gc_pat_special,
-
-    BEGIN OF gc_pat_sel,
-      p  TYPE string VALUE 'P_*',
-      cb TYPE string VALUE 'CB_*',
-      rb TYPE string VALUE 'RB_*',
-      rg TYPE string VALUE 'RG*',
-      s  TYPE string VALUE 'S_*',
-      bl TYPE string VALUE 'BL_*',
-    END OF gc_pat_sel,
-
-    BEGIN OF gc_pat_sig,
-      im TYPE string VALUE 'IM_*',
-      ex TYPE string VALUE 'EX_*',
-      ch TYPE string VALUE 'CH_*',
-      re TYPE string VALUE 'RE_*',
-      wa TYPE string VALUE 'WA_*',
-      i  TYPE string VALUE 'I_*',
-      e  TYPE string VALUE 'E_*',
-      c  TYPE string VALUE 'C_*',
-      t  TYPE string VALUE 'T_*',
-      f  TYPE string VALUE 'F_*',
-    END OF gc_pat_sig,
-
-    BEGIN OF gc_param,
-      scan_error   TYPE string VALUE 'SCAN_ERROR',
-      scan_runtime TYPE string VALUE 'SCAN_RUNTIME',
-      scan_unknown TYPE string VALUE 'SCAN_UNKNOWN',
-    END OF gc_param,
-
+    END OF gc_category .
+  constants:
     BEGIN OF gc_keyword,
       " Declaration / definition keywords
-      class               TYPE string VALUE 'CLASS',
       class_constants     TYPE string VALUE 'CLASS-CONSTANTS',
       class_constants_col TYPE string VALUE 'CLASS-CONSTANTS:',
       class_data          TYPE string VALUE 'CLASS-DATA',
@@ -284,7 +174,6 @@ PRIVATE SECTION.
       data_col            TYPE string VALUE 'DATA:',
       field_symbols       TYPE string VALUE 'FIELD-SYMBOLS',
       field_symbols_col   TYPE string VALUE 'FIELD-SYMBOLS:',
-      interface           TYPE string VALUE 'INTERFACE',
       methods             TYPE string VALUE 'METHODS',
       methods_col         TYPE string VALUE 'METHODS:',
       parameters          TYPE string VALUE 'PARAMETERS',
@@ -299,7 +188,11 @@ PRIVATE SECTION.
 
       " Block / routine / event keywords
       at                  TYPE string VALUE 'AT',
+      at_line_selection   TYPE string VALUE 'AT LINE-SELECTION',
       at_selection_screen TYPE string VALUE 'AT SELECTION-SCREEN',
+      at_sel_screen_on    TYPE string VALUE 'AT SELECTION-SCREEN ON',
+      at_sel_screen_out   TYPE string VALUE 'AT SELECTION-SCREEN OUTPUT',
+      at_user_command     TYPE string VALUE 'AT USER-COMMAND',
       begin               TYPE string VALUE 'BEGIN',
       block               TYPE string VALUE 'BLOCK',
       end                 TYPE string VALUE 'END',
@@ -311,16 +204,18 @@ PRIVATE SECTION.
       endmodule           TYPE string VALUE 'ENDMODULE',
       form                TYPE string VALUE 'FORM',
       func                TYPE string VALUE 'FUNCTION',
+      func_pat            TYPE string VALUE 'FUNCTION *.',
       include             TYPE string VALUE 'INCLUDE',
       include_pat         TYPE string VALUE 'INCLUDE *',
-      in_program          TYPE string VALUE ' IN PROGRAM ',
       initialization      TYPE string VALUE 'INITIALIZATION',
+      line_selection      TYPE string VALUE 'LINE-SELECTION',
       method              TYPE string VALUE 'METHOD',
       module              TYPE string VALUE 'MODULE',
       perform             TYPE string VALUE 'PERFORM',
       selection_screen    TYPE string VALUE 'SELECTION-SCREEN',
       start_of_selection  TYPE string VALUE 'START-OF-SELECTION',
       top_of_page         TYPE string VALUE 'TOP-OF-PAGE',
+      user_command        TYPE string VALUE 'USER-COMMAND',
 
       " General statement keywords
       call                TYPE string VALUE 'CALL',
@@ -339,12 +234,14 @@ PRIVATE SECTION.
       in                  TYPE string VALUE 'IN',
       importing           TYPE string VALUE 'IMPORTING',
       initial             TYPE string VALUE 'INITIAL',
-      if                  TYPE string VALUE 'IF',
       key                 TYPE string VALUE 'KEY',
       length              TYPE string VALUE 'LENGTH',
       like                TYPE string VALUE 'LIKE',
       line                TYPE string VALUE 'LINE',
       of                  TYPE string VALUE 'OF',
+      on                  TYPE string VALUE 'ON',
+      optional            TYPE string VALUE 'OPTIONAL',
+      output              TYPE string VALUE 'OUTPUT',
       radiobutton         TYPE string VALUE 'RADIOBUTTON',
       ref                 TYPE string VALUE 'REF',
       returning           TYPE string VALUE 'RETURNING',
@@ -357,9 +254,12 @@ PRIVATE SECTION.
       type                TYPE string VALUE 'TYPE',
       using               TYPE string VALUE 'USING',
       value               TYPE string VALUE 'VALUE',
+      value_star          TYPE string VALUE 'VALUE(*)',
+      value_lparen        TYPE string VALUE 'VALUE(',
       with                TYPE string VALUE 'WITH',
 
       " Symbols / text / pattern literals
+      at_sign             TYPE c LENGTH 1 VALUE '@',
       colon               TYPE string     VALUE ':',
       comma               TYPE string     VALUE ',',
       comment_quote       TYPE string     VALUE '*"',
@@ -374,6 +274,8 @@ PRIVATE SECTION.
       equal               TYPE string     VALUE '=',
       exclamation_mark    TYPE string     VALUE '!',
       field_symbol_pat    TYPE string     VALUE '<*>',
+      hash                TYPE string     VALUE '#',
+      invalid_assign_pat  TYPE string     VALUE '*===*',
       lbrace              TYPE c LENGTH 1 VALUE '{',
       lit_space           TYPE c LENGTH 1 VALUE ' ',
       lparen              TYPE string     VALUE '(',
@@ -387,18 +289,12 @@ PRIVATE SECTION.
       slash               TYPE c LENGTH 1 VALUE '/',
       spec_star           TYPE string     VALUE '{*}',
       star                TYPE string     VALUE '*',
-      text_prefix         TYPE string     VALUE 'TEXT-',
       underscore          TYPE c LENGTH 1 VALUE '_',
-    END OF gc_keyword,
-
+    END OF gc_keyword .
+  constants:
     "--------------------------------------------------
     " Naming convention
     "--------------------------------------------------
-    BEGIN OF gc_obj_prefix,
-      z TYPE c LENGTH 1 VALUE 'Z',
-      y TYPE c LENGTH 1 VALUE 'Y',
-    END OF gc_obj_prefix,
-
     BEGIN OF gc_sig_nm,
       changing  TYPE c LENGTH 1 VALUE 'C',
       exporting TYPE c LENGTH 1 VALUE 'E',
@@ -406,17 +302,25 @@ PRIVATE SECTION.
       returning TYPE c LENGTH 1 VALUE 'R',
       tables    TYPE c LENGTH 1 VALUE 'T',
       using     TYPE c LENGTH 1 VALUE 'U',
-    END OF gc_sig_nm,
-
+    END OF gc_sig_nm .
+  constants:
     BEGIN OF gc_kind_nm,
+      data_ref  TYPE c LENGTH 1 VALUE 'D',
       object    TYPE c LENGTH 1 VALUE 'O',
       range     TYPE c LENGTH 1 VALUE 'R',
       structure TYPE c LENGTH 1 VALUE 'S',
       table     TYPE c LENGTH 1 VALUE 'T',
       unknown   TYPE c LENGTH 1 VALUE 'U',
       value     TYPE c LENGTH 1 VALUE 'V',
-    END OF gc_kind_nm,
-
+    END OF gc_kind_nm .
+  constants:
+    BEGIN OF gc_msg_nm,
+      global        TYPE string VALUE 'Global' ##NO_TEXT,
+      global_inline TYPE string VALUE 'Global inline' ##NO_TEXT,
+      inline        TYPE string VALUE 'Inline' ##NO_TEXT,
+      local         TYPE string VALUE 'Local' ##NO_TEXT,
+    END OF gc_msg_nm .
+  constants:
     BEGIN OF gc_builtin_type_nm,
       abap_string     TYPE string VALUE 'STRING',
       abap_xstring    TYPE string VALUE 'XSTRING',
@@ -431,8 +335,8 @@ PRIVATE SECTION.
       abap_decfloat16 TYPE string VALUE 'DECFLOAT16',
       abap_decfloat34 TYPE string VALUE 'DECFLOAT34',
       abap_utclong    TYPE string VALUE 'UTCLONG',
-    END OF gc_builtin_type_nm,
-
+    END OF gc_builtin_type_nm .
+  constants:
     BEGIN OF gc_kw_nm,
       appending     TYPE string VALUE 'APPENDING',
       cast          TYPE string VALUE 'CAST',
@@ -442,8 +346,8 @@ PRIVATE SECTION.
       into          TYPE string VALUE 'INTO',
       new           TYPE string VALUE 'NEW',
       reference     TYPE string VALUE 'REFERENCE',
-    END OF gc_kw_nm,
-
+    END OF gc_kw_nm .
+  constants:
     BEGIN OF gc_token_nm,
       empty             TYPE string VALUE '',
       at_data_lparen    TYPE string VALUE '@DATA(',
@@ -453,231 +357,91 @@ PRIVATE SECTION.
       instance_call     TYPE string VALUE '->',
       cast_assign       TYPE string VALUE '?=',
       exact_cast_assign TYPE string VALUE '??=',
-    END OF gc_token_nm,
-
-    BEGIN OF gc_type_pat_nm,
-      any_ty_t TYPE string VALUE '*TY_T*',
-      gty      TYPE string VALUE 'GTY_*',
-      gty_t    TYPE string VALUE 'GTY_T_*',
-      lty      TYPE string VALUE 'LTY_*',
-      lty_t    TYPE string VALUE 'LTY_T_*',
-      tt       TYPE string VALUE 'TT_*',
-      ty       TYPE string VALUE 'TY_*',
-    END OF gc_type_pat_nm,
-
-    BEGIN OF gc_pat_ref_nm,
-      local_object  TYPE string VALUE 'LO_*',
-      global_object TYPE string VALUE 'GO_*',
-    END OF gc_pat_ref_nm,
-
-    BEGIN OF gc_prefix_nm,
-      go TYPE string VALUE 'GO_',
-      gs TYPE string VALUE 'GS_',
-      gt TYPE string VALUE 'GT_',
-      gv TYPE string VALUE 'GV_',
-      lo TYPE string VALUE 'LO_',
-      ls TYPE string VALUE 'LS_',
-      lt TYPE string VALUE 'LT_',
-      lv TYPE string VALUE 'LV_',
-    END OF gc_prefix_nm,
-
-    BEGIN OF gc_msg_scope_nm,
-      global        TYPE string VALUE 'Global',
-      global_inline TYPE string VALUE 'Global inline',
-      inline        TYPE string VALUE 'Inline',
-      local         TYPE string VALUE 'Local',
-    END OF gc_msg_scope_nm,
-
-    BEGIN OF gc_rtti_method_nm,
-      describe_by_data       TYPE string VALUE 'DESCRIBE_BY_DATA',
-      describe_by_data_ref   TYPE string VALUE 'DESCRIBE_BY_DATA_REF',
-      describe_by_name       TYPE string VALUE 'DESCRIBE_BY_NAME',
-      describe_by_object_ref TYPE string VALUE 'DESCRIBE_BY_OBJECT_REF',
-    END OF gc_rtti_method_nm,
-
-    BEGIN OF gc_type_prefix_nm,
-      global_structure TYPE string VALUE 'GTY_',
-      local_structure  TYPE string VALUE 'LTY_',
-    END OF gc_type_prefix_nm,
-
-    BEGIN OF gc_sig_pat_nm,
-      cs TYPE string VALUE 'CS_*',
-      ct TYPE string VALUE 'CT_*',
-      cv TYPE string VALUE 'CV_*',
-      es TYPE string VALUE 'ES_*',
-      et TYPE string VALUE 'ET_*',
-      ev TYPE string VALUE 'EV_*',
-      is TYPE string VALUE 'IS_*',
-      it TYPE string VALUE 'IT_*',
-      iv TYPE string VALUE 'IV_*',
-      ps TYPE string VALUE 'PS_*',
-      pt TYPE string VALUE 'PT_*',
-      pv TYPE string VALUE 'PV_*',
-      rs TYPE string VALUE 'RS_*',
-      rt TYPE string VALUE 'RT_*',
-      rv TYPE string VALUE 'RV_*',
-      tt TYPE string VALUE 'TT_*',
-    END OF gc_sig_pat_nm,
-
-    BEGIN OF gc_sig_prefix_nm,
-      cs TYPE string VALUE 'CS_',
-      ct TYPE string VALUE 'CT_',
-      cv TYPE string VALUE 'CV_',
-      es TYPE string VALUE 'ES_',
-      et TYPE string VALUE 'ET_',
-      ev TYPE string VALUE 'EV_',
-      is TYPE string VALUE 'IS_',
-      it TYPE string VALUE 'IT_',
-      iv TYPE string VALUE 'IV_',
-      ps TYPE string VALUE 'PS_',
-      pt TYPE string VALUE 'PT_',
-      pv TYPE string VALUE 'PV_',
-      rs TYPE string VALUE 'RS_',
-      rt TYPE string VALUE 'RT_',
-      rv TYPE string VALUE 'RV_',
-      tt TYPE string VALUE 'TT_',
-    END OF gc_sig_prefix_nm,
-
-    BEGIN OF gc_sig_desc_nm,
-      internal_table TYPE string VALUE 'internal-table',
-      structure      TYPE string VALUE 'structure',
-      value          TYPE string VALUE 'value',
-    END OF gc_sig_desc_nm,
-
+    END OF gc_token_nm .
+  constants:
     BEGIN OF gc_rx_nm,
-      leading_prefix TYPE string VALUE '^[A-Za-z0-9]+_',
-      like_name      TYPE string VALUE 'LIKE\s+([A-Z0-9_=>\-]+)',
-      type_name      TYPE string VALUE 'TYPE\s+([A-Z0-9_=>\-]+)',
-    END OF gc_rx_nm,
-
+      leading_prefix TYPE string VALUE '^[A-Za-z0-9]+_' ##NO_TEXT,
+      like_name      TYPE string VALUE 'LIKE\s+([A-Z0-9_=>\-]+)' ##NO_TEXT,
+      type_name      TYPE string VALUE 'TYPE\s+([A-Z0-9_=>\-]+)' ##NO_TEXT,
+      fm_value       TYPE string VALUE 'VALUE\(([A-Z0-9_!]+)\)' ##NO_TEXT,
+    END OF gc_rx_nm .
+  constants:
     BEGIN OF gc_iface_phrase_nm,
       hashed_table   TYPE string VALUE ' HASHED TABLE ',
       sorted_table   TYPE string VALUE ' SORTED TABLE ',
       standard_table TYPE string VALUE ' STANDARD TABLE ',
       structure      TYPE string VALUE ' STRUCTURE ',
       table_of       TYPE string VALUE ' TABLE OF ',
-    END OF gc_iface_phrase_nm,
-
+    END OF gc_iface_phrase_nm .
+  constants:
     BEGIN OF gc_rule_nm,
-      obj_prefix           TYPE string VALUE 'NM_OBJ_PREFIX_ZY',
-      scan_error           TYPE string VALUE 'NM_SCAN_ERROR',
-      scan_runtime         TYPE string VALUE 'NM_SCAN_RUNTIME',
-      scan_unknown         TYPE string VALUE 'NM_SCAN_UNKNOWN',
-      prefix_rule          TYPE string VALUE 'NM_PREFIX_RULE',
-      wa_prefix_obsolete   TYPE string VALUE 'NM_WA_PREFIX_OBSOLETE',
-      global_internal_only TYPE string VALUE 'NM_GLOBAL_INTERNAL_ONLY',
-    END OF gc_rule_nm,
-
-    BEGIN OF gc_param_nm,
-      object_name            TYPE string VALUE 'OBJECT_NAME',
-      expected_local_prefix  TYPE string VALUE 'EXPECTED_LOCAL_PREFIX',
-      expected_global_prefix TYPE string VALUE 'EXPECTED_GLOBAL_PREFIX',
-      local_prefix_rule      TYPE string VALUE 'LOCAL_PREFIX_RULE',
-      global_prefix_rule     TYPE string VALUE 'GLOBAL_PREFIX_RULE',
-      wa_prefix              TYPE string VALUE 'WA_PREFIX',
-      global_internal_only   TYPE string VALUE 'GLOBAL_INTERNAL_ONLY',
-      selection_screen_rule  TYPE string VALUE 'SELECTION_SCREEN_RULE',
-      radio_group_rule       TYPE string VALUE 'RADIO_GROUP_RULE',
-      field_symbol_rule      TYPE string VALUE 'FIELD_SYMBOL_RULE',
-      type_prefix_rule       TYPE string VALUE 'TYPE_PREFIX_RULE',
-      class_name_rule        TYPE string VALUE 'CLASS_NAME_RULE',
-      interface_name_rule    TYPE string VALUE 'INTERFACE_NAME_RULE',
-      method_param_rule      TYPE string VALUE 'METHOD_PARAM_RULE',
-      form_param_rule        TYPE string VALUE 'FORM_PARAM_RULE',
-      fm_param_rule          TYPE string VALUE 'FM_PARAM_RULE',
-      form_name_rule         TYPE string VALUE 'FORM_NAME_RULE',
-    END OF gc_param_nm,
-
+      prefix_rule        TYPE string VALUE 'NM_PREFIX_RULE',
+      wa_prefix_obsolete TYPE string VALUE 'NM_WA_PREFIX_OBSOLETE',
+    END OF gc_rule_nm .
+  constants:
     BEGIN OF gc_scope,
       global TYPE string VALUE '<<GLOBAL>>',
       block  TYPE string VALUE '<<BLOCK>>',
-    END OF gc_scope,
-
-    BEGIN OF gc_message_nm,
-      msg_global TYPE string VALUE 'GLOBAL (GV_/GS_/GT_/...)',
-      msg_local  TYPE string VALUE 'LOCAL (LV_/LS_/LT_/...)',
-    END OF gc_message_nm,
-
-    BEGIN OF gc_lit_nm,
-      fm_start_pat   TYPE string VALUE 'FUNCTION *.',
-      fm_value_regex TYPE string VALUE `VALUE\(([A-Z0-9_!]+)\)`,
-    END OF gc_lit_nm,
-
+    END OF gc_scope .
+  constants:
     "--------------------------------------------------
     " Clean code
     "--------------------------------------------------
     BEGIN OF gc_rule_cc,
-      scan_error         TYPE string VALUE 'CC_SCAN_ERROR',
-      scan_runtime       TYPE string VALUE 'CC_SCAN_RUNTIME',
-      scan_unknown       TYPE string VALUE 'CC_SCAN_UNKNOWN',
       blank_lines        TYPE string VALUE 'CC_BLANK_LINES',
       unused_local       TYPE string VALUE 'CC_UNUSED_LOCAL',
       unused_text_symbol TYPE string VALUE 'CC_UNUSED_TEXT_SYMBOL',
       unused_subroutine  TYPE string VALUE 'CC_UNUSED_SUBROUTINE',
-      subroutine_obso    TYPE string VALUE 'CC_SUBROUTINE_OBSOLETE',
-      dynamic_perform    TYPE string VALUE 'CC_DYNAMIC_PERFORM',
-      external_perform   TYPE string VALUE 'CC_EXTERNAL_PERFORM',
-    END OF gc_rule_cc,
-
-    BEGIN OF gc_param_cc,
-      blank_lines  TYPE string VALUE 'BLANK_LINES',
-      unused_local TYPE string VALUE 'UNUSED_LOCAL',
-    END OF gc_param_cc,
-
+    END OF gc_rule_cc .
+  constants:
     BEGIN OF gc_clean_code,
       blank_limit        TYPE i VALUE 3,
       unused_token_limit TYPE i VALUE 1,
       textpool_i         TYPE textpool-id VALUE 'I',
-      text_symbol        TYPE string VALUE `TEXT-([0-9][0-9][0-9]|[A-Z][0-9][0-9])`,
-    END OF gc_clean_code,
-    "--------------------------------------------------
-    " Obsolete
-    "--------------------------------------------------
-
-    gc_digits  TYPE string VALUE '0123456789',
-    gc_tech_e  TYPE string VALUE 'E',
-    gc_tech_w  TYPE string VALUE 'W',
-    gc_tech_i  TYPE string VALUE 'I',
-    gc_tech_s  TYPE string VALUE 'S',
-    gc_tech_a  TYPE string VALUE 'A',
-    gc_tech_x  TYPE string VALUE 'X',
-    gc_tech_eq TYPE string VALUE 'EQ',
-    gc_tech_ne TYPE string VALUE 'NE',
-    gc_tech_bt TYPE string VALUE 'BT',
-    gc_tech_cp TYPE string VALUE 'CP',
-    gc_tech_ge TYPE string VALUE 'GE',
-    gc_tech_le TYPE string VALUE 'LE',
-    gc_tech_gt TYPE string VALUE 'GT',
-    gc_tech_lt TYPE string VALUE 'LT',
-
+      text_symbol        TYPE string VALUE `TEXT-([0-9][0-9][0-9]|[A-Z][0-9][0-9])` ##NO_TEXT,
+    END OF gc_clean_code .
+  "--------------------------------------------------
+  " Obsolete
+  "--------------------------------------------------
+  constants GC_DIGITS type STRING value '0123456789' ##NO_TEXT.
+  constants GC_TECH_E type STRING value 'E' ##NO_TEXT.
+  constants GC_TECH_W type STRING value 'W' ##NO_TEXT.
+  constants GC_TECH_I type STRING value 'I' ##NO_TEXT.
+  constants GC_TECH_S type STRING value 'S' ##NO_TEXT.
+  constants GC_TECH_A type STRING value 'A' ##NO_TEXT.
+  constants GC_TECH_X type STRING value 'X' ##NO_TEXT.
+  constants GC_TECH_EQ type STRING value 'EQ' ##NO_TEXT.
+  constants GC_TECH_NE type STRING value 'NE' ##NO_TEXT.
+  constants GC_TECH_BT type STRING value 'BT' ##NO_TEXT.
+  constants GC_TECH_CP type STRING value 'CP' ##NO_TEXT.
+  constants GC_TECH_GE type STRING value 'GE' ##NO_TEXT.
+  constants GC_TECH_LE type STRING value 'LE' ##NO_TEXT.
+  constants GC_TECH_GT type STRING value 'GT' ##NO_TEXT.
+  constants GC_TECH_LT type STRING value 'LT' ##NO_TEXT.
+  constants:
     BEGIN OF gc_kw_obsolete,
-      move_kw           TYPE string VALUE 'MOVE',
-      occurs_kw         TYPE string VALUE 'OCCURS',
-      ranges_kw         TYPE string VALUE 'RANGES',
-      compute_kw        TYPE string VALUE 'COMPUTE',
-      extract_kw        TYPE string VALUE 'EXTRACT',
-      field_groups_kw   TYPE string VALUE 'FIELD-GROUPS',
-      refresh_kw        TYPE string VALUE 'REFRESH',
-      leave_kw          TYPE string VALUE 'LEAVE',
-      add_kw            TYPE string VALUE 'ADD',
-      subtract_kw       TYPE string VALUE 'SUBTRACT',
-      multiply_kw       TYPE string VALUE 'MULTIPLY',
-      divide_kw         TYPE string VALUE 'DIVIDE',
-      local_kw          TYPE string VALUE 'LOCAL',
-      supply_kw         TYPE string VALUE 'SUPPLY',
-      condense_kw       TYPE string VALUE 'CONDENSE',
-      describe_kw       TYPE string VALUE 'DESCRIBE',
-      call_kw           TYPE string VALUE 'CALL',
-      catch_kw          TYPE string VALUE 'CATCH',
-      field_symbols_kw  TYPE string VALUE 'FIELD-SYMBOLS',
-      select_kw         TYPE string VALUE 'SELECT',
-*      call_transaction_kw TYPE string VALUE 'CALL TRANSACTION',
-      call_dialog_kw    TYPE string VALUE 'CALL DIALOG',
-      call_method_kw    TYPE string VALUE 'CALL METHOD',
-      catch_sys_exc_kw  TYPE string VALUE 'CATCH SYSTEM-EXCEPTIONS',
-      describe_table_kw TYPE string VALUE 'DESCRIBE TABLE',
-    END OF gc_kw_obsolete,
-
+      move_kw         TYPE string VALUE 'MOVE',
+      occurs_kw       TYPE string VALUE 'OCCURS',
+      ranges_kw       TYPE string VALUE 'RANGES',
+      compute_kw      TYPE string VALUE 'COMPUTE',
+      extract_kw      TYPE string VALUE 'EXTRACT',
+      field_groups_kw TYPE string VALUE 'FIELD-GROUPS',
+      refresh_kw      TYPE string VALUE 'REFRESH',
+      leave_kw        TYPE string VALUE 'LEAVE',
+      add_kw          TYPE string VALUE 'ADD',
+      subtract_kw     TYPE string VALUE 'SUBTRACT',
+      multiply_kw     TYPE string VALUE 'MULTIPLY',
+      divide_kw       TYPE string VALUE 'DIVIDE',
+      local_kw        TYPE string VALUE 'LOCAL',
+      supply_kw       TYPE string VALUE 'SUPPLY',
+      from_kw         TYPE string VALUE 'FROM',
+      by_kw           TYPE string VALUE 'BY',
+      control_kw      TYPE string VALUE 'CONTROL',
+      describe_kw     TYPE string VALUE 'DESCRIBE',
+      lines_kw        TYPE string VALUE 'LINES',
+      catch_kw        TYPE string VALUE 'CATCH',
+    END OF gc_kw_obsolete .
+  constants:
     BEGIN OF gc_phrase_obsolete,
       with_header_line     TYPE string VALUE 'WITH HEADER LINE',
       on_change_of         TYPE string VALUE 'ON CHANGE OF',
@@ -687,28 +451,31 @@ PRIVATE SECTION.
       without_auth_check   TYPE string VALUE 'WITHOUT AUTHORITY-CHECK',
       call_dialog          TYPE string VALUE 'CALL DIALOG',
       catch_system_exc     TYPE string VALUE 'CATCH SYSTEM-EXCEPTIONS',
-      describe_table_lines TYPE string VALUE 'DESCRIBE TABLE',
-      lines_kw             TYPE string VALUE 'LINES',
       call_method          TYPE string VALUE 'CALL METHOD',
-      selection_in_loop    TYPE string VALUE 'SELECT',
-      local_friends        TYPE string VALUE 'LOCAL FRIENDS',
-      local_copy           TYPE string VALUE 'LOCAL COPY OF',
-      leave_plain          TYPE string VALUE 'LEAVE.',
-    END OF gc_phrase_obsolete,
-
+    END OF gc_phrase_obsolete .
+  constants:
     BEGIN OF gc_old_relop,
       not_equal_1 TYPE string VALUE '><',
       less_equal  TYPE string VALUE '=<',
       greater_eq  TYPE string VALUE '=>',
-    END OF gc_old_relop,
-
+    END OF gc_old_relop .
+  constants:
+    BEGIN OF gc_msg_obsolete,
+      old_relop            TYPE string VALUE 'OLD RELATIONAL OPERATOR',
+      field_symbols_typing TYPE string VALUE 'FIELD-SYMBOLS obsolete typing' ##NO_TEXT,
+      describe_table_lines TYPE string VALUE 'DESCRIBE TABLE ... LINES',
+    END OF gc_msg_obsolete .
+  constants:
+    BEGIN OF gc_pat_obsolete,
+      field_symbols_any TYPE string VALUE 'FIELD-SYMBOLS*',
+    END OF gc_pat_obsolete .
+  constants:
     BEGIN OF gc_rule_obsolete,
-      obsolete_syntax        TYPE string VALUE 'OBSOLETE_SYNTAX',
       move_rule              TYPE string VALUE 'OBSOLETE_MOVE',
       occurs_rule            TYPE string VALUE 'OBSOLETE_OCCURS',
       ranges_rule            TYPE string VALUE 'OBSOLETE_RANGES',
       compute_rule           TYPE string VALUE 'OBSOLETE_COMPUTE',
-      tables_rule            TYPE string VALUE 'OBSOLETE_TABLES',
+
       extract_rule           TYPE string VALUE 'OBSOLETE_EXTRACT',
       field_groups_rule      TYPE string VALUE 'OBSOLETE_FIELD_GROUPS',
       refresh_rule           TYPE string VALUE 'OBSOLETE_REFRESH',
@@ -719,83 +486,150 @@ PRIVATE SECTION.
       local_rule             TYPE string VALUE 'OBSOLETE_LOCAL',
       supply_rule            TYPE string VALUE 'OBSOLETE_SUPPLY',
       leave_rule             TYPE string VALUE 'OBSOLETE_LEAVE',
-      call_transaction_rule  TYPE string VALUE 'OBSOLETE_CALL_TRANSACTION',
+
       call_dialog_rule       TYPE string VALUE 'OBSOLETE_CALL_DIALOG',
       catch_system_exc_rule  TYPE string VALUE 'OBSOLETE_CATCH_SYSTEM_EXC',
-      condense_rule          TYPE string VALUE 'OBSOLETE_CONDENSE',
+
       describe_table_rule    TYPE string VALUE 'OBSOLETE_DESCRIBE_TABLE',
       call_method_rule       TYPE string VALUE 'OBSOLETE_CALL_METHOD',
       header_line_rule       TYPE string VALUE 'OBSOLETE_WITH_HEADER_LINE',
       on_change_rule         TYPE string VALUE 'OBSOLETE_ON_CHANGE_OF',
       like_line_rule         TYPE string VALUE 'OBSOLETE_LIKE_LINE_OF',
       relop_rule             TYPE string VALUE 'OBSOLETE_REL_OPERATOR',
-      select_in_loop_rule    TYPE string VALUE 'OBSOLETE_SELECT_IN_LOOP',
+
       field_symbol_type_rule TYPE string VALUE 'OBSOLETE_FIELD_SYMBOL_TYPING',
       auth_check_rule        TYPE string VALUE 'OBSOLETE_CALL_TRANSACTION_AUTH',
-    END OF gc_rule_obsolete,
-
+    END OF gc_rule_obsolete .
+  constants:
     BEGIN OF gc_rx_obsolete,
-      old_relop            TYPE string VALUE `(\>\<|\=\<|\=\>)`,
-      call_method_static   TYPE string VALUE `^\s*CALL\s+METHOD\s+[A-Z0-9_=>~\-]+(\s|$)`,
-      select_stmt          TYPE string VALUE `^\s*SELECT(\s|$)`,
-      loop_stmt            TYPE string VALUE `^\s*LOOP\s+AT(\s|$)`,
-      endloop_stmt         TYPE string VALUE `^\s*ENDLOOP\.?$`,
-      refresh_stmt         TYPE string VALUE `^\s*REFRESH\s+[A-Z0-9_<>\-]+`,
-      leave_stmt           TYPE string VALUE `^\s*LEAVE(\s|\.|$)`,
-      calc_add             TYPE string VALUE `^\s*ADD\s+`,
-      calc_subtract        TYPE string VALUE `^\s*SUBTRACT\s+`,
-      calc_multiply        TYPE string VALUE `^\s*MULTIPLY\s+`,
-      calc_divide          TYPE string VALUE `^\s*DIVIDE\s+`,
-      local_stmt           TYPE string VALUE `^\s*LOCAL(\s|$)`,
-      supply_stmt          TYPE string VALUE `^\s*SUPPLY(\s|$)`,
-      catch_sys_exc_stmt   TYPE string VALUE `^\s*CATCH\s+SYSTEM-EXCEPTIONS(\s|$)`,
-      call_dialog_stmt     TYPE string VALUE `^\s*CALL\s+DIALOG(\s|$)`,
-      call_trans_stmt      TYPE string VALUE `^\s*CALL\s+TRANSACTION\s+`,
-      with_auth_check      TYPE string VALUE `\bWITH\s+AUTHORITY-CHECK\b`,
-      fs_no_type           TYPE string VALUE `^\s*FIELD-SYMBOLS\s*:?\s*<[^>]+>\s*[,\.]?$`,
-      fs_structure_default TYPE string VALUE `\bSTRUCTURE\b|\bDEFAULT\b`,
-      tables_star_stmt     TYPE string VALUE `^\s*TABLES\s*:\s*\*|\^\s*TABLES\s+\*`,
-      leave_plain_stmt     TYPE string VALUE `^\s*LEAVE\s*\.\s*$`,
-    END OF gc_rx_obsolete,
+
+      " Remove literals
+      sq_literal           TYPE string VALUE `'(?:''|[^'])*'`,
+      bt_literal           TYPE string VALUE '`(?:``|[^`])*`',
+
+      " Common regex fragments
+      left_boundary        TYPE string VALUE `(^|[^A-Z0-9_])` ##NO_TEXT,
+      right_boundary       TYPE string VALUE `([^A-Z0-9_]|$)` ##NO_TEXT,
+      occurs_left_boundary TYPE string VALUE `(^|[^A-Z0-9_-])` ##NO_TEXT,
+      stmt_begin           TYPE string VALUE `^\s*`,
+      stmt_end             TYPE string VALUE `$`,
+      ws0                  TYPE string VALUE `\s*`,
+      ws1                  TYPE string VALUE `\s+`,
+      anything             TYPE string VALUE `.+`,
+      dot_esc              TYPE string VALUE `\.`,
+      opt_colon            TYPE string VALUE `:?`,
+      alt                  TYPE string VALUE '|',
+
+      " FIELD-SYMBOLS fragments
+      fs_name              TYPE string VALUE `<[^>]+>`,
+      fs_more_names        TYPE string VALUE `(\s*,\s*<[^>]+>)*`,
+
+    END OF gc_rx_obsolete .
+  constants:
     "--------------------------------------------------
     " Performance
     "--------------------------------------------------
     BEGIN OF gc_perf_kw,
-      select_kw      TYPE string VALUE 'SELECT',
-      select_all     TYPE string VALUE 'SELECT * FROM',
-      select_single  TYPE string VALUE 'SELECT SINGLE',
       loop_at        TYPE string VALUE 'LOOP AT',
       endloop        TYPE string VALUE 'ENDLOOP',
       read_table     TYPE string VALUE 'READ TABLE',
       with_key       TYPE string VALUE 'WITH KEY',
       binary_search  TYPE string VALUE 'BINARY SEARCH',
       with_table_key TYPE string VALUE 'WITH TABLE KEY',
-    END OF gc_perf_kw,
-
+    END OF gc_perf_kw .
+  constants:
     BEGIN OF gc_rule_perf,
-      select_star    TYPE string VALUE 'PERF_SELECT_STAR',
-      nested_loop    TYPE string VALUE 'PERF_NESTED_LOOP',
-      select_in_loop TYPE string VALUE 'PERF_SELECT_IN_LOOP',
-      read_no_binary TYPE string VALUE 'PERF_READ_NO_BINARY',
-    END OF gc_rule_perf,
-
+      select_star     TYPE string VALUE 'PERF_SELECT_STAR',
+      nested_loop     TYPE string VALUE 'PERF_NESTED_LOOP',
+      select_in_loop  TYPE string VALUE 'PERF_SELECT_IN_LOOP',
+      read_no_binary  TYPE string VALUE 'PERF_READ_NO_BINARY',
+      fae_empty_check TYPE string VALUE 'PERF_FAE_EMPTY_CHECK',
+    END OF gc_rule_perf .
+  constants:
     BEGIN OF gc_perf_regex,
-      loop_at_table TYPE string VALUE `LOOP\s+AT\s+([A-Z0-9_><\->]+)`,
-      select_stmt   TYPE string VALUE `^\s*SELECT(\s|$)`,
-      select_all    TYPE string VALUE `^\s*SELECT\s+\*\s+FROM\s+`,
-    END OF gc_perf_regex,
-
+      loop_at_table TYPE string VALUE `LOOP\s+AT\s+([A-Z0-9_><\->]+)` ##NO_TEXT,
+      select_stmt   TYPE string VALUE `^\s*SELECT(\s|$)` ##NO_TEXT,
+      select_all    TYPE string VALUE `^\s*SELECT\s+\*\s+FROM\s+` ##NO_TEXT,
+      fae_table     TYPE string VALUE `FOR\s+ALL\s+ENTRIES\s+IN\s+([A-Z0-9_<>\-]+)` ##NO_TEXT,
+    END OF gc_perf_regex .
+  constants:
+    BEGIN OF gc_perf_cfg,
+      fae_guard_lookback TYPE i VALUE 5,
+      heavy_depth_min    TYPE i VALUE 1,
+      zero               TYPE i VALUE 0,
+    END OF gc_perf_cfg .
+  constants:
+    BEGIN OF gc_perf_guard,
+      if_kw              TYPE string VALUE 'IF',
+      check_kw           TYPE string VALUE 'CHECK',
+      assert_kw          TYPE string VALUE 'ASSERT',
+      is_not_initial_pat TYPE string VALUE 'IS NOT INITIAL.*',
+    END OF gc_perf_guard .
+  constants:
     BEGIN OF gc_perf_table,
       lt_temp_errors TYPE string VALUE 'LT_TEMP_ERRORS',
       lt_all_err     TYPE string VALUE 'LT_ALL_ERR',
       rt_errors      TYPE string VALUE 'RT_ERRORS',
       me_rt_errors   TYPE string VALUE 'ME->RT_ERRORS',
       lt_new         TYPE string VALUE 'LT_NEW',
-    END OF gc_perf_table,
+    END OF gc_perf_table .
 
-    BEGIN OF gc_offset,
-      sapl_prefix_len TYPE i VALUE 4,
-    END OF gc_offset .
+  methods NM_DATA_CHECKS
+    importing
+      !IT_TOKENS type GTY_T_TOK_TAB
+      !IT_STMT_INFO type GTY_T_STMT_INFO
+      !IV_CURR_SRC_LINES type I
+    changing
+      !CT_GLOBAL_DECL type GTY_T_GLOBAL_DECL
+      !CT_USE type GTY_T_USE
+      !CT_PENDING type GTY_T_PENDING
+      !CT_ERRORS type ZTT_ERROR .
+  methods NM_ADDITIONAL_NAMING_CHECKS
+    importing
+      !IT_SOURCE type STRING_TABLE
+      !IT_TOKENS type GTY_T_TOK_TAB
+      !IT_STMTS type GTY_T_STMT_TAB
+      !IT_STMT_INFO type GTY_T_STMT_INFO
+      !IT_GLOBAL_DECL type GTY_T_GLOBAL_DECL
+      !IT_USE type GTY_T_USE
+      !IT_PENDING type GTY_T_PENDING
+      !IV_CURR_SRC_LINES type I
+    changing
+      !CT_ERRORS type ZTT_ERROR .
+  methods NM_RESOLVE_TYPE_KIND
+    importing
+      !IV_TYPE_NAME type STRING
+    exporting
+      !EV_KIND type GTY_NM_KIND
+      !EV_LINE_KIND type GTY_NM_KIND
+    changing
+      !CT_TYPE_CACHE type GTY_T_NAME_KIND .
+  methods NM_RESOLVE_SIG_KIND
+    importing
+      !IT_TOKENS type GTY_T_TOK_TAB
+      !IV_FROM type SY-TABIX
+      !IV_TO type SY-TABIX
+    exporting
+      !EV_KIND type C
+      !EV_LAST_IDX type SY-TABIX
+    changing
+      !CT_TYPE_CACHE type GTY_T_NAME_KIND .
+  methods CC_PREPROCESS_SOURCE
+    importing
+      !IT_SOURCE type STRING_TABLE
+    returning
+      value(RT_SRC) type GTY_T_SRC_LINE .
+  methods CC_ADD_USAGE_COUNT
+    importing
+      !IV_NAME type STRING
+    changing
+      !CT_CNT type GTY_T_CNT .
+  methods GET_OBJECT_AUTHOR
+    importing
+      !IV_OBJ_TYPE type TADIR-OBJECT
+      !IV_OBJ_NAME type SOBJ_NAME
+    returning
+      value(RT_AUTHOR) type SYUNAME .
 ENDCLASS.
 
 
@@ -859,10 +693,6 @@ METHOD analyze_clean_code.
   DATA lt_textpool          TYPE STANDARD TABLE OF textpool WITH EMPTY KEY.
   DATA lt_used              TYPE lty_t_used.
   DATA lt_usage_source      TYPE string_table.
-  DATA lt_src_part          TYPE string_table.
-  DATA lt_prog_queue        TYPE STANDARD TABLE OF progname WITH EMPTY KEY.
-  DATA lt_prog_seen         TYPE HASHED TABLE OF progname WITH UNIQUE KEY table_line.
-  DATA lt_words_inc         TYPE STANDARD TABLE OF string WITH EMPTY KEY.
   DATA lt_struct_stack      TYPE STANDARD TABLE OF string WITH EMPTY KEY.
   DATA lt_words             TYPE STANDARD TABLE OF string WITH EMPTY KEY.
   DATA lt_forms             TYPE lty_t_form_decl.
@@ -871,18 +701,15 @@ METHOD analyze_clean_code.
 
   DATA ls_src               TYPE gty_src_line.
   DATA lv_text              TYPE string.
-  DATA lv_line              TYPE string.
   DATA lv_trim              TYPE string.
   DATA lv_up                TYPE string.
   DATA lv_i                 TYPE i.
   DATA lv_off               TYPE i.
-  DATA lv_subrc_s           TYPE string.
   DATA lv_blank_run         TYPE i VALUE 0.
   DATA lv_blank_start       TYPE i VALUE 0.
   DATA lv_prog              TYPE progname.
   DATA lv_inc_prog          TYPE progname.
   DATA lv_classpool_prog    TYPE progname.
-  DATA lv_work_inc          TYPE string.
   DATA lv_stmt              TYPE string.
   DATA lv_stmt_start        TYPE i.
   DATA lv_word1             TYPE string.
@@ -894,7 +721,6 @@ METHOD analyze_clean_code.
   DATA lv_match_scope TYPE string.
   DATA lv_cnt_key     TYPE string.
 
-  DATA lv_use_idx    TYPE i.
   DATA lv_use_tok1   TYPE string.
   DATA lv_use_tok2   TYPE string.
   DATA lv_use_tok3   TYPE string.
@@ -902,29 +728,15 @@ METHOD analyze_clean_code.
   DATA lv_use_parent TYPE string.
   DATA lv_use_comp   TYPE string.
 
-  DATA lv_stmt_is_types    TYPE abap_bool.
-  DATA lv_stmt_kind        TYPE string.
-  DATA lv_stmt_from        TYPE i.
-  DATA lv_stmt_to          TYPE i.
   DATA lv_name_row         TYPE i.
   DATA lv_tok_u            TYPE string.
   DATA lv_prev_u           TYPE string.
   DATA lv_prev2_u          TYPE string.
-  DATA lv_idx_decl_start   TYPE i.
-  DATA lv_prefix_tok       TYPE string.
-  DATA lv_prefix_idx       TYPE i.
-  DATA lv_expect_decl_name TYPE abap_bool.
-  DATA lv_is_begin_of      TYPE abap_bool.
-  DATA lv_is_end_of        TYPE abap_bool.
-  DATA lv_is_root_struct   TYPE abap_bool.
-  DATA lv_paren_depth      TYPE i.
   DATA lv_stack_idx        TYPE i.
 
   DATA lt_prog_queue_text   TYPE STANDARD TABLE OF progname WITH EMPTY KEY.
   DATA lt_prog_seen_text    TYPE HASHED TABLE OF progname WITH UNIQUE KEY table_line.
   DATA lt_src_part_text     TYPE string_table.
-  DATA lv_prog_text         TYPE progname.
-  DATA lv_work_inc_text     TYPE string.
   DATA lt_words_inc_text    TYPE STANDARD TABLE OF string WITH EMPTY KEY.
   DATA lt_decl_prefix       TYPE lty_t_decl_prefix.
   DATA lv_use_src_line      TYPE string.
@@ -942,225 +754,12 @@ METHOD analyze_clean_code.
   "------------------------------------------------------------
 
   " Build source to scan once
-  CLEAR: lv_classpool_prog,
-         lt_prog_queue,
-         lt_prog_seen,
-         lt_method_includes.
+  CLEAR lt_usage_source.
 
   IF it_usage_source IS NOT INITIAL.
     lt_usage_source = it_usage_source.
   ELSE.
     lt_usage_source = it_source.
-
-    "Seed queue
-    CASE is_ctx-obj_type.
-      WHEN gc_obj_type-clas.
-
-        "Read method includes once
-        IF is_ctx-obj_name IS NOT INITIAL.
-          TRY.
-              lt_method_includes =
-                cl_oo_classname_service=>get_all_method_includes(
-                  CONV seoclsname( is_ctx-obj_name ) ).
-            CATCH cx_root.
-              CLEAR lt_method_includes.
-          ENDTRY.
-        ENDIF.
-
-        "Resolve classpool program
-        IF is_ctx-main_prog IS NOT INITIAL.
-          CLEAR lt_src_part.
-          READ REPORT is_ctx-main_prog INTO lt_src_part.
-          IF sy-subrc = 0 AND lt_src_part IS NOT INITIAL.
-            lv_classpool_prog = is_ctx-main_prog.
-          ENDIF.
-        ENDIF.
-
-        IF lv_classpool_prog IS INITIAL
-           AND is_ctx-obj_name IS NOT INITIAL.
-          TRY.
-              lv_classpool_prog =
-                cl_oo_classname_service=>get_classpool_name(
-                  clsname = CONV seoclsname( is_ctx-obj_name ) ).
-            CATCH cx_root.
-              CLEAR lv_classpool_prog.
-          ENDTRY.
-        ENDIF.
-
-        IF lv_classpool_prog IS NOT INITIAL.
-          APPEND lv_classpool_prog TO lt_prog_queue.
-        ENDIF.
-
-        LOOP AT lt_method_includes ASSIGNING FIELD-SYMBOL(<ls_method_inc>).
-          lv_inc_prog = <ls_method_inc>-incname.
-          IF lv_inc_prog IS INITIAL
-             OR lv_inc_prog = is_ctx-include.
-            CONTINUE.
-          ENDIF.
-
-          TRANSLATE lv_inc_prog TO UPPER CASE.
-
-          READ TABLE lt_prog_seen
-            WITH TABLE KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
-          IF sy-subrc = 0.
-            CONTINUE.
-          ENDIF.
-
-          READ TABLE lt_prog_queue
-            WITH KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
-          IF sy-subrc = 0.
-            CONTINUE.
-          ENDIF.
-
-          APPEND lv_inc_prog TO lt_prog_queue.
-        ENDLOOP.
-
-      WHEN gc_obj_type-prog
-        OR gc_obj_type-reps.
-
-        IF is_ctx-main_prog IS NOT INITIAL.
-          lv_prog = is_ctx-main_prog.
-        ELSEIF is_ctx-obj_name IS NOT INITIAL.
-          lv_prog = is_ctx-obj_name.
-        ENDIF.
-
-        IF lv_prog IS NOT INITIAL.
-          TRANSLATE lv_prog TO UPPER CASE.
-          APPEND lv_prog TO lt_prog_queue.
-        ENDIF.
-
-      WHEN gc_obj_type-incl.
-
-        IF is_ctx-main_prog IS NOT INITIAL.
-          lv_prog = is_ctx-main_prog.
-        ELSEIF is_ctx-include IS NOT INITIAL.
-          lv_prog = is_ctx-include.
-        ELSEIF is_ctx-obj_name IS NOT INITIAL.
-          lv_prog = is_ctx-obj_name.
-        ENDIF.
-
-        IF lv_prog IS NOT INITIAL.
-          TRANSLATE lv_prog TO UPPER CASE.
-          APPEND lv_prog TO lt_prog_queue.
-        ENDIF.
-
-      WHEN gc_obj_type-fugr.
-
-        IF is_ctx-main_prog IS NOT INITIAL.
-          lv_prog = is_ctx-main_prog.
-        ELSEIF is_ctx-obj_name IS NOT INITIAL.
-          lv_prog = |{ gc_obj_type-sapl }{ is_ctx-obj_name }|.
-        ENDIF.
-
-        IF lv_prog IS NOT INITIAL.
-          TRANSLATE lv_prog TO UPPER CASE.
-          APPEND lv_prog TO lt_prog_queue.
-        ENDIF.
-
-      WHEN gc_obj_type-func
-        OR gc_obj_type-fm.
-
-        IF is_ctx-main_prog IS NOT INITIAL.
-          lv_prog = is_ctx-main_prog.
-        ELSEIF is_ctx-include IS NOT INITIAL.
-          lv_prog = is_ctx-include.
-        ENDIF.
-
-        IF lv_prog IS NOT INITIAL.
-          TRANSLATE lv_prog TO UPPER CASE.
-          APPEND lv_prog TO lt_prog_queue.
-        ENDIF.
-
-      WHEN OTHERS.
-
-        IF is_ctx-main_prog IS NOT INITIAL.
-          lv_prog = is_ctx-main_prog.
-        ELSEIF is_ctx-include IS NOT INITIAL.
-          lv_prog = is_ctx-include.
-        ELSEIF is_ctx-obj_name IS NOT INITIAL.
-          lv_prog = is_ctx-obj_name.
-        ENDIF.
-
-        IF lv_prog IS NOT INITIAL.
-          TRANSLATE lv_prog TO UPPER CASE.
-          APPEND lv_prog TO lt_prog_queue.
-        ENDIF.
-
-    ENDCASE.
-
-    IF is_ctx-include IS NOT INITIAL.
-      READ TABLE lt_prog_queue
-        WITH KEY table_line = is_ctx-include
-        TRANSPORTING NO FIELDS.
-      IF sy-subrc <> 0.
-        INSERT is_ctx-include INTO TABLE lt_prog_seen.
-      ENDIF.
-    ENDIF.
-
-    "Expand source by queue
-    WHILE lt_prog_queue IS NOT INITIAL.
-      READ TABLE lt_prog_queue INDEX 1 INTO lv_prog.
-      DELETE lt_prog_queue INDEX 1.
-
-      INSERT lv_prog INTO TABLE lt_prog_seen.
-      IF sy-subrc <> 0.
-        CONTINUE.
-      ENDIF.
-
-      CLEAR lt_src_part.
-      READ REPORT lv_prog INTO lt_src_part.
-      IF sy-subrc <> 0 OR lt_src_part IS INITIAL.
-        CONTINUE.
-      ENDIF.
-
-      APPEND LINES OF lt_src_part TO lt_usage_source.
-
-      lt_src_curr = cc_preprocess_source( lt_src_part ).
-
-      LOOP AT lt_src_curr INTO ls_src.
-        lv_work_inc = ls_src-upper.
-
-        IF lv_work_inc IS INITIAL
-           OR lv_work_inc NP gc_keyword-include_pat.
-          CONTINUE.
-        ENDIF.
-
-        CLEAR lt_words_inc.
-        SPLIT lv_work_inc AT space INTO TABLE lt_words_inc.
-        DELETE lt_words_inc WHERE table_line IS INITIAL.
-
-        CLEAR lv_inc_prog.
-        READ TABLE lt_words_inc INDEX 2 INTO lv_inc_prog.
-        IF sy-subrc <> 0 OR lv_inc_prog IS INITIAL.
-          CONTINUE.
-        ENDIF.
-
-        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_inc_prog WITH ''.
-        TRANSLATE lv_inc_prog TO UPPER CASE.
-
-        IF lv_inc_prog = is_ctx-include
-           OR lv_inc_prog = gc_keyword-methods
-           OR lv_inc_prog = gc_keyword-type
-           OR lv_inc_prog = gc_keyword-structure.
-          CONTINUE.
-        ENDIF.
-
-        READ TABLE lt_prog_seen
-          WITH TABLE KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
-        IF sy-subrc = 0.
-          CONTINUE.
-        ENDIF.
-
-        READ TABLE lt_prog_queue
-          WITH KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
-        IF sy-subrc = 0.
-          CONTINUE.
-        ENDIF.
-
-        APPEND lv_inc_prog TO lt_prog_queue.
-      ENDLOOP.
-    ENDWHILE.
-
   ENDIF.
 
   "------------------------------------------------------------
@@ -1174,80 +773,21 @@ METHOD analyze_clean_code.
     STATEMENTS INTO lt_stmts
     WITH ANALYSIS.
 
-  IF sy-subrc <> 0.
-    CASE sy-subrc.
-      WHEN 4.
-        MESSAGE e013(z_gsp04_message) INTO lv_text.
-        IF lv_text IS INITIAL.
-          MESSAGE e009(z_gsp04_message)
-            WITH is_ctx-obj_type is_ctx-obj_name
-            INTO lv_text.
-        ENDIF.
-
-        APPEND VALUE zst_error(
-          rule     = gc_rule_cc-scan_error
-          sev      = gc_severity-error
-          line     = 0
-          msg      = lv_text
-          category = gc_category-clean_code
-        ) TO rt_errors.
-        RETURN.
-
-      WHEN 8.
-        MESSAGE e012(z_gsp04_message)
-          WITH sy-subrc is_ctx-obj_type is_ctx-obj_name
-          INTO lv_text.
-
-        APPEND VALUE zst_error(
-          rule     = gc_rule_cc-scan_runtime
-          sev      = gc_severity-error
-          line     = 0
-          msg      = lv_text
-          category = gc_category-clean_code
-        ) TO rt_errors.
-        RETURN.
-
-      WHEN OTHERS.
-        lv_subrc_s = sy-subrc.
-
-        MESSAGE e009(z_gsp04_message)
-          WITH is_ctx-obj_type is_ctx-obj_name
-          INTO lv_text.
-
-        APPEND VALUE zst_error(
-          rule     = gc_rule_cc-scan_unknown
-          sev      = gc_severity-error
-          line     = 0
-          msg      = lv_text
-          category = gc_category-clean_code
-        ) TO rt_errors.
-        RETURN.
-    ENDCASE.
-  ENDIF.
-
   "------------------------------------------------------------
   " Collect declarations from current source only
   "------------------------------------------------------------
   CLEAR lt_struct_stack.
   lv_curr_scope = gc_scope-global.
   LOOP AT lt_stmts INTO DATA(ls_decl_stmt).
-    CLEAR: lv_stmt_is_types,
-           lv_stmt_kind,
-           lv_name_row,
+    CLEAR: lv_name_row,
            lv_tok_u,
            lv_prev_u,
            lv_prev2_u,
-           lv_prefix_tok,
-           lv_expect_decl_name,
-           lv_is_begin_of,
-           lv_is_end_of,
-           lv_is_root_struct,
-           lv_paren_depth,
            lv_parent_struct,
            lv_name.
 
-    lv_stmt_from = ls_decl_stmt-from.
-    lv_stmt_to   = ls_decl_stmt-to.
+    DATA(lv_stmt_from) = ls_decl_stmt-from.
+    DATA(lv_stmt_to)   = ls_decl_stmt-to.
 
     IF lv_stmt_from <= 0 OR lv_stmt_to < lv_stmt_from.
       CONTINUE.
@@ -1260,16 +800,15 @@ METHOD analyze_clean_code.
       CONTINUE.
     ENDIF.
 
-    lv_stmt_kind      = ls_first_tok-str.
-    lv_idx_decl_start = lv_stmt_from + 1.
-    TRANSLATE lv_stmt_kind TO UPPER CASE.
+    DATA(lv_stmt_kind)      = to_upper( ls_first_tok-str ).
+    DATA(lv_idx_decl_start) = lv_stmt_from + 1.
 
     CLEAR lv_word1.
     READ TABLE lt_tokens INDEX lv_stmt_from + 1 INTO DATA(ls_scope_tok).
     IF sy-subrc = 0 AND ls_scope_tok-str IS NOT INITIAL.
       lv_word1 = ls_scope_tok-str.
-      REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word1 WITH ''.
-      TRANSLATE lv_word1 TO UPPER CASE.
+      REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word1 WITH gc_token_nm-empty.
+      lv_word1 = to_upper( lv_word1 ).
     ENDIF.
 
     CASE lv_stmt_kind.
@@ -1307,15 +846,14 @@ METHOD analyze_clean_code.
     ENDCASE.
 
     IF ls_decl_stmt-prefixlen > 0.
-      lv_prefix_idx = lv_stmt_from - ls_decl_stmt-prefixlen.
+      DATA(lv_prefix_idx) = lv_stmt_from - ls_decl_stmt-prefixlen.
       IF lv_prefix_idx < 1.
         lv_prefix_idx = 1.
       ENDIF.
 
       READ TABLE lt_tokens INDEX lv_prefix_idx INTO DATA(lfs_prefix_tok).
       IF sy-subrc = 0 AND lfs_prefix_tok-str IS NOT INITIAL.
-        lv_prefix_tok = lfs_prefix_tok-str.
-        TRANSLATE lv_prefix_tok TO UPPER CASE.
+        DATA(lv_prefix_tok) = to_upper( lfs_prefix_tok-str ).
 
         CASE lv_prefix_tok.
           WHEN gc_keyword-data
@@ -1343,8 +881,9 @@ METHOD analyze_clean_code.
         CONTINUE.
     ENDCASE.
 
-    lv_stmt_is_types    = xsdbool( lv_stmt_kind = gc_keyword-types ).
-    lv_expect_decl_name = abap_true.
+    DATA(lv_stmt_is_types)    = xsdbool( lv_stmt_kind = gc_keyword-types ).
+    DATA(lv_expect_decl_name) = abap_true.
+    DATA(lv_paren_depth)      = 0.
 
     DATA(lv_idx_decl) = lv_idx_decl_start.
 
@@ -1355,7 +894,7 @@ METHOD analyze_clean_code.
       ENDIF.
 
       lv_tok_u = ls_decl_tok-str.
-      TRANSLATE lv_tok_u TO UPPER CASE.
+      lv_tok_u = to_upper( lv_tok_u ).
 
       CASE lv_tok_u.
         WHEN gc_keyword-lparen.
@@ -1393,28 +932,29 @@ METHOD analyze_clean_code.
       CLEAR: lv_prev_u,
              lv_prev2_u,
              lv_parent_struct,
-             lv_name,
-             lv_is_begin_of,
-             lv_is_end_of,
-             lv_is_root_struct.
+             lv_name.
+
+      DATA(lv_is_begin_of)    = abap_false.
+      DATA(lv_is_end_of)      = abap_false.
+      DATA(lv_is_root_struct) = abap_false.
 
       READ TABLE lt_tokens INDEX lv_idx_decl - 1 INTO DATA(ls_prev_tok).
       IF sy-subrc = 0.
         lv_prev_u = ls_prev_tok-str.
-        TRANSLATE lv_prev_u TO UPPER CASE.
+        lv_prev_u = to_upper( lv_prev_u ).
       ENDIF.
 
       READ TABLE lt_tokens INDEX lv_idx_decl - 2 INTO DATA(ls_prev2_tok).
       IF sy-subrc = 0.
         lv_prev2_u = ls_prev2_tok-str.
-        TRANSLATE lv_prev2_u TO UPPER CASE.
+        lv_prev2_u = to_upper( lv_prev2_u ).
       ENDIF.
 
       CLEAR lv_word1.
       READ TABLE lt_tokens INDEX lv_idx_decl + 1 INTO DATA(ls_next_tok).
       IF sy-subrc = 0 AND ls_next_tok-str IS NOT INITIAL.
         lv_word1 = ls_next_tok-str.
-        TRANSLATE lv_word1 TO UPPER CASE.
+        lv_word1 = to_upper( lv_word1 ).
       ENDIF.
 
       IF ( lv_tok_u = gc_keyword-begin OR lv_tok_u = gc_keyword-end )
@@ -1513,7 +1053,7 @@ METHOD analyze_clean_code.
          lt_decl_prefix.
 
   LOOP AT lt_decl INTO DATA(ls_decl_prefix_src)
-       WHERE name CS gc_keyword-dash.
+       WHERE name CS gc_keyword-dash.                   "#EC CI_HASHSEQ
 
     CLEAR lv_off.
     FIND FIRST OCCURRENCE OF gc_keyword-dash
@@ -1555,18 +1095,18 @@ METHOD analyze_clean_code.
 
   lv_curr_scope = gc_scope-global.
   LOOP AT lt_stmts INTO DATA(ls_use_stmt).
-    lv_use_idx = ls_use_stmt-from.
+    DATA(lv_use_idx) = ls_use_stmt-from.
     READ TABLE lt_tokens INDEX ls_use_stmt-from INTO DATA(ls_stmt_tok1).
     IF sy-subrc = 0 AND ls_stmt_tok1-str IS NOT INITIAL.
       lv_word1 = ls_stmt_tok1-str.
-      TRANSLATE lv_word1 TO UPPER CASE.
+      lv_word1 = to_upper( lv_word1 ).
 
       CLEAR lv_word2.
       READ TABLE lt_tokens INDEX ls_use_stmt-from + 1 INTO DATA(ls_stmt_tok2).
       IF sy-subrc = 0 AND ls_stmt_tok2-str IS NOT INITIAL.
         lv_word2 = ls_stmt_tok2-str.
-        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word2 WITH ''.
-        TRANSLATE lv_word2 TO UPPER CASE.
+        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word2 WITH gc_token_nm-empty.
+        lv_word2 = to_upper( lv_word2 ).
       ENDIF.
 
       CASE lv_word1.
@@ -1635,9 +1175,9 @@ METHOD analyze_clean_code.
         CONTINUE.
       ENDIF.
 
-      TRANSLATE lv_use_tok1 TO UPPER CASE.
+      lv_use_tok1 = to_upper( lv_use_tok1 ).
 
-      IF lv_use_tok1(1) = '@'.
+      IF lv_use_tok1(1) = gc_keyword-at_sign.
         SHIFT lv_use_tok1 BY 1 PLACES LEFT.
       ENDIF.
 
@@ -1646,12 +1186,33 @@ METHOD analyze_clean_code.
         CONTINUE.
       ENDIF.
 
-      IF lv_use_tok1 CS gc_keyword-dash.
+      IF lv_use_tok1 = gc_keyword-value
+         AND lv_use_idx + 1 <= ls_use_stmt-to.
+        READ TABLE lt_tokens INDEX lv_use_idx + 1 INTO DATA(ls_value_type_tok).
+
+        IF sy-subrc = 0 AND ls_value_type_tok-str IS NOT INITIAL.
+          lv_use_idx  += 1.
+          lv_use_tok1  = to_upper( ls_value_type_tok-str ).
+          ls_use_tok1-type = gc_token_type-identifier.
+          REPLACE ALL OCCURRENCES OF gc_keyword-dot    IN lv_use_tok1 WITH gc_token_nm-empty.
+          REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_use_tok1 WITH gc_token_nm-empty.
+          CONDENSE lv_use_tok1 NO-GAPS.
+        ENDIF.
+      ENDIF.
+
+      IF ls_use_tok1-type = gc_token_type-identifier
+        AND lv_use_tok1 CS gc_keyword-dash.
+
         lv_use_full = lv_use_tok1.
+
+        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_full WITH gc_token_nm-empty.
+        CONDENSE lv_use_full NO-GAPS.
+
         SPLIT lv_use_full AT gc_keyword-dash INTO lv_use_parent lv_use_comp.
 
-        TRANSLATE lv_use_full   TO UPPER CASE.
-        TRANSLATE lv_use_parent TO UPPER CASE.
+        lv_use_full = to_upper( lv_use_full ).
+        lv_use_parent = to_upper( lv_use_parent ).
+        lv_use_comp = to_upper( lv_use_comp ).
 
         lv_use_idx += 1.
 
@@ -1667,18 +1228,26 @@ METHOD analyze_clean_code.
           lv_use_tok2 = ls_use_tok2-str.
           lv_use_tok3 = ls_use_tok3-str.
 
-          TRANSLATE lv_use_tok2 TO UPPER CASE.
-          TRANSLATE lv_use_tok3 TO UPPER CASE.
+          lv_use_tok2 = to_upper( lv_use_tok2 ).
+          lv_use_tok3 = to_upper( lv_use_tok3 ).
 
-          IF ( lv_use_tok2 = gc_keyword-dash OR lv_use_tok2 = '-' )
+          IF lv_use_tok2 = gc_keyword-dash
              AND ls_use_tok3-type = gc_token_type-identifier.
 
             lv_use_parent = lv_use_tok1.
             lv_use_comp   = lv_use_tok3.
             lv_use_full   = |{ lv_use_parent }-{ lv_use_comp }|.
 
-            TRANSLATE lv_use_parent TO UPPER CASE.
-            TRANSLATE lv_use_full   TO UPPER CASE.
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_full WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_parent WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_comp WITH gc_token_nm-empty.
+
+            CONDENSE lv_use_full   NO-GAPS.
+            CONDENSE lv_use_parent NO-GAPS.
+            CONDENSE lv_use_comp   NO-GAPS.
+
+            lv_use_parent = to_upper( lv_use_parent ).
+            lv_use_full = to_upper( lv_use_full ).
 
             lv_use_idx += 3.
           ELSE.
@@ -1715,7 +1284,8 @@ METHOD analyze_clean_code.
         ENDIF.
 
         IF lv_match_scope IS INITIAL
-           AND lv_use_full CS gc_keyword-dash.
+          AND lv_use_full CS gc_keyword-dash.
+
           READ TABLE lt_decl_prefix
             ASSIGNING <lfs_prefix>
             WITH TABLE KEY prefix = lv_use_full.
@@ -1723,6 +1293,7 @@ METHOD analyze_clean_code.
           IF sy-subrc = 0
              AND <lfs_prefix>-ambiguous = abap_false
              AND <lfs_prefix>-full_name IS NOT INITIAL.
+
             lv_use_full = <lfs_prefix>-full_name.
 
             READ TABLE lt_decl
@@ -1742,8 +1313,35 @@ METHOD analyze_clean_code.
                 lv_match_scope = gc_scope-global.
               ENDIF.
             ENDIF.
+
           ELSE.
-            CLEAR lv_use_full.
+            lv_up = lv_use_src_line.
+            lv_up = to_upper( lv_up ).
+
+            CLEAR: lv_name,
+                   lv_match_scope.
+
+            LOOP AT lt_decl INTO DATA(ls_decl_try)
+                 WHERE name CP |{ lv_use_full }*|.      "#EC CI_HASHSEQ
+
+              IF ls_decl_try-scope_id <> lv_curr_scope
+                 AND ls_decl_try-scope_id <> gc_scope-global.
+                CONTINUE.
+              ENDIF.
+
+              IF lv_up CS ls_decl_try-name.
+                lv_name        = ls_decl_try-name.
+                lv_match_scope = ls_decl_try-scope_id.
+                EXIT.
+              ENDIF.
+            ENDLOOP.
+
+            IF lv_name IS NOT INITIAL.
+              lv_use_full = lv_name.
+            ELSE.
+              CLEAR lv_use_full.
+            ENDIF.
+
           ENDIF.
         ENDIF.
 
@@ -1843,7 +1441,7 @@ METHOD analyze_clean_code.
       lv_cnt = ls_cnt-cnt.
     ENDIF.
 
-    IF ls_decl-name CS '-'.
+    IF ls_decl-name CS gc_keyword-dash.
       IF lv_cnt > 0.
         CONTINUE.
       ENDIF.
@@ -1853,9 +1451,9 @@ METHOD analyze_clean_code.
       ENDIF.
     ENDIF.
 
-    IF ls_decl-name CS '-'.
-      SPLIT ls_decl-name AT '-' INTO DATA(lv_parent_name_u) lv_ignore.
-      TRANSLATE lv_parent_name_u TO UPPER CASE.
+    IF ls_decl-name CS gc_keyword-dash.
+      SPLIT ls_decl-name AT gc_keyword-dash INTO DATA(lv_parent_name_u) lv_ignore.
+      lv_parent_name_u = to_upper( lv_parent_name_u ).
 
       lv_cnt_key = |{ ls_decl-scope_id };{ lv_parent_name_u }|.
 
@@ -1889,6 +1487,8 @@ METHOD analyze_clean_code.
   "------------------------------------------------------------
   " E) RULE 2 - Blank lines
   "------------------------------------------------------------
+  lt_src_curr = cc_preprocess_source( it_source ).
+
   CLEAR: lv_blank_run,
          lv_blank_start.
 
@@ -1946,7 +1546,7 @@ METHOD analyze_clean_code.
         ENDIF.
 
         IF lv_textpool_prog IS NOT INITIAL.
-          TRANSLATE lv_textpool_prog TO UPPER CASE.
+          lv_textpool_prog = to_upper( lv_textpool_prog ).
           APPEND lv_textpool_prog TO lt_prog_queue_text.
         ENDIF.
 
@@ -1959,7 +1559,7 @@ METHOD analyze_clean_code.
         ENDIF.
 
         IF lv_textpool_prog IS NOT INITIAL.
-          TRANSLATE lv_textpool_prog TO UPPER CASE.
+          lv_textpool_prog = to_upper( lv_textpool_prog ).
           APPEND lv_textpool_prog TO lt_prog_queue_text.
         ENDIF.
 
@@ -1971,7 +1571,7 @@ METHOD analyze_clean_code.
         ENDIF.
 
         IF lv_textpool_prog IS NOT INITIAL.
-          TRANSLATE lv_textpool_prog TO UPPER CASE.
+          lv_textpool_prog = to_upper( lv_textpool_prog ).
           APPEND lv_textpool_prog TO lt_prog_queue_text.
         ENDIF.
 
@@ -1999,7 +1599,7 @@ METHOD analyze_clean_code.
         lv_textpool_prog = lv_classpool_prog.
 
         IF lv_textpool_prog IS NOT INITIAL.
-          TRANSLATE lv_textpool_prog TO UPPER CASE.
+          lv_textpool_prog = to_upper( lv_textpool_prog ).
           APPEND lv_textpool_prog TO lt_prog_queue_text.
         ENDIF.
 
@@ -2019,7 +1619,7 @@ METHOD analyze_clean_code.
             CONTINUE.
           ENDIF.
 
-          TRANSLATE lv_inc_prog TO UPPER CASE.
+          lv_inc_prog = to_upper( lv_inc_prog ).
 
           READ TABLE lt_prog_queue_text
             WITH KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
@@ -2040,7 +1640,7 @@ METHOD analyze_clean_code.
       IF sy-subrc = 0 AND lt_textpool IS NOT INITIAL.
 
         WHILE lt_prog_queue_text IS NOT INITIAL.
-          READ TABLE lt_prog_queue_text INDEX 1 INTO lv_prog_text.
+          READ TABLE lt_prog_queue_text INDEX 1 INTO DATA(lv_prog_text).
           DELETE lt_prog_queue_text INDEX 1.
 
           IF sy-subrc <> 0 OR lv_prog_text IS INITIAL.
@@ -2064,7 +1664,8 @@ METHOD analyze_clean_code.
           lt_src_curr = cc_preprocess_source( lt_src_part_text ).
 
           LOOP AT lt_src_curr INTO ls_src.
-            lv_work_inc_text = ls_src-upper.
+            DATA(lv_work_inc_text) = ls_src-no_comment.
+            lv_work_inc_text = to_upper( lv_work_inc_text ).
 
             IF lv_work_inc_text IS INITIAL.
               CONTINUE.
@@ -2080,17 +1681,17 @@ METHOD analyze_clean_code.
             READ TABLE lt_words_inc_text INDEX 1 INTO lv_word1.
             READ TABLE lt_words_inc_text INDEX 2 INTO lv_word2.
 
-            TRANSLATE lv_word1 TO UPPER CASE.
-            TRANSLATE lv_word2 TO UPPER CASE.
+            lv_word1 = to_upper( lv_word1 ).
+            lv_word2 = to_upper( lv_word2 ).
 
             IF lv_word1 = gc_keyword-include
                AND lv_word2 IS NOT INITIAL.
 
               lv_inc_prog = lv_word2.
-              REPLACE ALL OCCURRENCES OF gc_keyword-dot   IN lv_inc_prog WITH ''.
-              REPLACE ALL OCCURRENCES OF gc_keyword-quote IN lv_inc_prog WITH ''.
+              REPLACE ALL OCCURRENCES OF gc_keyword-dot   IN lv_inc_prog WITH gc_token_nm-empty.
+              REPLACE ALL OCCURRENCES OF gc_keyword-quote IN lv_inc_prog WITH gc_token_nm-empty.
               CONDENSE lv_inc_prog NO-GAPS.
-              TRANSLATE lv_inc_prog TO UPPER CASE.
+              lv_inc_prog = to_upper( lv_inc_prog ).
 
               IF lv_inc_prog IS NOT INITIAL
                  AND lv_inc_prog <> gc_keyword-methods
@@ -2126,7 +1727,7 @@ METHOD analyze_clean_code.
               ENDIF.
 
               lv_word1 = lv_name+lv_off(lv_stack_idx).
-              TRANSLATE lv_word1 TO UPPER CASE.
+              lv_word1 = to_upper( lv_word1 ).
 
               IF strlen( lv_word1 ) >= 8.
                 INSERT VALUE lty_used(
@@ -2211,12 +1812,12 @@ METHOD analyze_clean_code.
 
     READ TABLE lt_words INDEX 1 INTO lv_word1.
     READ TABLE lt_words INDEX 2 INTO lv_word2.
-    TRANSLATE lv_word1 TO UPPER CASE.
+    lv_word1 = to_upper( lv_word1 ).
 
     IF lv_word1 = gc_keyword-form.
       lv_name = lv_word2.
-      REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_name WITH ''.
-      TRANSLATE lv_name TO UPPER CASE.
+      REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_name WITH gc_token_nm-empty.
+      lv_name = to_upper( lv_name ).
 
       IF lv_name IS NOT INITIAL.
         INSERT VALUE lty_form_decl(
@@ -2237,7 +1838,7 @@ METHOD analyze_clean_code.
   IF lv_up IS INITIAL.
     lv_up = is_ctx-obj_name.
   ENDIF.
-  TRANSLATE lv_up TO UPPER CASE.
+  lv_up = to_upper( lv_up ).
 
   LOOP AT lt_stmts INTO DATA(ls_perf_stmt).
 
@@ -2247,7 +1848,7 @@ METHOD analyze_clean_code.
     ENDIF.
 
     lv_word1 = ls_perf_tok1-str.
-    TRANSLATE lv_word1 TO UPPER CASE.
+    lv_word1 = to_upper( lv_word1 ).
     IF lv_word1 <> gc_keyword-perform.
       CONTINUE.
     ENDIF.
@@ -2269,8 +1870,8 @@ METHOD analyze_clean_code.
     ENDIF.
 
     lv_name = ls_perf_tok2-str.
-    REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_name WITH ''.
-    TRANSLATE lv_name TO UPPER CASE.
+    REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_name WITH gc_token_nm-empty.
+    lv_name = to_upper( lv_name ).
 
     IF lv_name IS INITIAL.
       CONTINUE.
@@ -2288,22 +1889,22 @@ METHOD analyze_clean_code.
       ENDIF.
 
       lv_word1 = ls_perf_tokx-str.
-      TRANSLATE lv_word1 TO UPPER CASE.
+      lv_word1 = to_upper( lv_word1 ).
 
       IF lv_word1 = gc_keyword-in.
         READ TABLE lt_tokens INDEX lv_i + 1 INTO DATA(ls_perf_toky).
         IF sy-subrc = 0 AND ls_perf_toky-str IS NOT INITIAL.
           lv_word2 = ls_perf_toky-str.
-          REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word2 WITH ''.
-          TRANSLATE lv_word2 TO UPPER CASE.
+          REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word2 WITH gc_token_nm-empty.
+          lv_word2 = to_upper( lv_word2 ).
 
           IF lv_word2 = gc_keyword-program.
             READ TABLE lt_tokens INDEX lv_i + 2 INTO DATA(ls_perf_tokz).
             IF sy-subrc = 0 AND ls_perf_tokz-str IS NOT INITIAL.
               lv_prog = ls_perf_tokz-str.
-              REPLACE ALL OCCURRENCES OF gc_keyword-dot   IN lv_prog WITH ''.
-              REPLACE ALL OCCURRENCES OF gc_keyword-quote IN lv_prog WITH ''.
-              TRANSLATE lv_prog TO UPPER CASE.
+              REPLACE ALL OCCURRENCES OF gc_keyword-dot   IN lv_prog WITH gc_token_nm-empty.
+              REPLACE ALL OCCURRENCES OF gc_keyword-quote IN lv_prog WITH gc_token_nm-empty.
+              lv_prog = to_upper( lv_prog ).
             ENDIF.
             EXIT.
           ENDIF.
@@ -2318,9 +1919,7 @@ METHOD analyze_clean_code.
       CONTINUE.
     ENDIF.
 
-    INSERT VALUE lty_name(
-      name_u = lv_name
-    ) INTO TABLE lt_called.
+    INSERT VALUE lty_name( name_u = lv_name ) INTO TABLE lt_called.
 
   ENDLOOP.
 
@@ -2387,6 +1986,7 @@ METHOD analyze_hardcode.
        TOKENS     INTO lt_tokens
        STATEMENTS INTO lt_statements
        WITH ANALYSIS.
+
 
   LOOP AT lt_statements INTO DATA(ls_stmt).
 
@@ -2773,384 +2373,46 @@ METHOD analyze_naming.
   CLEAR: rt_errors,
          me->rt_errors.
 
-  TYPES: BEGIN OF lty_row_map,
-           bundle_row   TYPE i,
-           local_row    TYPE i,
-           include_name TYPE progname,
-         END OF lty_row_map.
-  TYPES lty_t_row_map TYPE HASHED TABLE OF lty_row_map WITH UNIQUE KEY bundle_row.
-
   TYPES: BEGIN OF lty_err_seen,
            rule         TYPE string,
            sev          TYPE string,
            category     TYPE string,
            include_name TYPE progname,
            line         TYPE i,
+           msg          TYPE string,
          END OF lty_err_seen.
-  TYPES lty_t_err_seen TYPE HASHED TABLE OF lty_err_seen WITH UNIQUE KEY rule sev category line.
+  TYPES lty_t_err_seen TYPE HASHED TABLE OF lty_err_seen
+    WITH UNIQUE KEY rule sev category include_name line msg.
 
-  DATA: lt_tokens          TYPE gty_t_tok_tab,
-        lt_stmts           TYPE gty_t_stmt_tab,
-        lt_global_decl     TYPE gty_t_global_decl,
-        lt_use             TYPE gty_t_use,
-        lt_pending         TYPE gty_t_pending,
-        lt_stmt_info       TYPE gty_t_stmt_info,
-        lt_usage_source    TYPE string_table,
-        lt_prog_queue      TYPE STANDARD TABLE OF progname WITH EMPTY KEY,
-        lt_prog_seen       TYPE HASHED TABLE OF progname WITH UNIQUE KEY table_line,
-        lt_src_part        TYPE string_table,
-        lt_src_curr        TYPE gty_t_src_line,
-        lt_words_inc       TYPE STANDARD TABLE OF string WITH EMPTY KEY,
-        lt_method_includes TYPE seop_methods_w_include,
-        ls_src             TYPE gty_src_line,
-        lv_text            TYPE string,
-        lv_prog            TYPE progname,
-        lv_inc_prog        TYPE progname,
-        lv_classpool_prog  TYPE progname,
-        lv_obj_name_u      TYPE string,
-        lv_main_prog_u     TYPE progname,
-        lv_fg_area         TYPE rs38l-area,
-        lv_ok_inc          TYPE abap_bool,
-        lt_row_map         TYPE lty_t_row_map,
-        lt_errors_final    TYPE STANDARD TABLE OF zst_error WITH EMPTY KEY,
-        lt_err_seen        TYPE lty_t_err_seen,
-        lv_err_include     TYPE progname.
+  TYPES: BEGIN OF lty_scope_rule,
+           keyword TYPE string,
+           action  TYPE c LENGTH 1,
+         END OF lty_scope_rule.
+  TYPES lty_t_scope_rule TYPE SORTED TABLE OF lty_scope_rule
+    WITH UNIQUE KEY keyword.
 
-  FIELD-SYMBOLS:
-    <lfs_method_inc> TYPE LINE OF seop_methods_w_include,
-    <lfs_row_map>    TYPE lty_row_map,
-    <lfs_err>        TYPE zst_error.
+  TYPES: BEGIN OF lty_nm_scope_state,
+           depth           TYPE i,
+           in_event_local  TYPE abap_bool,
+           current_routine TYPE string,
+         END OF lty_nm_scope_state.
 
-  "------------------------------------------------------------
-  " Object-name rules
-  "------------------------------------------------------------
-*  IF is_ctx-obj_name IS NOT INITIAL
-*     AND ( is_ctx-include IS INITIAL OR is_ctx-include = is_ctx-obj_name )
-*     AND is_ctx-obj_name(1) <> gc_obj_prefix-z
-*     AND is_ctx-obj_name(1) <> gc_obj_prefix-y.
-*
-*    MESSAGE e008(z_gsp04_message) WITH is_ctx-obj_name INTO lv_text.
-*
-*    APPEND VALUE zst_error(
-*      rule     = gc_rule_nm-obj_prefix
-*      sev      = gc_severity-warning
-*      line     = 0
-*      msg      = lv_text
-*      category = gc_category-naming
-*    ) TO rt_errors.
-*  ENDIF.
-*
-*  IF is_ctx-include IS NOT INITIAL
-*     AND is_ctx-include <> is_ctx-obj_name
-*     AND is_ctx-include(1) <> gc_obj_prefix-z
-*     AND is_ctx-include(1) <> gc_obj_prefix-y.
-*
-*    lv_text = |Include name must start with Z or Y: { is_ctx-include }|.
-*
-*    APPEND VALUE zst_error(
-*      rule     = gc_rule_nm-obj_prefix
-*      sev      = gc_severity-warning
-*      line     = 0
-*      include  = is_ctx-include
-*      msg      = lv_text
-*      category = gc_category-naming
-*    ) TO rt_errors.
-*  ENDIF.
+  CONSTANTS:
+    lc_action_begin        TYPE c LENGTH 1 VALUE 'B',
+    lc_action_end          TYPE c LENGTH 1 VALUE 'E',
+    lc_action_global_event TYPE c LENGTH 1 VALUE 'G'.
 
-  "------------------------------------------------------------
-  " Build source bundle inline
-  "------------------------------------------------------------
-  CLEAR: lt_prog_queue,
-         lt_prog_seen,
-         lt_method_includes,
-         lt_row_map.
+  DATA lt_tokens       TYPE gty_t_tok_tab.
+  DATA lt_stmts        TYPE gty_t_stmt_tab.
+  DATA lt_global_decl  TYPE gty_t_global_decl.
+  DATA lt_use          TYPE gty_t_use.
+  DATA lt_pending      TYPE gty_t_pending.
+  DATA lt_stmt_info    TYPE gty_t_stmt_info.
+  DATA lt_errors_final TYPE STANDARD TABLE OF zst_error WITH EMPTY KEY.
+  DATA lt_err_seen     TYPE lty_t_err_seen.
 
-  lt_usage_source = it_source.
-
-  LOOP AT it_source INTO DATA(lv_curr_line).
-    INSERT VALUE lty_row_map(
-      bundle_row   = sy-tabix
-      local_row    = sy-tabix
-      include_name = COND progname(
-                       WHEN is_ctx-include IS NOT INITIAL
-                       THEN is_ctx-include
-                       WHEN is_ctx-main_prog IS NOT INITIAL
-                       THEN is_ctx-main_prog
-                       ELSE is_ctx-obj_name )
-    ) INTO TABLE lt_row_map.
-  ENDLOOP.
-
-  IF is_ctx-include IS NOT INITIAL.
-    INSERT is_ctx-include INTO TABLE lt_prog_seen.
-  ENDIF.
-
-  lv_obj_name_u  = is_ctx-obj_name.
-  lv_main_prog_u = is_ctx-main_prog.
-
-  TRANSLATE lv_obj_name_u  TO UPPER CASE.
-  TRANSLATE lv_main_prog_u TO UPPER CASE.
-
-  CLEAR lv_fg_area.
-  CASE is_ctx-obj_type.
-    WHEN gc_obj_type-fugr.
-      lv_fg_area = is_ctx-obj_name.
-
-    WHEN gc_obj_type-func
-      OR gc_obj_type-fm.
-      IF lv_main_prog_u CP 'SAPL*'.
-        lv_fg_area = lv_main_prog_u+4.
-      ENDIF.
-  ENDCASE.
-  TRANSLATE lv_fg_area TO UPPER CASE.
-
-  CASE is_ctx-obj_type.
-
-    WHEN gc_obj_type-clas.
-
-      IF is_ctx-obj_name IS NOT INITIAL.
-        TRY.
-            lt_method_includes =
-              cl_oo_classname_service=>get_all_method_includes(
-                CONV seoclsname( is_ctx-obj_name ) ).
-          CATCH cx_root.
-            CLEAR lt_method_includes.
-        ENDTRY.
-      ENDIF.
-
-      IF is_ctx-main_prog IS NOT INITIAL.
-        CLEAR lt_src_part.
-        READ REPORT is_ctx-main_prog INTO lt_src_part.
-        IF sy-subrc = 0 AND lt_src_part IS NOT INITIAL.
-          lv_classpool_prog = is_ctx-main_prog.
-        ENDIF.
-      ENDIF.
-
-      IF lv_classpool_prog IS INITIAL
-         AND is_ctx-obj_name IS NOT INITIAL.
-        TRY.
-            lv_classpool_prog =
-              cl_oo_classname_service=>get_classpool_name(
-                clsname = CONV seoclsname( is_ctx-obj_name ) ).
-          CATCH cx_root.
-            CLEAR lv_classpool_prog.
-        ENDTRY.
-      ENDIF.
-
-      IF lv_classpool_prog IS NOT INITIAL.
-        TRANSLATE lv_classpool_prog TO UPPER CASE.
-        APPEND lv_classpool_prog TO lt_prog_queue.
-      ENDIF.
-
-      LOOP AT lt_method_includes ASSIGNING <lfs_method_inc>.
-        lv_inc_prog = <lfs_method_inc>-incname.
-        IF lv_inc_prog IS INITIAL
-           OR lv_inc_prog = is_ctx-include.
-          CONTINUE.
-        ENDIF.
-
-        TRANSLATE lv_inc_prog TO UPPER CASE.
-
-        READ TABLE lt_prog_queue
-          WITH KEY table_line = lv_inc_prog
-          TRANSPORTING NO FIELDS.
-        IF sy-subrc <> 0.
-          APPEND lv_inc_prog TO lt_prog_queue.
-        ENDIF.
-      ENDLOOP.
-
-    WHEN gc_obj_type-prog
-      OR gc_obj_type-reps.
-
-      IF lv_main_prog_u IS NOT INITIAL.
-        APPEND lv_main_prog_u TO lt_prog_queue.
-      ELSEIF lv_obj_name_u IS NOT INITIAL.
-        APPEND lv_obj_name_u TO lt_prog_queue.
-      ENDIF.
-
-    WHEN gc_obj_type-incl.
-
-      IF lv_main_prog_u IS NOT INITIAL.
-        APPEND lv_main_prog_u TO lt_prog_queue.
-      ELSEIF is_ctx-include IS NOT INITIAL.
-        lv_prog = is_ctx-include.
-        TRANSLATE lv_prog TO UPPER CASE.
-        APPEND lv_prog TO lt_prog_queue.
-      ELSEIF lv_obj_name_u IS NOT INITIAL.
-        APPEND lv_obj_name_u TO lt_prog_queue.
-      ENDIF.
-
-    WHEN gc_obj_type-fugr.
-
-      IF lv_main_prog_u IS NOT INITIAL.
-        APPEND lv_main_prog_u TO lt_prog_queue.
-      ELSEIF lv_fg_area IS NOT INITIAL.
-        lv_prog = |SAPL{ lv_fg_area }|.
-        TRANSLATE lv_prog TO UPPER CASE.
-        APPEND lv_prog TO lt_prog_queue.
-      ENDIF.
-
-    WHEN gc_obj_type-func
-      OR gc_obj_type-fm.
-
-      IF lv_main_prog_u IS NOT INITIAL.
-        APPEND lv_main_prog_u TO lt_prog_queue.
-      ENDIF.
-
-      IF is_ctx-include IS NOT INITIAL.
-        lv_prog = is_ctx-include.
-        TRANSLATE lv_prog TO UPPER CASE.
-
-        READ TABLE lt_prog_queue
-          WITH KEY table_line = lv_prog
-          TRANSPORTING NO FIELDS.
-        IF sy-subrc <> 0.
-          APPEND lv_prog TO lt_prog_queue.
-        ENDIF.
-      ENDIF.
-
-    WHEN OTHERS.
-
-      IF lv_main_prog_u IS NOT INITIAL.
-        APPEND lv_main_prog_u TO lt_prog_queue.
-      ELSEIF is_ctx-include IS NOT INITIAL.
-        lv_prog = is_ctx-include.
-        TRANSLATE lv_prog TO UPPER CASE.
-        APPEND lv_prog TO lt_prog_queue.
-      ELSEIF lv_obj_name_u IS NOT INITIAL.
-        APPEND lv_obj_name_u TO lt_prog_queue.
-      ENDIF.
-
-  ENDCASE.
-
-  WHILE lt_prog_queue IS NOT INITIAL.
-    READ TABLE lt_prog_queue INDEX 1 INTO lv_prog.
-    DELETE lt_prog_queue INDEX 1.
-
-    IF lv_prog IS INITIAL.
-      CONTINUE.
-    ENDIF.
-
-    TRANSLATE lv_prog TO UPPER CASE.
-
-    INSERT lv_prog INTO TABLE lt_prog_seen.
-    IF sy-subrc <> 0.
-      CONTINUE.
-    ENDIF.
-
-    CLEAR lt_src_part.
-    READ REPORT lv_prog INTO lt_src_part.
-    IF sy-subrc <> 0 OR lt_src_part IS INITIAL.
-      CONTINUE.
-    ENDIF.
-
-    LOOP AT lt_src_part INTO DATA(lv_part_line).
-      APPEND lv_part_line TO lt_usage_source.
-
-      INSERT VALUE lty_row_map(
-        bundle_row   = lines( lt_usage_source )
-        local_row    = sy-tabix
-        include_name = lv_prog
-      ) INTO TABLE lt_row_map.
-    ENDLOOP.
-
-    lt_src_curr = cc_preprocess_source( lt_src_part ).
-    LOOP AT lt_src_curr INTO ls_src.
-      IF ls_src-upper IS INITIAL
-         OR ls_src-upper NP gc_keyword-include_pat.
-        CONTINUE.
-      ENDIF.
-
-      CLEAR lt_words_inc.
-      SPLIT ls_src-upper AT space INTO TABLE lt_words_inc.
-      DELETE lt_words_inc WHERE table_line IS INITIAL.
-
-      CLEAR lv_inc_prog.
-      READ TABLE lt_words_inc INDEX 2 INTO lv_inc_prog.
-      IF sy-subrc <> 0 OR lv_inc_prog IS INITIAL.
-        CONTINUE.
-      ENDIF.
-
-      REPLACE ALL OCCURRENCES OF gc_keyword-dot   IN lv_inc_prog WITH ''.
-      REPLACE ALL OCCURRENCES OF gc_keyword-quote IN lv_inc_prog WITH ''.
-      CONDENSE lv_inc_prog NO-GAPS.
-      TRANSLATE lv_inc_prog TO UPPER CASE.
-
-      IF lv_inc_prog = gc_keyword-methods
-         OR lv_inc_prog = gc_keyword-type
-         OR lv_inc_prog = gc_keyword-structure.
-        CONTINUE.
-      ENDIF.
-
-      lv_ok_inc = abap_false.
-
-      CASE is_ctx-obj_type.
-        WHEN gc_obj_type-clas.
-          lv_ok_inc = xsdbool(
-            lv_obj_name_u IS NOT INITIAL
-            AND lv_inc_prog CS lv_obj_name_u ).
-
-        WHEN gc_obj_type-fugr.
-          lv_ok_inc = xsdbool(
-            lv_fg_area IS NOT INITIAL
-            AND lv_inc_prog CP |L{ lv_fg_area }*| ).
-
-        WHEN gc_obj_type-func
-          OR gc_obj_type-fm.
-          lv_ok_inc = xsdbool(
-            lv_fg_area IS NOT INITIAL
-            AND ( lv_inc_prog = is_ctx-include
-               OR lv_inc_prog CP |L{ lv_fg_area }TOP| ) ).
-
-        WHEN OTHERS.
-          lv_ok_inc = abap_true.
-
-          IF lv_inc_prog(1) = '<'
-             OR lv_inc_prog(1) = '%'
-             OR lv_inc_prog CP 'DB__*'
-             OR lv_inc_prog CS '='.
-            lv_ok_inc = abap_false.
-          ENDIF.
-      ENDCASE.
-
-      IF lv_ok_inc = abap_false.
-        CONTINUE.
-      ENDIF.
-
-      READ TABLE lt_prog_seen
-        WITH TABLE KEY table_line = lv_inc_prog
-        TRANSPORTING NO FIELDS.
-      IF sy-subrc = 0.
-        CONTINUE.
-      ENDIF.
-
-      READ TABLE lt_prog_queue
-        WITH KEY table_line = lv_inc_prog
-        TRANSPORTING NO FIELDS.
-      IF sy-subrc = 0.
-        CONTINUE.
-      ENDIF.
-
-      APPEND lv_inc_prog TO lt_prog_queue.
-    ENDLOOP.
-  ENDWHILE.
-
-  IF lt_usage_source IS INITIAL.
-    lt_usage_source = it_source.
-    CLEAR lt_row_map.
-
-    LOOP AT it_source INTO DATA(lv_fallback_line).
-      INSERT VALUE lty_row_map(
-        bundle_row   = sy-tabix
-        local_row    = sy-tabix
-        include_name = COND progname(
-                         WHEN is_ctx-include IS NOT INITIAL
-                         THEN is_ctx-include
-                         WHEN lv_main_prog_u IS NOT INITIAL
-                         THEN lv_main_prog_u
-                         ELSE lv_obj_name_u )
-      ) INTO TABLE lt_row_map.
-    ENDLOOP.
-  ENDIF.
+  DATA lt_scope_rule TYPE lty_t_scope_rule.
+  DATA ls_state      TYPE lty_nm_scope_state.
 
   "------------------------------------------------------------
   " SCAN
@@ -3158,72 +2420,170 @@ METHOD analyze_naming.
   CLEAR: lt_tokens,
          lt_stmts.
 
-  SCAN ABAP-SOURCE lt_usage_source
+  SCAN ABAP-SOURCE it_source
     TOKENS     INTO lt_tokens
     STATEMENTS INTO lt_stmts
     WITH ANALYSIS.
 
-  IF sy-subrc <> 0.
-    CASE sy-subrc.
-      WHEN 4.
-        MESSAGE e013(z_gsp04_message) INTO lv_text.
-        IF lv_text IS INITIAL.
-          MESSAGE e009(z_gsp04_message)
-            WITH is_ctx-obj_type is_ctx-obj_name
-            INTO lv_text.
-        ENDIF.
-
-        APPEND VALUE zst_error(
-          rule     = gc_rule_nm-scan_error
-          sev      = gc_severity-error
-          line     = 0
-          msg      = lv_text
-          category = gc_category-naming
-        ) TO rt_errors.
-
-        me->rt_errors = rt_errors.
-        RETURN.
-
-      WHEN 8.
-        MESSAGE e012(z_gsp04_message)
-          WITH sy-subrc is_ctx-obj_type is_ctx-obj_name
-          INTO lv_text.
-
-        APPEND VALUE zst_error(
-          rule     = gc_rule_nm-scan_runtime
-          sev      = gc_severity-error
-          line     = 0
-          msg      = lv_text
-          category = gc_category-naming
-        ) TO rt_errors.
-
-        me->rt_errors = rt_errors.
-        RETURN.
-
-      WHEN OTHERS.
-        MESSAGE e010(z_gsp04_message)
-          WITH sy-subrc is_ctx-obj_type is_ctx-obj_name
-          INTO lv_text.
-
-        APPEND VALUE zst_error(
-          rule     = gc_rule_nm-scan_unknown
-          sev      = gc_severity-error
-          line     = 0
-          msg      = lv_text
-          category = gc_category-naming
-        ) TO rt_errors.
-
-        me->rt_errors = rt_errors.
-        RETURN.
-    ENDCASE.
-  ENDIF.
-
   "------------------------------------------------------------
   " Build statement info
   "------------------------------------------------------------
-  lt_stmt_info = nm_build_stmt(
-                   it_tokens = lt_tokens
-                   it_stmts  = lt_stmts ).
+  CLEAR lt_stmt_info.
+
+  lt_scope_rule = VALUE #(
+    ( keyword = gc_keyword-form               action = lc_action_begin )
+    ( keyword = gc_keyword-method             action = lc_action_begin )
+    ( keyword = gc_keyword-func               action = lc_action_begin )
+    ( keyword = gc_keyword-module             action = lc_action_begin )
+
+    ( keyword = gc_keyword-endform            action = lc_action_end )
+    ( keyword = gc_keyword-endmethod          action = lc_action_end )
+    ( keyword = gc_keyword-endfunc            action = lc_action_end )
+    ( keyword = gc_keyword-endmodule          action = lc_action_end )
+
+    ( keyword = gc_keyword-initialization     action = lc_action_global_event )
+    ( keyword = gc_keyword-start_of_selection action = lc_action_global_event )
+    ( keyword = gc_keyword-end_of_selection   action = lc_action_global_event )
+    ( keyword = gc_keyword-top_of_page        action = lc_action_global_event )
+    ( keyword = gc_keyword-end_of_page        action = lc_action_global_event ) ).
+
+  ls_state = VALUE #(
+    depth           = 0
+    in_event_local  = abap_false
+    current_routine = gc_scope-global ).
+
+  LOOP AT lt_stmts ASSIGNING FIELD-SYMBOL(<ls_stmt>).
+
+    IF <ls_stmt>-from > <ls_stmt>-to.
+      CONTINUE.
+    ENDIF.
+
+    READ TABLE lt_tokens
+      REFERENCE INTO DATA(lr_first)
+      INDEX <ls_stmt>-from.
+
+    IF sy-subrc <> 0 OR lr_first IS NOT BOUND.
+      CONTINUE.
+    ENDIF.
+
+    DATA(lv_first_u) = to_upper( lr_first->str ).
+
+    READ TABLE lt_scope_rule
+      WITH TABLE KEY keyword = lv_first_u
+      INTO DATA(ls_scope_rule).
+
+    IF sy-subrc = 0.
+
+      CASE ls_scope_rule-action.
+
+        WHEN lc_action_begin.
+
+          ls_state-depth += 1.
+          ls_state-in_event_local = abap_false.
+
+          READ TABLE lt_tokens
+            REFERENCE INTO DATA(lr_routine_name)
+            INDEX ( <ls_stmt>-from + 1 ).
+
+          IF sy-subrc = 0 AND lr_routine_name IS BOUND.
+            ls_state-current_routine = to_upper( lr_routine_name->str ).
+          ELSE.
+            ls_state-current_routine = gc_scope-block.
+          ENDIF.
+
+        WHEN lc_action_end.
+
+          IF ls_state-depth > 0.
+            ls_state-depth -= 1.
+          ENDIF.
+
+          ls_state-in_event_local = abap_false.
+
+          IF ls_state-depth = 0.
+            ls_state-current_routine = gc_scope-global.
+          ENDIF.
+
+        WHEN lc_action_global_event.
+
+          ls_state-in_event_local  = abap_false.
+          ls_state-current_routine = lv_first_u.
+
+      ENDCASE.
+
+    ELSEIF lv_first_u = gc_keyword-at.
+
+      DATA(lv_at_next_u)  = ``.
+      DATA(lv_at_third_u) = ``.
+
+      READ TABLE lt_tokens
+        REFERENCE INTO DATA(lr_at_next)
+        INDEX ( <ls_stmt>-from + 1 ).
+
+      IF sy-subrc = 0 AND lr_at_next IS BOUND.
+        lv_at_next_u = to_upper( lr_at_next->str ).
+      ENDIF.
+
+      READ TABLE lt_tokens
+        REFERENCE INTO DATA(lr_at_third)
+        INDEX ( <ls_stmt>-from + 2 ).
+
+      IF sy-subrc = 0 AND lr_at_third IS BOUND.
+        lv_at_third_u = to_upper( lr_at_third->str ).
+      ENDIF.
+
+      CASE lv_at_next_u.
+
+        WHEN gc_keyword-selection_screen.
+
+          ls_state-in_event_local = abap_true.
+
+          ls_state-current_routine = COND string(
+            WHEN lv_at_third_u = gc_keyword-output
+            THEN gc_keyword-at_sel_screen_out
+            WHEN lv_at_third_u = gc_keyword-on
+            THEN gc_keyword-at_sel_screen_on
+            ELSE gc_keyword-at_selection_screen ).
+
+        WHEN gc_keyword-line_selection.
+
+          ls_state-in_event_local  = abap_false.
+          ls_state-current_routine = gc_keyword-at_line_selection.
+
+        WHEN gc_keyword-user_command.
+
+          ls_state-in_event_local  = abap_false.
+          ls_state-current_routine = gc_keyword-at_user_command.
+
+        WHEN OTHERS.
+
+          ls_state-in_event_local = abap_false.
+
+          IF lv_at_next_u IS INITIAL.
+            ls_state-current_routine = gc_keyword-at.
+          ELSE.
+            ls_state-current_routine = |AT { lv_at_next_u }|.
+          ENDIF.
+
+      ENDCASE.
+
+    ENDIF.
+
+    APPEND VALUE gty_stmt_info(
+      from            = <ls_stmt>-from
+      to              = <ls_stmt>-to
+      first_u         = lv_first_u
+      is_local_scope  = xsdbool(
+                          ls_state-depth > 0
+                          OR ls_state-in_event_local = abap_true )
+      is_data_stmt    = xsdbool(
+                          lv_first_u = gc_keyword-data
+                          OR lv_first_u = gc_keyword-data_col
+                          OR lv_first_u = gc_keyword-class_data
+                          OR lv_first_u = gc_keyword-class_data_col )
+      current_routine = ls_state-current_routine
+    ) TO lt_stmt_info.
+
+  ENDLOOP.
 
   "------------------------------------------------------------
   " DATA checks + usage collection
@@ -3256,31 +2616,20 @@ METHOD analyze_naming.
       ct_errors = rt_errors ).
 
   "------------------------------------------------------------
-  " Remap line + deduplicate errors
+  " Deduplicate errors
   "------------------------------------------------------------
   CLEAR: lt_errors_final,
          lt_err_seen.
 
-  LOOP AT rt_errors ASSIGNING <lfs_err>.
-
-    CLEAR lv_err_include.
-
-    IF <lfs_err>-line > 0.
-      READ TABLE lt_row_map
-        ASSIGNING <lfs_row_map>
-        WITH TABLE KEY bundle_row = <lfs_err>-line.
-      IF sy-subrc = 0.
-        <lfs_err>-line = <lfs_row_map>-local_row.
-        lv_err_include = <lfs_row_map>-include_name.
-      ENDIF.
-    ENDIF.
+  LOOP AT rt_errors ASSIGNING FIELD-SYMBOL(<lfs_err>).
 
     INSERT VALUE lty_err_seen(
       rule         = <lfs_err>-rule
       sev          = <lfs_err>-sev
       category     = <lfs_err>-category
-      include_name = lv_err_include
+      include_name = <lfs_err>-include
       line         = <lfs_err>-line
+      msg          = <lfs_err>-msg
     ) INTO TABLE lt_err_seen.
 
     IF sy-subrc = 0.
@@ -3297,172 +2646,241 @@ ENDMETHOD.
 METHOD analyze_obsolete.
 
   CLEAR rt_errors.
-  CLEAR me->rt_errors.
 
   DATA: lt_tokens     TYPE gty_t_tok_tab,
         lt_statements TYPE gty_t_stmt_tab,
         ls_token      TYPE stokex,
-        ls_stmt       TYPE sstmnt,
-        ls_error      TYPE zst_error.
+        ls_stmt       TYPE sstmnt.
 
-  DATA: lv_line         TYPE string,
-        lv_line_uc      TYPE string,
-        lv_code_only    TYPE string,
-        lv_msg          TYPE string,
-        lv_rule         TYPE string,
+  DATA: lv_msg          TYPE string,
         lv_stmt_text    TYPE string,
         lv_stmt_text_uc TYPE string,
         lv_stmt_line    TYPE string,
         lv_stmt_row     TYPE i,
         lv_stmt_trow    TYPE i,
         lv_idx          TYPE i,
-        lv_quote_pos    TYPE i.
+        lv_quote_pos    TYPE i,
+        lv_next_idx     TYPE i,
+        lv_first_tok    TYPE string,
+        lv_second_tok   TYPE string.
 
-  DATA: lt_single_keywords TYPE gty_t_single_keywords.
+  DATA: lv_rx_old_relop      TYPE string,
+        lv_rx_occurs         TYPE string,
+        lv_rx_move           TYPE string,
+        lv_rx_ranges         TYPE string,
+        lv_rx_compute        TYPE string,
+        lv_rx_extract        TYPE string,
+        lv_rx_field_groups   TYPE string,
+        lv_rx_leave_plain    TYPE string,
+        lv_rx_add            TYPE string,
+        lv_rx_subtract       TYPE string,
+        lv_rx_multiply       TYPE string,
+        lv_rx_divide         TYPE string,
+        lv_rx_local          TYPE string,
+        lv_rx_supply         TYPE string,
+        lv_rx_call_method    TYPE string,
+        lv_rx_fs_no_type     TYPE string,
+        lv_rx_describe_table TYPE string,
+        lv_phrase_type       TYPE string,
+        lv_phrase_like       TYPE string,
+        lv_phrase_structure  TYPE string.
 
-  FIELD-SYMBOLS: <lv_src> TYPE string.
+  FIELD-SYMBOLS: <lfs_src>   TYPE string,
+                 <lfs_error> TYPE zst_error.
 
-  lt_single_keywords = VALUE #(
-    ( gc_kw_obsolete-move_kw )
-    ( gc_kw_obsolete-occurs_kw )
-    ( gc_kw_obsolete-ranges_kw )
-    ( gc_kw_obsolete-compute_kw )
-    ( gc_kw_obsolete-extract_kw )
-    ( gc_kw_obsolete-field_groups_kw )
-    ( gc_kw_obsolete-refresh_kw )
-    ( gc_kw_obsolete-add_kw )
-    ( gc_kw_obsolete-subtract_kw )
-    ( gc_kw_obsolete-multiply_kw )
-    ( gc_kw_obsolete-divide_kw )
-    ( gc_kw_obsolete-local_kw )
-    ( gc_kw_obsolete-supply_kw )
-  ).
+  DEFINE add_obsolete_error.
+    APPEND INITIAL LINE TO rt_errors ASSIGNING <lfs_error>.
+    <lfs_error>-line     = &1.
+    <lfs_error>-sev      = gc_severity-error.
+    <lfs_error>-msg      = &2.
+    <lfs_error>-rule     = &3.
+    <lfs_error>-category = gc_category-obsolete.
+  END-OF-DEFINITION.
 
+  "============================================================
+  " Scan source once
+  "============================================================
   SCAN ABAP-SOURCE it_source
        TOKENS     INTO lt_tokens
        STATEMENTS INTO lt_statements
        WITH ANALYSIS.
 
-  DEFINE add_obsolete_error.
-    CLEAR ls_error.
-    ls_error-line     = &1.
-    ls_error-sev      = gc_severity-error.
-    ls_error-msg      = &2.
-    ls_error-rule     = &3.
-    ls_error-category = gc_category-obsolete.
-    APPEND ls_error TO me->rt_errors.
-  END-OF-DEFINITION.
+  "============================================================
+  " Build dynamic regex once before checking statements
+  "============================================================
+
+  " Old relational operators: ><, =<, =>
+  lv_rx_old_relop =
+    |{ gc_rx_obsolete-left_boundary }| &&
+    |({ gc_old_relop-not_equal_1 }{ gc_rx_obsolete-alt }| &&
+    |{ gc_old_relop-less_equal }{ gc_rx_obsolete-alt }| &&
+    |{ gc_old_relop-greater_eq })| &&
+    |{ gc_rx_obsolete-right_boundary }|.
+
+  " OCCURS can appear inside DATA statements, so do not force
+  " it to be the first token. Also avoid matching component names
+  " like GC_XXX-OCCURS.
+  lv_rx_occurs =
+  gc_rx_obsolete-occurs_left_boundary &&
+  gc_kw_obsolete-occurs_kw &&
+  gc_rx_obsolete-right_boundary.
+
+  " Statement-start obsolete keywords
+  lv_rx_move =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-move_kw }| &&
+    |({ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-alt }| &&
+    |{ gc_rx_obsolete-ws0 }:{ gc_rx_obsolete-ws0 })|.
+
+  lv_rx_ranges =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-ranges_kw }| &&
+    |({ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-alt }| &&
+    |{ gc_rx_obsolete-ws0 }:{ gc_rx_obsolete-ws0 })|.
+
+  lv_rx_compute =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-compute_kw }| &&
+    |({ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-alt }| &&
+    |{ gc_rx_obsolete-ws0 }:{ gc_rx_obsolete-ws0 })|.
+
+  lv_rx_extract =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-extract_kw }| &&
+    |({ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-alt }| &&
+    |{ gc_rx_obsolete-ws0 }:{ gc_rx_obsolete-ws0 })|.
+
+  lv_rx_field_groups =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-field_groups_kw }| &&
+    |({ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-alt }| &&
+    |{ gc_rx_obsolete-ws0 }:{ gc_rx_obsolete-ws0 })|.
+
+  lv_rx_leave_plain =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-leave_kw }| &&
+    |{ gc_rx_obsolete-ws0 }| &&
+    |{ gc_rx_obsolete-dot_esc }| &&
+    |{ gc_rx_obsolete-ws0 }| &&
+    |{ gc_rx_obsolete-stmt_end }|.
+
+  lv_rx_add =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-add_kw }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_keyword-to }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }|.
+
+  lv_rx_subtract =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-subtract_kw }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_kw_obsolete-from_kw }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }|.
+
+  lv_rx_multiply =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-multiply_kw }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_kw_obsolete-by_kw }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }|.
+
+  lv_rx_divide =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-divide_kw }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_kw_obsolete-by_kw }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }|.
+
+  lv_rx_local =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-local_kw }| &&
+    |({ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-alt }| &&
+    |{ gc_rx_obsolete-ws0 }:{ gc_rx_obsolete-ws0 })|.
+
+  lv_rx_supply =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-supply_kw }| &&
+    |({ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-alt }| &&
+    |{ gc_rx_obsolete-ws0 }:{ gc_rx_obsolete-ws0 })|.
+
+  lv_rx_call_method =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_keyword-call }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_keyword-method }| &&
+    |{ gc_rx_obsolete-ws1 }|.
+
+  lv_rx_fs_no_type =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_keyword-field_symbols }| &&
+    |{ gc_rx_obsolete-opt_colon }| &&
+    |{ gc_rx_obsolete-ws0 }| &&
+    |{ gc_rx_obsolete-fs_name }| &&
+    |{ gc_rx_obsolete-fs_more_names }| &&
+    |{ gc_rx_obsolete-ws0 }| &&
+    |{ gc_rx_obsolete-dot_esc }| &&
+    |{ gc_rx_obsolete-ws0 }| &&
+    |{ gc_rx_obsolete-stmt_end }|.
+
+  lv_rx_describe_table =
+    |{ gc_rx_obsolete-stmt_begin }| &&
+    |{ gc_kw_obsolete-describe_kw }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_keyword-table }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_kw_obsolete-lines_kw }| &&
+    |{ gc_rx_obsolete-ws1 }| &&
+    |{ gc_rx_obsolete-anything }|.
+
+  lv_phrase_type      = | { gc_keyword-type } |.
+  lv_phrase_like      = | { gc_keyword-like } |.
+  lv_phrase_structure = | { gc_keyword-structure } |.
 
   "============================================================
-  " Part A - Single-token obsolete syntax
-  "============================================================
-  LOOP AT lt_tokens INTO ls_token.
-
-    DATA(lv_tok) = ls_token-str.
-    IF lv_tok IS INITIAL.
-      CONTINUE.
-    ENDIF.
-
-    DATA(lv_tok_uc) = lv_tok.
-    TRANSLATE lv_tok_uc TO UPPER CASE.
-
-    READ TABLE lt_single_keywords
-      WITH TABLE KEY table_line = lv_tok_uc
-      TRANSPORTING NO FIELDS.
-    IF sy-subrc <> 0.
-      CONTINUE.
-    ENDIF.
-
-    READ TABLE it_source INDEX ls_token-row INTO lv_line.
-    IF sy-subrc <> 0 OR lv_line IS INITIAL.
-      CONTINUE.
-    ENDIF.
-
-    lv_line_uc = lv_line.
-    TRANSLATE lv_line_uc TO UPPER CASE.
-    lv_code_only = lv_line_uc.
-
-    SHIFT lv_code_only LEFT DELETING LEADING space.
-    IF lv_code_only IS INITIAL.
-      CONTINUE.
-    ENDIF.
-
-    " full-line comment
-    IF lv_code_only+0(1) = gc_keyword-star.
-      CONTINUE.
-    ENDIF.
-
-    " bỏ inline comment
-    FIND FIRST OCCURRENCE OF gc_keyword-quote IN lv_code_only MATCH OFFSET lv_quote_pos.
-    IF sy-subrc = 0.
-      lv_code_only = lv_code_only(lv_quote_pos).
-    ENDIF.
-
-    " bỏ literal text / string template
-    REPLACE ALL OCCURRENCES OF PCRE `'(?:''|[^'])*'`
-      IN lv_code_only WITH space.
-    REPLACE ALL OCCURRENCES OF PCRE '`(?:``|[^`])*`'
-      IN lv_code_only WITH space.
-
-    CONDENSE lv_code_only.
-    IF lv_code_only IS INITIAL.
-      CONTINUE.
-    ENDIF.
-
-    CLEAR lv_rule.
-    CASE lv_tok_uc.
-      WHEN gc_kw_obsolete-move_kw.
-        lv_rule = gc_rule_obsolete-move_rule.
-      WHEN gc_kw_obsolete-occurs_kw.
-        lv_rule = gc_rule_obsolete-occurs_rule.
-      WHEN gc_kw_obsolete-ranges_kw.
-        lv_rule = gc_rule_obsolete-ranges_rule.
-      WHEN gc_kw_obsolete-compute_kw.
-        lv_rule = gc_rule_obsolete-compute_rule.
-      WHEN gc_kw_obsolete-extract_kw.
-        lv_rule = gc_rule_obsolete-extract_rule.
-      WHEN gc_kw_obsolete-field_groups_kw.
-        lv_rule = gc_rule_obsolete-field_groups_rule.
-      WHEN gc_kw_obsolete-refresh_kw.
-        lv_rule = gc_rule_obsolete-refresh_rule.
-      WHEN gc_kw_obsolete-add_kw.
-        lv_rule = gc_rule_obsolete-add_rule.
-      WHEN gc_kw_obsolete-subtract_kw.
-        lv_rule = gc_rule_obsolete-subtract_rule.
-      WHEN gc_kw_obsolete-multiply_kw.
-        lv_rule = gc_rule_obsolete-multiply_rule.
-      WHEN gc_kw_obsolete-divide_kw.
-        lv_rule = gc_rule_obsolete-divide_rule.
-      WHEN gc_kw_obsolete-local_kw.
-        lv_rule = gc_rule_obsolete-local_rule.
-      WHEN gc_kw_obsolete-supply_kw.
-        lv_rule = gc_rule_obsolete-supply_rule.
-      WHEN OTHERS.
-        lv_rule = gc_rule_obsolete-obsolete_syntax.
-    ENDCASE.
-
-    MESSAGE e040(z_gsp04_message) WITH lv_tok_uc INTO lv_msg.
-    add_obsolete_error ls_token-row lv_msg lv_rule.
-
-  ENDLOOP.
-
-  "============================================================
-  " Part B - Statement / phrase / context checks
+  " Statement / phrase / context checks
   "============================================================
   LOOP AT lt_statements INTO ls_stmt.
 
     CLEAR: lv_stmt_text,
            lv_stmt_text_uc,
            lv_msg,
-           lv_rule,
            lv_stmt_row,
-           lv_stmt_trow.
+           lv_stmt_trow,
+           lv_first_tok,
+           lv_second_tok.
 
-    " start line = row của token đầu statement
+    "----------------------------------------------------------
+    " Get first token and start/end row of statement
+    "----------------------------------------------------------
     READ TABLE lt_tokens INDEX ls_stmt-from INTO ls_token.
     IF sy-subrc <> 0.
       CONTINUE.
     ENDIF.
+
+    lv_first_tok = ls_token-str.
+    TRANSLATE lv_first_tok TO UPPER CASE.
 
     lv_stmt_row  = ls_token-row.
     lv_stmt_trow = ls_stmt-trow.
@@ -3475,16 +2893,30 @@ METHOD analyze_obsolete.
       CONTINUE.
     ENDIF.
 
-    " ghép source của cả statement theo line
+    "----------------------------------------------------------
+    " Get second token for CALL METHOD / REFRESH CONTROL checks
+    "----------------------------------------------------------
+    lv_next_idx = ls_stmt-from + 1.
+
+    READ TABLE lt_tokens INDEX lv_next_idx INTO ls_token.
+    IF sy-subrc = 0.
+      lv_second_tok = ls_token-str.
+      TRANSLATE lv_second_tok TO UPPER CASE.
+    ENDIF.
+
+    "----------------------------------------------------------
+    " Join all source lines of current statement
+    "----------------------------------------------------------
     DO lv_stmt_trow - lv_stmt_row + 1 TIMES.
+
       lv_idx = lv_stmt_row + sy-index - 1.
 
-      READ TABLE it_source INDEX lv_idx ASSIGNING <lv_src>.
+      READ TABLE it_source INDEX lv_idx ASSIGNING <lfs_src>.
       IF sy-subrc <> 0.
         CONTINUE.
       ENDIF.
 
-      lv_stmt_line = <lv_src>.
+      lv_stmt_line = <lfs_src>.
       TRANSLATE lv_stmt_line TO UPPER CASE.
       SHIFT lv_stmt_line LEFT DELETING LEADING space.
 
@@ -3492,18 +2924,22 @@ METHOD analyze_obsolete.
         CONTINUE.
       ENDIF.
 
-      " full-line comment
+      " Full-line comment
       IF lv_stmt_line+0(1) = gc_keyword-star.
         CONTINUE.
       ENDIF.
 
-      " inline comment
-      FIND FIRST OCCURRENCE OF gc_keyword-quote IN lv_stmt_line MATCH OFFSET lv_quote_pos.
+      " Inline comment
+      FIND FIRST OCCURRENCE OF gc_keyword-quote
+        IN lv_stmt_line
+        MATCH OFFSET lv_quote_pos.
+
       IF sy-subrc = 0.
         lv_stmt_line = lv_stmt_line(lv_quote_pos).
       ENDIF.
 
       CONDENSE lv_stmt_line.
+
       IF lv_stmt_line IS INITIAL.
         CONTINUE.
       ENDIF.
@@ -3513,6 +2949,7 @@ METHOD analyze_obsolete.
       ELSE.
         lv_stmt_text = |{ lv_stmt_text } { lv_stmt_line }|.
       ENDIF.
+
     ENDDO.
 
     IF lv_stmt_text IS INITIAL.
@@ -3521,22 +2958,115 @@ METHOD analyze_obsolete.
 
     lv_stmt_text_uc = lv_stmt_text.
 
-    " bỏ literal text / string template
-    REPLACE ALL OCCURRENCES OF PCRE `'(?:''|[^'])*'`
+    "----------------------------------------------------------
+    " Remove literals before checking rules
+    "----------------------------------------------------------
+    REPLACE ALL OCCURRENCES OF PCRE gc_rx_obsolete-sq_literal
       IN lv_stmt_text_uc WITH space.
-    REPLACE ALL OCCURRENCES OF PCRE '`(?:``|[^`])*`'
+
+    REPLACE ALL OCCURRENCES OF PCRE gc_rx_obsolete-bt_literal
       IN lv_stmt_text_uc WITH space.
 
     CONDENSE lv_stmt_text_uc.
+
     IF lv_stmt_text_uc IS INITIAL.
       CONTINUE.
+    ENDIF.
+
+    "----------------------------------------------------------
+    " MOVE
+    " Only if MOVE is the first token.
+    " Avoid false positive: gc_msg_nm-move
+    "----------------------------------------------------------
+    IF lv_first_tok = gc_kw_obsolete-move_kw.
+      FIND PCRE lv_rx_move IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-move_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-move_rule.
+      ENDIF.
+    ENDIF.
+
+    "----------------------------------------------------------
+    " RANGES
+    "----------------------------------------------------------
+    IF lv_first_tok = gc_kw_obsolete-ranges_kw.
+      FIND PCRE lv_rx_ranges IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-ranges_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-ranges_rule.
+      ENDIF.
+    ENDIF.
+
+    "----------------------------------------------------------
+    " COMPUTE
+    "----------------------------------------------------------
+    IF lv_first_tok = gc_kw_obsolete-compute_kw.
+      FIND PCRE lv_rx_compute IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-compute_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-compute_rule.
+      ENDIF.
+    ENDIF.
+
+    "----------------------------------------------------------
+    " EXTRACT
+    "----------------------------------------------------------
+    IF lv_first_tok = gc_kw_obsolete-extract_kw.
+      FIND PCRE lv_rx_extract IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-extract_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-extract_rule.
+      ENDIF.
+    ENDIF.
+
+    "----------------------------------------------------------
+    " FIELD-GROUPS
+    "----------------------------------------------------------
+    IF lv_first_tok = gc_kw_obsolete-field_groups_kw.
+      FIND PCRE lv_rx_field_groups IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-field_groups_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-field_groups_rule.
+      ENDIF.
+    ENDIF.
+
+    "----------------------------------------------------------
+    " OCCURS
+    " Can appear inside declaration statements.
+    " Avoid false positive after dash, e.g. gc_xxx-occurs.
+    "----------------------------------------------------------
+    FIND PCRE lv_rx_occurs IN lv_stmt_text_uc.
+    IF sy-subrc = 0.
+      MESSAGE e040(z_gsp04_message)
+        WITH gc_kw_obsolete-occurs_kw
+        INTO lv_msg.
+
+      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-occurs_rule.
     ENDIF.
 
     "----------------------------------------------------------
     " WITH HEADER LINE
     "----------------------------------------------------------
     IF lv_stmt_text_uc CS gc_phrase_obsolete-with_header_line.
-      MESSAGE e040(z_gsp04_message) WITH gc_phrase_obsolete-with_header_line INTO lv_msg.
+      MESSAGE e040(z_gsp04_message)
+        WITH gc_phrase_obsolete-with_header_line
+        INTO lv_msg.
+
       add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-header_line_rule.
     ENDIF.
 
@@ -3544,7 +3074,10 @@ METHOD analyze_obsolete.
     " LIKE LINE OF
     "----------------------------------------------------------
     IF lv_stmt_text_uc CS gc_phrase_obsolete-like_line_of.
-      MESSAGE e040(z_gsp04_message) WITH gc_phrase_obsolete-like_line_of INTO lv_msg.
+      MESSAGE e040(z_gsp04_message)
+        WITH gc_phrase_obsolete-like_line_of
+        INTO lv_msg.
+
       add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-like_line_rule.
     ENDIF.
 
@@ -3552,158 +3085,267 @@ METHOD analyze_obsolete.
     " ON CHANGE OF
     "----------------------------------------------------------
     IF lv_stmt_text_uc CS gc_phrase_obsolete-on_change_of.
-      MESSAGE e040(z_gsp04_message) WITH gc_phrase_obsolete-on_change_of INTO lv_msg.
+      MESSAGE e040(z_gsp04_message)
+        WITH gc_phrase_obsolete-on_change_of
+        INTO lv_msg.
+
       add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-on_change_rule.
     ENDIF.
 
     "----------------------------------------------------------
     " Old relational operators: ><, =<, =>
     "----------------------------------------------------------
-    FIND PCRE `(^|[^A-Z0-9_])(><|=<|=>)([^A-Z0-9_]|$)` IN lv_stmt_text_uc.
+    FIND PCRE lv_rx_old_relop IN lv_stmt_text_uc.
     IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH 'OLD RELATIONAL OPERATOR' INTO lv_msg.
+      MESSAGE e040(z_gsp04_message)
+        WITH gc_msg_obsolete-old_relop
+        INTO lv_msg.
+
       add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-relop_rule.
     ENDIF.
 
     "----------------------------------------------------------
     " REFRESH itab
-    " ignore REFRESH CONTROL ...
+    " Ignore REFRESH CONTROL ...
     "----------------------------------------------------------
-    FIND PCRE `(^|[^A-Z0-9_])REFRESH\s+(?!CONTROL\b).+` IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH gc_kw_obsolete-refresh_kw INTO lv_msg.
+    IF lv_first_tok = gc_kw_obsolete-refresh_kw
+       AND lv_second_tok <> gc_kw_obsolete-control_kw.
+
+      MESSAGE e040(z_gsp04_message)
+        WITH gc_kw_obsolete-refresh_kw
+        INTO lv_msg.
+
       add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-refresh_rule.
+
     ENDIF.
 
     "----------------------------------------------------------
-    " LEAVE.
-    " chỉ bắt plain LEAVE.
+    " Plain LEAVE.
+    " Only catch: LEAVE.
     "----------------------------------------------------------
-    FIND PCRE `^\s*LEAVE\s*\.\s*$` IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH gc_kw_obsolete-leave_kw INTO lv_msg.
-      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-leave_rule.
+    IF lv_first_tok = gc_kw_obsolete-leave_kw.
+      FIND PCRE lv_rx_leave_plain IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-leave_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-leave_rule.
+      ENDIF.
     ENDIF.
 
     "----------------------------------------------------------
-    " Old calculation statements
+    " ADD ... TO ...
     "----------------------------------------------------------
-    FIND PCRE `(^|[^A-Z0-9_])ADD\s+.+\s+TO\s+.+` IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH gc_kw_obsolete-add_kw INTO lv_msg.
-      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-add_rule.
+    IF lv_first_tok = gc_kw_obsolete-add_kw.
+      FIND PCRE lv_rx_add IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-add_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-add_rule.
+      ENDIF.
     ENDIF.
 
-    FIND PCRE `(^|[^A-Z0-9_])SUBTRACT\s+.+\s+FROM\s+.+` IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH gc_kw_obsolete-subtract_kw INTO lv_msg.
-      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-subtract_rule.
+    "----------------------------------------------------------
+    " SUBTRACT ... FROM ...
+    "----------------------------------------------------------
+    IF lv_first_tok = gc_kw_obsolete-subtract_kw.
+      FIND PCRE lv_rx_subtract IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-subtract_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-subtract_rule.
+      ENDIF.
     ENDIF.
 
-    FIND PCRE `(^|[^A-Z0-9_])MULTIPLY\s+.+\s+BY\s+.+` IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH gc_kw_obsolete-multiply_kw INTO lv_msg.
-      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-multiply_rule.
+    "----------------------------------------------------------
+    " MULTIPLY ... BY ...
+    "----------------------------------------------------------
+    IF lv_first_tok = gc_kw_obsolete-multiply_kw.
+      FIND PCRE lv_rx_multiply IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-multiply_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-multiply_rule.
+      ENDIF.
     ENDIF.
 
-    FIND PCRE `(^|[^A-Z0-9_])DIVIDE\s+.+\s+BY\s+.+` IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH gc_kw_obsolete-divide_kw INTO lv_msg.
-      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-divide_rule.
+    "----------------------------------------------------------
+    " DIVIDE ... BY ...
+    "----------------------------------------------------------
+    IF lv_first_tok = gc_kw_obsolete-divide_kw.
+      FIND PCRE lv_rx_divide IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-divide_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-divide_rule.
+      ENDIF.
     ENDIF.
 
     "----------------------------------------------------------
     " LOCAL
+    " Only if LOCAL is statement-start keyword.
+    " Avoid false positive: gc_msg_nm-local / lc_prefix-local_value
     "----------------------------------------------------------
-    FIND PCRE `(^|[^A-Z0-9_])LOCAL\s+` IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH gc_kw_obsolete-local_kw INTO lv_msg.
-      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-local_rule.
+    IF lv_first_tok = gc_kw_obsolete-local_kw.
+      FIND PCRE lv_rx_local IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-local_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-local_rule.
+      ENDIF.
     ENDIF.
 
     "----------------------------------------------------------
     " SUPPLY
     "----------------------------------------------------------
-    FIND PCRE `(^|[^A-Z0-9_])SUPPLY\s+` IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH gc_kw_obsolete-supply_kw INTO lv_msg.
-      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-supply_rule.
+    IF lv_first_tok = gc_kw_obsolete-supply_kw.
+      FIND PCRE lv_rx_supply IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_kw_obsolete-supply_kw
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-supply_rule.
+      ENDIF.
     ENDIF.
 
     "----------------------------------------------------------
     " CALL TRANSACTION
-    " Rule hiện tại: chỉ bắt khi thiếu cả WITH và WITHOUT AUTHORITY-CHECK
+    " Catch only when both WITH AUTHORITY-CHECK and
+    " WITHOUT AUTHORITY-CHECK are missing.
     "----------------------------------------------------------
-    IF lv_stmt_text_uc CS gc_phrase_obsolete-call_transaction.
+    IF lv_first_tok = gc_keyword-call
+       AND lv_stmt_text_uc CS gc_phrase_obsolete-call_transaction.
+
       IF     lv_stmt_text_uc NS gc_phrase_obsolete-with_authority_check
          AND lv_stmt_text_uc NS gc_phrase_obsolete-without_auth_check.
-        MESSAGE e040(z_gsp04_message) WITH gc_phrase_obsolete-call_transaction INTO lv_msg.
+
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_phrase_obsolete-call_transaction
+          INTO lv_msg.
+
         add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-auth_check_rule.
+
       ENDIF.
     ENDIF.
 
     "----------------------------------------------------------
     " CALL DIALOG
     "----------------------------------------------------------
-    IF lv_stmt_text_uc CS gc_phrase_obsolete-call_dialog.
-      MESSAGE e040(z_gsp04_message) WITH gc_phrase_obsolete-call_dialog INTO lv_msg.
+    IF lv_first_tok = gc_keyword-call
+       AND lv_stmt_text_uc CS gc_phrase_obsolete-call_dialog.
+
+      MESSAGE e040(z_gsp04_message)
+        WITH gc_phrase_obsolete-call_dialog
+        INTO lv_msg.
+
       add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-call_dialog_rule.
+
     ENDIF.
 
     "----------------------------------------------------------
     " CATCH SYSTEM-EXCEPTIONS
     "----------------------------------------------------------
-    IF lv_stmt_text_uc CS gc_phrase_obsolete-catch_system_exc.
-      MESSAGE e040(z_gsp04_message) WITH gc_phrase_obsolete-catch_system_exc INTO lv_msg.
+    IF lv_first_tok = gc_kw_obsolete-catch_kw
+       AND lv_stmt_text_uc CS gc_phrase_obsolete-catch_system_exc.
+
+      MESSAGE e040(z_gsp04_message)
+        WITH gc_phrase_obsolete-catch_system_exc
+        INTO lv_msg.
+
       add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-catch_system_exc_rule.
+
     ENDIF.
 
     "----------------------------------------------------------
     " CALL METHOD old form
     "----------------------------------------------------------
-    FIND PCRE `(^|[^A-Z0-9_])CALL\s+METHOD\s+` IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH gc_phrase_obsolete-call_method INTO lv_msg.
-      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-call_method_rule.
+    IF lv_first_tok = gc_keyword-call
+       AND lv_second_tok = gc_keyword-method.
+
+      FIND PCRE lv_rx_call_method IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_phrase_obsolete-call_method
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-call_method_rule.
+      ENDIF.
+
     ENDIF.
 
     "----------------------------------------------------------
     " FIELD-SYMBOLS obsolete typing
+    " Catch:
+    "   FIELD-SYMBOLS <fs>.
+    "   FIELD-SYMBOLS: <fs1>, <fs2>.
+    "
+    " Ignore:
+    "   FIELD-SYMBOLS <fs> TYPE ...
+    "   FIELD-SYMBOLS <fs> LIKE ...
+    "   FIELD-SYMBOLS <fs> STRUCTURE ...
     "----------------------------------------------------------
-    IF lv_stmt_text_uc CP 'FIELD-SYMBOLS*'.
-      IF lv_stmt_text_uc NS ' TYPE '
-         AND lv_stmt_text_uc NS ' LIKE '
-         AND lv_stmt_text_uc NS ' STRUCTURE '.
-        FIND PCRE `^\s*FIELD-SYMBOLS\s*:?\s*<[^>]+>(\s*,\s*<[^>]+>)*\s*\.\s*$`
-          IN lv_stmt_text_uc.
+    IF lv_first_tok = gc_keyword-field_symbols
+       OR lv_first_tok = gc_keyword-field_symbols_col
+       OR lv_stmt_text_uc CP gc_pat_obsolete-field_symbols_any.
+
+      IF lv_stmt_text_uc NS lv_phrase_type
+         AND lv_stmt_text_uc NS lv_phrase_like
+         AND lv_stmt_text_uc NS lv_phrase_structure.
+
+        FIND PCRE lv_rx_fs_no_type IN lv_stmt_text_uc.
         IF sy-subrc = 0.
-          MESSAGE e040(z_gsp04_message) WITH 'FIELD-SYMBOLS obsolete typing' INTO lv_msg.
+          MESSAGE e040(z_gsp04_message)
+            WITH gc_msg_obsolete-field_symbols_typing
+            INTO lv_msg.
+
           add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-field_symbol_type_rule.
         ENDIF.
+
       ENDIF.
     ENDIF.
 
     "----------------------------------------------------------
     " DESCRIBE TABLE ... LINES ...
     "----------------------------------------------------------
-    FIND PCRE `(^|[^A-Z0-9_])DESCRIBE\s+TABLE\s+.+\s+LINES\s+.+`
-      IN lv_stmt_text_uc.
-    IF sy-subrc = 0.
-      MESSAGE e040(z_gsp04_message) WITH 'DESCRIBE TABLE ... LINES' INTO lv_msg.
-      add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-describe_table_rule.
+    IF lv_first_tok = gc_kw_obsolete-describe_kw
+       AND lv_second_tok = gc_keyword-table.
+
+      FIND PCRE lv_rx_describe_table IN lv_stmt_text_uc.
+      IF sy-subrc = 0.
+        MESSAGE e040(z_gsp04_message)
+          WITH gc_msg_obsolete-describe_table_lines
+          INTO lv_msg.
+
+        add_obsolete_error lv_stmt_row lv_msg gc_rule_obsolete-describe_table_rule.
+      ENDIF.
+
     ENDIF.
 
   ENDLOOP.
 
-  SORT me->rt_errors BY line rule msg.
-  DELETE ADJACENT DUPLICATES FROM me->rt_errors COMPARING line rule msg.
-
-  rt_errors = me->rt_errors.
+  "============================================================
+  " Final cleanup
+  "============================================================
+  SORT rt_errors BY line rule msg.
+  DELETE ADJACENT DUPLICATES FROM rt_errors COMPARING line rule msg.
 
 ENDMETHOD.
 
 
 METHOD analyze_performance.
+
   CLEAR rt_errors.
   CLEAR me->rt_errors.
 
@@ -3713,9 +3355,7 @@ METHOD analyze_performance.
          END OF lty_loop_ctx,
          lty_t_loop_ctx TYPE STANDARD TABLE OF lty_loop_ctx WITH EMPTY KEY.
 
-  DATA: lt_tokens     TYPE gty_t_tok_tab,
-        lt_statements TYPE gty_t_stmt_tab,
-        ls_error      TYPE zst_error.
+  DATA: ls_error TYPE zst_error.
 
   DATA: lv_line        TYPE string,
         lv_line_uc     TYPE string,
@@ -3730,16 +3370,24 @@ METHOD analyze_performance.
         lv_heavy_depth TYPE i VALUE 0,
         ls_loop_ctx    TYPE lty_loop_ctx,
         lt_loop_stack  TYPE lty_t_loop_ctx,
-        lv_fae_table   TYPE string, "FOR ALL ENTRIES
+        lv_fae_table   TYPE string,
         lv_guard_found TYPE abap_bool,
         lv_back_idx    TYPE i,
         lv_prev_line   TYPE string,
-        lv_prev_uc     TYPE string.
+        lv_prev_uc     TYPE string,
+        lv_pos_quote   TYPE i,
+        lv_prev_pos_quote TYPE i,
+        lv_stack_lines TYPE i.
 
-  SCAN ABAP-SOURCE it_source
-       TOKENS     INTO lt_tokens
-       STATEMENTS INTO lt_statements
-       WITH ANALYSIS.
+  DEFINE add_perf_error.
+    CLEAR ls_error.
+    ls_error-line     = &1.
+    ls_error-sev      = gc_severity-error.
+    ls_error-msg      = &2.
+    ls_error-rule     = &3.
+    ls_error-category = gc_category-performance.
+    APPEND ls_error TO me->rt_errors.
+  END-OF-DEFINITION.
 
   LOOP AT it_source INTO lv_line.
 
@@ -3750,7 +3398,8 @@ METHOD analyze_performance.
            lv_msg,
            lv_rule,
            lv_table_name,
-           lv_is_light.
+           lv_is_light,
+           lv_pos_quote.
 
     lv_line_idx = sy-tabix.
 
@@ -3776,22 +3425,26 @@ METHOD analyze_performance.
     "------------------------------------------------------------
     lv_code_only = lv_line_uc.
 
-    DATA(lv_pos_quote) = 0.
-    FIND FIRST OCCURRENCE OF gc_keyword-quote IN lv_code_only MATCH OFFSET lv_pos_quote.
+    FIND FIRST OCCURRENCE OF gc_keyword-quote
+      IN lv_code_only
+      MATCH OFFSET lv_pos_quote.
+
     IF sy-subrc = 0.
       lv_code_only = lv_code_only(lv_pos_quote).
       CONDENSE lv_code_only.
+
       IF lv_code_only IS INITIAL.
         CONTINUE.
       ENDIF.
     ENDIF.
+
     "------------------------------------------------------------
     " Check 0: FOR ALL ENTRIES without IS NOT INITIAL guard
-    " Heuristic: look backward a few lines for IF/CHECK <itab> IS NOT INITIAL
     "------------------------------------------------------------
-    CLEAR: lv_fae_table, lv_guard_found.
+    CLEAR: lv_fae_table,
+           lv_guard_found.
 
-    FIND PCRE 'FOR\s+ALL\s+ENTRIES\s+IN\s+([A-Z0-9_<>\-]+)'
+    FIND PCRE gc_perf_regex-fae_table
       IN lv_code_only
       SUBMATCHES lv_fae_table.
 
@@ -3799,11 +3452,17 @@ METHOD analyze_performance.
 
       lv_guard_found = abap_false.
 
-      DO 5 TIMES.
+      DO gc_perf_cfg-fae_guard_lookback TIMES.
+
         lv_back_idx = lv_line_idx - sy-index.
-        IF lv_back_idx <= 0.
+
+        IF lv_back_idx <= gc_perf_cfg-zero.
           EXIT.
         ENDIF.
+
+        CLEAR: lv_prev_line,
+               lv_prev_uc,
+               lv_prev_pos_quote.
 
         READ TABLE it_source INTO lv_prev_line INDEX lv_back_idx.
         IF sy-subrc <> 0.
@@ -3822,60 +3481,59 @@ METHOD analyze_performance.
           CONTINUE.
         ENDIF.
 
-        DATA(lv_prev_pos_quote) = 0.
-        FIND FIRST OCCURRENCE OF gc_keyword-quote IN lv_prev_uc MATCH OFFSET lv_prev_pos_quote.
+        FIND FIRST OCCURRENCE OF gc_keyword-quote
+          IN lv_prev_uc
+          MATCH OFFSET lv_prev_pos_quote.
+
         IF sy-subrc = 0.
           lv_prev_uc = lv_prev_uc(lv_prev_pos_quote).
           CONDENSE lv_prev_uc.
+
           IF lv_prev_uc IS INITIAL.
             CONTINUE.
           ENDIF.
         ENDIF.
 
-        IF lv_prev_uc CP |IF { lv_fae_table } IS NOT INITIAL.*|
-           OR lv_prev_uc CP |CHECK { lv_fae_table } IS NOT INITIAL.*|
-           OR lv_prev_uc CP |ASSERT { lv_fae_table } IS NOT INITIAL.*|.
+        IF lv_prev_uc CP |{ gc_perf_guard-if_kw } { lv_fae_table } { gc_perf_guard-is_not_initial_pat }|
+           OR lv_prev_uc CP |{ gc_perf_guard-check_kw } { lv_fae_table } { gc_perf_guard-is_not_initial_pat }|
+           OR lv_prev_uc CP |{ gc_perf_guard-assert_kw } { lv_fae_table } { gc_perf_guard-is_not_initial_pat }|.
+
           lv_guard_found = abap_true.
           EXIT.
+
         ENDIF.
+
       ENDDO.
 
       IF lv_guard_found = abap_false.
-        lv_rule = 'PERF_FAE_EMPTY_CHECK'.
-        MESSAGE e043(z_gsp04_message) WITH lv_fae_table INTO lv_msg.
 
-        CLEAR ls_error.
-        ls_error-line      = lv_line_idx.
-        ls_error-sev       = gc_severity-error.
-        ls_error-msg       = lv_msg.
-        ls_error-rule      = lv_rule.
-        ls_error-category  = gc_category-performance.
-*        ls_error-chk_date  = sy-datum.
-*        ls_error-chk_usr   = sy-uname.
-        APPEND ls_error TO me->rt_errors.
+        lv_rule = gc_rule_perf-fae_empty_check.
+
+        MESSAGE e043(z_gsp04_message)
+          WITH lv_fae_table
+          INTO lv_msg.
+
+        add_perf_error lv_line_idx lv_msg lv_rule.
+
       ENDIF.
 
     ENDIF.
+
     "------------------------------------------------------------
     " Check 1: SELECT * FROM
-    " Only flag real SELECT statements, avoid false positives
     "------------------------------------------------------------
     FIND PCRE gc_perf_regex-select_all
       IN lv_code_only.
 
     IF sy-subrc = 0.
-      lv_rule = gc_rule_perf-select_star.
-      MESSAGE e036(z_gsp04_message) INTO lv_msg.
 
-      CLEAR ls_error.
-      ls_error-line      = lv_line_idx.
-      ls_error-sev       = gc_severity-error.
-      ls_error-msg       = lv_msg.
-      ls_error-rule      = lv_rule.
-      ls_error-category  = gc_category-performance.
-*      ls_error-chk_date  = sy-datum.
-*      ls_error-chk_usr   = sy-uname.
-      APPEND ls_error TO me->rt_errors.
+      lv_rule = gc_rule_perf-select_star.
+
+      MESSAGE e036(z_gsp04_message)
+        INTO lv_msg.
+
+      add_perf_error lv_line_idx lv_msg lv_rule.
+
     ENDIF.
 
     "------------------------------------------------------------
@@ -3886,39 +3544,38 @@ METHOD analyze_performance.
       CLEAR lv_table_name.
 
       FIND PCRE gc_perf_regex-loop_at_table
-      IN lv_code_only
-      SUBMATCHES lv_table_name.
+        IN lv_code_only
+        SUBMATCHES lv_table_name.
 
       IF lv_table_name IS INITIAL.
         lv_table_name = gc_obj_type-unknown.
       ENDIF.
 
-      " Light loops = temp/result/error tables, usually metadata enrichment only
+      " Light loops = temp/result/error tables
       lv_is_light = abap_false.
+
       IF lv_table_name = gc_perf_table-lt_temp_errors
-   OR lv_table_name = gc_perf_table-lt_all_err
-   OR lv_table_name = gc_perf_table-rt_errors
-   OR lv_table_name = gc_perf_table-me_rt_errors
-   OR lv_table_name = gc_perf_table-lt_new.
+         OR lv_table_name = gc_perf_table-lt_all_err
+         OR lv_table_name = gc_perf_table-rt_errors
+         OR lv_table_name = gc_perf_table-me_rt_errors
+         OR lv_table_name = gc_perf_table-lt_new.
+
         lv_is_light = abap_true.
+
       ENDIF.
 
       " Nested LOOP only if current context already contains heavy loop
-      " and new loop is not a light/enrichment loop
-      IF lv_heavy_depth >= 1
+      IF lv_heavy_depth >= gc_perf_cfg-heavy_depth_min
          AND lv_is_light = abap_false.
-        lv_rule = gc_rule_perf-nested_loop.
-        MESSAGE e037(z_gsp04_message) WITH lv_table_name INTO lv_msg.
 
-        CLEAR ls_error.
-        ls_error-line      = lv_line_idx.
-        ls_error-sev       = gc_severity-error.
-        ls_error-msg       = lv_msg.
-        ls_error-rule      = lv_rule.
-        ls_error-category  = gc_category-performance.
-*        ls_error-chk_date  = sy-datum.
-*        ls_error-chk_usr   = sy-uname.
-        APPEND ls_error TO me->rt_errors.
+        lv_rule = gc_rule_perf-nested_loop.
+
+        MESSAGE e037(z_gsp04_message)
+          WITH lv_table_name
+          INTO lv_msg.
+
+        add_perf_error lv_line_idx lv_msg lv_rule.
+
       ENDIF.
 
       CLEAR ls_loop_ctx.
@@ -3927,35 +3584,32 @@ METHOD analyze_performance.
       APPEND ls_loop_ctx TO lt_loop_stack.
 
       lv_loop_depth = lv_loop_depth + 1.
+
       IF lv_is_light = abap_false.
         lv_heavy_depth = lv_heavy_depth + 1.
       ENDIF.
 
       CONTINUE.
+
     ENDIF.
 
     "------------------------------------------------------------
-    " Check 2b: SELECT inside heavy LOOP
-    " Only flag real SELECT statements, avoid analyzer self-hit
+    " Check 2: SELECT inside heavy LOOP
     "------------------------------------------------------------
-    IF lv_heavy_depth >= 1.
+    IF lv_heavy_depth >= gc_perf_cfg-heavy_depth_min.
 
       FIND PCRE gc_perf_regex-select_stmt
         IN lv_code_only.
 
       IF sy-subrc = 0.
-        lv_rule = gc_rule_perf-select_in_loop.
-        MESSAGE e038(z_gsp04_message) INTO lv_msg.
 
-        CLEAR ls_error.
-        ls_error-line      = lv_line_idx.
-        ls_error-sev       = gc_severity-error.
-        ls_error-msg       = lv_msg.
-        ls_error-rule      = lv_rule.
-        ls_error-category  = gc_category-performance.
-*        ls_error-chk_date  = sy-datum.
-*        ls_error-chk_usr   = sy-uname.
-        APPEND ls_error TO me->rt_errors.
+        lv_rule = gc_rule_perf-select_in_loop.
+
+        MESSAGE e038(z_gsp04_message)
+          INTO lv_msg.
+
+        add_perf_error lv_line_idx lv_msg lv_rule.
+
       ENDIF.
 
     ENDIF.
@@ -3970,42 +3624,49 @@ METHOD analyze_performance.
        AND lv_code_only NS gc_perf_kw-with_table_key.
 
       lv_rule = gc_rule_perf-read_no_binary.
-      MESSAGE e039(z_gsp04_message) INTO lv_msg.
 
-      CLEAR ls_error.
-      ls_error-line      = lv_line_idx.
-      ls_error-sev       = gc_severity-error.
-      ls_error-msg       = lv_msg.
-      ls_error-rule      = lv_rule.
-      ls_error-category  = gc_category-performance.
-*      ls_error-chk_date  = sy-datum.
-*      ls_error-chk_usr   = sy-uname.
-      APPEND ls_error TO me->rt_errors.
+      MESSAGE e039(z_gsp04_message)
+        INTO lv_msg.
+
+      add_perf_error lv_line_idx lv_msg lv_rule.
+
     ENDIF.
 
     "------------------------------------------------------------
     " Reduce loop stack
     "------------------------------------------------------------
     IF lv_code_only CS gc_perf_kw-endloop.
-      IF lv_loop_depth > 0.
+
+      IF lv_loop_depth > gc_perf_cfg-zero.
         lv_loop_depth = lv_loop_depth - 1.
       ENDIF.
 
-      DATA(lv_stack_lines) = lines( lt_loop_stack ).
-      IF lv_stack_lines > 0.
+      lv_stack_lines = lines( lt_loop_stack ).
+
+      IF lv_stack_lines > gc_perf_cfg-zero.
+
         READ TABLE lt_loop_stack INTO ls_loop_ctx INDEX lv_stack_lines.
-        IF sy-subrc = 0 AND ls_loop_ctx-is_light = abap_false AND lv_heavy_depth > 0.
+
+        IF sy-subrc = 0
+           AND ls_loop_ctx-is_light = abap_false
+           AND lv_heavy_depth > gc_perf_cfg-zero.
+
           lv_heavy_depth = lv_heavy_depth - 1.
+
         ENDIF.
+
         DELETE lt_loop_stack INDEX lv_stack_lines.
+
       ENDIF.
 
       CONTINUE.
+
     ENDIF.
 
   ENDLOOP.
 
   rt_errors = me->rt_errors.
+
 ENDMETHOD.
 
 
@@ -4169,30 +3830,70 @@ ENDMETHOD.
 
 
 METHOD nm_additional_naming_checks.
+
+  "============================================================
+  " Naming policy - customizable by project/company
+  "============================================================
+  CONSTANTS:
+    BEGIN OF lc_pattern,
+      global_type_struct      TYPE string VALUE 'GTY_*',
+      global_type_table       TYPE string VALUE 'GTY_T_*',
+      local_type_struct       TYPE string VALUE 'LTY_*',
+      local_type_table        TYPE string VALUE 'LTY_T_*',
+
+      global_constant         TYPE string VALUE 'GC_*',
+      local_constant          TYPE string VALUE 'LC_*',
+      statics                 TYPE string VALUE 'ST_*',
+
+      global_field_symbol     TYPE string VALUE '<GFS_*>',
+      local_field_symbol      TYPE string VALUE '<LFS_*>',
+
+      selection_parameter     TYPE string VALUE 'P_*',
+      selection_checkbox      TYPE string VALUE 'CB_*',
+      selection_radiobutton   TYPE string VALUE 'RB_*',
+      selection_group         TYPE string VALUE 'RG*',
+      selection_select_option TYPE string VALUE 'S_*',
+      selection_block         TYPE string VALUE 'BL_*',
+
+      form_name               TYPE string VALUE 'F_*',
+      obsolete_work_area      TYPE string VALUE 'WA_*',
+
+      changing_structure      TYPE string VALUE 'CS_*',
+      changing_table          TYPE string VALUE 'CT_*',
+      changing_value          TYPE string VALUE 'CV_*',
+      exporting_structure     TYPE string VALUE 'ES_*',
+      exporting_table         TYPE string VALUE 'ET_*',
+      exporting_value         TYPE string VALUE 'EV_*',
+      importing_structure     TYPE string VALUE 'IS_*',
+      importing_table         TYPE string VALUE 'IT_*',
+      importing_value         TYPE string VALUE 'IV_*',
+      form_using_structure    TYPE string VALUE 'PS_*',
+      form_using_table        TYPE string VALUE 'PT_*',
+      form_using_value        TYPE string VALUE 'PV_*',
+      returning_structure     TYPE string VALUE 'RS_*',
+      returning_table         TYPE string VALUE 'RT_*',
+      returning_value         TYPE string VALUE 'RV_*',
+      fm_tables               TYPE string VALUE 'TT_*',
+    END OF lc_pattern,
+
+    BEGIN OF lc_prefix,
+      global_type_struct TYPE string VALUE 'GTY_',
+      local_type_struct  TYPE string VALUE 'LTY_',
+    END OF lc_prefix,
+
+    BEGIN OF lc_desc,
+      internal_table TYPE string VALUE 'internal-table',
+      structure      TYPE string VALUE 'structure',
+      value          TYPE string VALUE 'value',
+    END OF lc_desc.
+
+
   DATA: lv_sig_kind        TYPE c LENGTH 1,
         lv_sig_probe_idx   TYPE sy-tabix,
         lv_sig_type_name   TYPE string,
         lv_sig_type_name_u TYPE string.
 
   DATA lt_type_cache TYPE gty_t_name_kind.
-
-  DATA: ls_stmt          TYPE sstmnt,
-        ls_stmt_info2    TYPE gty_stmt_info,
-        ls_first2        TYPE stokex,
-        ls_next          TYPE stokex,
-        ls_const_tok     TYPE stokex,
-        ls_stat_tok      TYPE stokex,
-        ls_fs_tok        TYPE stokex,
-        ls_type_scan_tok TYPE stokex,
-        ls_type_name_tok TYPE stokex,
-        ls_par_tok       TYPE stokex,
-        ls_rg_tok        TYPE stokex,
-        ls_sel_tok       TYPE stokex,
-        ls_blk_tok       TYPE stokex,
-        ls_form_tok      TYPE stokex,
-        ls_meth_tok      TYPE stokex,
-        ls_tok           TYPE stokex,
-        ls_p             TYPE gty_pending.
 
   DATA: lv_stmt_idx2          TYPE sy-tabix,
         lv_u                  TYPE string,
@@ -4230,20 +3931,21 @@ METHOD nm_additional_naming_checks.
         lv_sig_row      TYPE i,
         lv_sig_wait     TYPE abap_bool,
         lv_expected_msg TYPE string,
-        lv_tok_idx2     TYPE sy-tabix.
+        lv_tok_idx2     TYPE sy-tabix,
+        ls_tok          TYPE stokex.
 
   "------------------------------------------------------------
   "E.2) Additional statement-based naming checks
   "------------------------------------------------------------
-  LOOP AT it_stmts INTO ls_stmt.
+  LOOP AT it_stmts INTO DATA(ls_stmt).
     lv_stmt_idx2 = sy-tabix.
 
-    READ TABLE it_stmt_info INDEX lv_stmt_idx2 INTO ls_stmt_info2.
+    READ TABLE it_stmt_info INDEX lv_stmt_idx2 INTO DATA(ls_stmt_info2).
     IF sy-subrc <> 0.
       CONTINUE.
     ENDIF.
 
-    READ TABLE it_tokens INDEX ls_stmt-from INTO ls_first2.
+    READ TABLE it_tokens INDEX ls_stmt-from INTO DATA(ls_first2).
     IF sy-subrc <> 0.
       CONTINUE.
     ENDIF.
@@ -4269,17 +3971,23 @@ METHOD nm_additional_naming_checks.
         WHILE lv_tok_idx2 < ls_stmt-to.
           lv_tok_idx2 += 1.
 
-          READ TABLE it_tokens INDEX lv_tok_idx2 INTO ls_const_tok.
+          READ TABLE it_tokens INDEX lv_tok_idx2 INTO DATA(ls_const_tok).
           IF sy-subrc <> 0.
             EXIT.
           ENDIF.
 
-          lv_u = ls_const_tok-str.
-          TRANSLATE lv_u TO UPPER CASE.
+          lv_u = to_upper( ls_const_tok-str ).
 
-          IF lv_u = gc_keyword-begin.
+          CLEAR lv_tok_u.
+          READ TABLE it_tokens INDEX ( lv_tok_idx2 + 1 ) INTO DATA(ls_next).
+          IF sy-subrc = 0.
+            lv_tok_u = to_upper( ls_next-str ).
+          ENDIF.
+
+          IF lv_u = gc_keyword-begin
+             AND lv_tok_u = gc_keyword-of.
             lv_expect_struct_name = abap_true.
-            ADD 1 TO lv_const_begin_depth.
+            lv_const_begin_depth += 1.
             CONTINUE.
           ENDIF.
 
@@ -4294,20 +4002,18 @@ METHOD nm_additional_naming_checks.
                 lv_struct_name = ls_const_tok-str.
                 SHIFT lv_struct_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
 
-                lv_struct_name_u = lv_struct_name.
-                TRANSLATE lv_struct_name_u TO UPPER CASE.
+                lv_struct_name_u = to_upper( lv_struct_name ).
 
                 lv_ok = COND abap_bool(
                   WHEN ls_stmt_info2-is_local_scope = abap_true
-                  THEN xsdbool( lv_struct_name_u CP gc_pat_local-lc )
-                  ELSE xsdbool( lv_struct_name_u CP gc_pat_global-gc )
-                ).
+                  THEN xsdbool( lv_struct_name_u CP lc_pattern-local_constant )
+                  ELSE xsdbool( lv_struct_name_u CP lc_pattern-global_constant ) ).
 
                 IF lv_ok = abap_false.
                   IF ls_stmt_info2-is_local_scope = abap_true.
-                    MESSAGE w051(z_gsp04_message) WITH lv_struct_name INTO lv_text.
+                    MESSAGE w051(z_gsp04_message) WITH lv_struct_name lc_pattern-local_constant INTO lv_text.
                   ELSE.
-                    MESSAGE w050(z_gsp04_message) WITH lv_struct_name INTO lv_text.
+                    MESSAGE w050(z_gsp04_message) WITH lv_struct_name lc_pattern-global_constant INTO lv_text.
                   ENDIF.
 
                   APPEND VALUE zst_error(
@@ -4324,7 +4030,8 @@ METHOD nm_additional_naming_checks.
               CONTINUE.
             ENDIF.
 
-            IF lv_u = gc_keyword-end.
+            IF lv_u = gc_keyword-end
+              AND lv_tok_u = gc_keyword-of.
               lv_const_begin_depth = lv_const_begin_depth - 1.
               CLEAR: lv_name, lv_row, lv_expect_struct_name.
               lv_const_exp = abap_true.
@@ -4352,20 +4059,18 @@ METHOD nm_additional_naming_checks.
                 OR lv_u = gc_keyword-like
                 OR lv_u = gc_keyword-value ).
 
-            lv_name_u = lv_name.
-            TRANSLATE lv_name_u TO UPPER CASE.
+            lv_name_u = to_upper( lv_name ).
 
             lv_ok = COND abap_bool(
               WHEN ls_stmt_info2-is_local_scope = abap_true
-              THEN xsdbool( lv_name_u CP gc_pat_local-lc )
-              ELSE xsdbool( lv_name_u CP gc_pat_global-gc )
-            ).
+              THEN xsdbool( lv_name_u CP lc_pattern-local_constant )
+              ELSE xsdbool( lv_name_u CP lc_pattern-global_constant ) ).
 
             IF lv_ok = abap_false.
               IF ls_stmt_info2-is_local_scope = abap_true.
-                MESSAGE w051(z_gsp04_message) WITH lv_name INTO lv_text.
+                MESSAGE w051(z_gsp04_message) WITH lv_name lc_pattern-local_constant INTO lv_text.
               ELSE.
-                MESSAGE w052(z_gsp04_message) WITH lv_name INTO lv_text.
+                MESSAGE w052(z_gsp04_message) WITH lv_name lc_pattern-global_constant INTO lv_text.
               ENDIF.
 
               APPEND VALUE zst_error(
@@ -4393,13 +4098,12 @@ METHOD nm_additional_naming_checks.
         WHILE lv_tok_idx2 < ls_stmt-to.
           lv_tok_idx2 += 1.
 
-          READ TABLE it_tokens INDEX lv_tok_idx2 INTO ls_stat_tok.
+          READ TABLE it_tokens INDEX lv_tok_idx2 INTO DATA(ls_stat_tok).
           IF sy-subrc <> 0.
             EXIT.
           ENDIF.
 
-          lv_u = ls_stat_tok-str.
-          TRANSLATE lv_u TO UPPER CASE.
+          lv_u = to_upper( ls_stat_tok-str ).
 
           IF lv_u = gc_keyword-colon OR lv_u = gc_keyword-comma.
             CLEAR: lv_name, lv_row.
@@ -4421,11 +4125,10 @@ METHOD nm_additional_naming_checks.
                 OR lv_u = gc_keyword-like
                 OR lv_u = gc_keyword-value ).
 
-            lv_name_u = lv_name.
-            TRANSLATE lv_name_u TO UPPER CASE.
+            lv_name_u = to_upper( lv_name ).
 
-            IF lv_name_u NP gc_pat_special-st.
-              MESSAGE w053(z_gsp04_message) WITH lv_name INTO lv_text.
+            IF lv_name_u NP lc_pattern-statics.
+              MESSAGE w053(z_gsp04_message) WITH lv_name lc_pattern-statics INTO lv_text.
               APPEND VALUE zst_error(
                 rule     = gc_rule_nm-prefix_rule
                 sev      = gc_severity-warning
@@ -4451,13 +4154,12 @@ METHOD nm_additional_naming_checks.
         WHILE lv_tok_idx2 < ls_stmt-to.
           lv_tok_idx2 += 1.
 
-          READ TABLE it_tokens INDEX lv_tok_idx2 INTO ls_fs_tok.
+          READ TABLE it_tokens INDEX lv_tok_idx2 INTO DATA(ls_fs_tok).
           IF sy-subrc <> 0.
             EXIT.
           ENDIF.
 
-          lv_u = ls_fs_tok-str.
-          TRANSLATE lv_u TO UPPER CASE.
+          lv_u = to_upper( ls_fs_tok-str ).
 
           IF lv_u = gc_keyword-colon OR lv_u = gc_keyword-comma.
             CLEAR: lv_name, lv_row.
@@ -4476,20 +4178,18 @@ METHOD nm_additional_naming_checks.
 
           IF lv_name IS NOT INITIAL
              AND ( lv_u = gc_keyword-type OR lv_u = gc_keyword-like ).
-            lv_name_u = lv_name.
-            TRANSLATE lv_name_u TO UPPER CASE.
+            lv_name_u = to_upper( lv_name ).
 
             lv_ok = COND abap_bool(
               WHEN ls_stmt_info2-is_local_scope = abap_true
-              THEN xsdbool( lv_name_u CP gc_pat_local-lfs )
-              ELSE xsdbool( lv_name_u CP gc_pat_global-gfs )
-            ).
+              THEN xsdbool( lv_name_u CP lc_pattern-local_field_symbol )
+              ELSE xsdbool( lv_name_u CP lc_pattern-global_field_symbol ) ).
 
             IF lv_ok = abap_false.
               IF ls_stmt_info2-is_local_scope = abap_true.
-                MESSAGE w054(z_gsp04_message) WITH lv_name INTO lv_text.
+                MESSAGE w054(z_gsp04_message) WITH lv_name lc_pattern-local_field_symbol INTO lv_text.
               ELSE.
-                MESSAGE w055(z_gsp04_message) WITH lv_name INTO lv_text.
+                MESSAGE w055(z_gsp04_message) WITH lv_name lc_pattern-global_field_symbol INTO lv_text.
               ENDIF.
 
               APPEND VALUE zst_error(
@@ -4515,13 +4215,12 @@ METHOD nm_additional_naming_checks.
           WHILE lv_tok_idx2 < ls_stmt-to.
             lv_tok_idx2 += 1.
 
-            READ TABLE it_tokens INDEX lv_tok_idx2 INTO ls_type_scan_tok.
+            READ TABLE it_tokens INDEX lv_tok_idx2 INTO DATA(ls_type_scan_tok).
             IF sy-subrc <> 0.
               EXIT.
             ENDIF.
 
-            lv_type_scan_u = ls_type_scan_tok-str.
-            TRANSLATE lv_type_scan_u TO UPPER CASE.
+            lv_type_scan_u = to_upper( ls_type_scan_tok-str ).
 
             IF lv_type_scan_u = gc_keyword-end.
               CLEAR lv_type_has_begin.
@@ -4533,9 +4232,9 @@ METHOD nm_additional_naming_checks.
 
         CLEAR: lv_type_has_comma,
                lv_type_is_tab,
+               lv_type_is_line_of,
                lv_type_name,
                lv_type_name_u,
-               lv_type_expected_name,
                lv_type_expected_name.
 
         lv_tok_idx2 = ls_stmt-from.
@@ -4547,43 +4246,41 @@ METHOD nm_additional_naming_checks.
             EXIT.
           ENDIF.
 
-          lv_type_scan_u = ls_type_scan_tok-str.
-          TRANSLATE lv_type_scan_u TO UPPER CASE.
+          lv_type_scan_u = to_upper( ls_type_scan_tok-str ).
 
           IF lv_type_scan_u = gc_keyword-begin.
 
             READ TABLE it_tokens INDEX ( lv_tok_idx2 + 1 ) INTO ls_next.
             IF sy-subrc = 0.
-              lv_u = ls_next-str.
-              TRANSLATE lv_u TO UPPER CASE.
+              lv_u = to_upper( ls_next-str ).
 
               IF lv_u = gc_keyword-of.
-                READ TABLE it_tokens INDEX ( lv_tok_idx2 + 2 ) INTO ls_type_name_tok.
+                READ TABLE it_tokens INDEX ( lv_tok_idx2 + 2 ) INTO DATA(ls_type_name_tok).
                 IF sy-subrc = 0
                    AND ls_type_name_tok-type = gc_token_type-identifier.
 
                   lv_type_name = ls_type_name_tok-str.
                   SHIFT lv_type_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
 
-                  lv_type_name_u = lv_type_name.
-                  TRANSLATE lv_type_name_u TO UPPER CASE.
+                  lv_type_name_u = to_upper( lv_type_name ).
 
                   lv_type_ok = COND abap_bool(
                     WHEN ls_stmt_info2-is_local_scope = abap_true
-                    THEN xsdbool( lv_type_name_u CP gc_pat_local-lty )
-                    ELSE xsdbool( lv_type_name_u CP gc_pat_global-gty )
-                  ).
+                    THEN xsdbool( lv_type_name_u CP lc_pattern-local_type_struct )
+                    ELSE xsdbool( lv_type_name_u CP lc_pattern-global_type_struct ) ).
 
                   IF lv_type_ok = abap_false.
                     lv_type_expected_name = lv_type_name.
 
                     IF ls_stmt_info2-is_local_scope = abap_true.
-                      REPLACE FIRST OCCURRENCE OF PCRE gc_rx_nm-leading_prefix IN lv_type_expected_name WITH gc_type_prefix_nm-local_structure.
+                      REPLACE FIRST OCCURRENCE OF PCRE gc_rx_nm-leading_prefix
+                      IN lv_type_expected_name WITH lc_prefix-local_type_struct.
                       IF lv_type_expected_name = lv_type_name.
                         lv_type_expected_name = |lty_{ lv_type_name }|.
                       ENDIF.
                     ELSE.
-                      REPLACE FIRST OCCURRENCE OF PCRE gc_rx_nm-leading_prefix IN lv_type_expected_name WITH gc_type_prefix_nm-global_structure.
+                      REPLACE FIRST OCCURRENCE OF PCRE gc_rx_nm-leading_prefix
+                      IN lv_type_expected_name WITH lc_prefix-global_type_struct.
                       IF lv_type_expected_name = lv_type_name.
                         lv_type_expected_name = |gty_{ lv_type_name }|.
                       ENDIF.
@@ -4613,8 +4310,7 @@ METHOD nm_additional_naming_checks.
           IF lv_type_scan_u = gc_keyword-line.
             READ TABLE it_tokens INDEX ( lv_tok_idx2 + 1 ) INTO ls_next.
             IF sy-subrc = 0.
-              lv_u = ls_next-str.
-              TRANSLATE lv_u TO UPPER CASE.
+              lv_u = to_upper( ls_next-str ).
 
               IF lv_u = gc_keyword-of.
                 lv_type_is_line_of = abap_true.
@@ -4642,8 +4338,7 @@ METHOD nm_additional_naming_checks.
         lv_type_name = ls_type_name_tok-str.
         SHIFT lv_type_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
 
-        lv_type_name_u = lv_type_name.
-        TRANSLATE lv_type_name_u TO UPPER CASE.
+        lv_type_name_u = to_upper( lv_type_name ).
 
         IF lv_type_name_u = gc_keyword-end
            OR lv_type_name_u = gc_keyword-of.
@@ -4654,36 +4349,36 @@ METHOD nm_additional_naming_checks.
           WHEN ls_stmt_info2-is_local_scope = abap_true
                AND lv_type_is_line_of = abap_true
           THEN xsdbool(
-                 lv_type_name_u CP gc_pat_local-lty
-                 AND lv_type_name_u NP gc_pat_local-lty_t )
+                 lv_type_name_u CP lc_pattern-local_type_struct
+                 AND lv_type_name_u NP lc_pattern-local_type_table )
 
           WHEN ls_stmt_info2-is_local_scope = abap_true
                AND lv_type_is_tab = abap_true
-          THEN xsdbool( lv_type_name_u CP gc_pat_local-lty_t )
+          THEN xsdbool( lv_type_name_u CP lc_pattern-local_type_table )
 
           WHEN ls_stmt_info2-is_local_scope = abap_true
-          THEN xsdbool( lv_type_name_u CP gc_pat_local-lty )
+          THEN xsdbool( lv_type_name_u CP lc_pattern-local_type_struct )
 
           WHEN lv_type_is_line_of = abap_true
           THEN xsdbool(
-                 lv_type_name_u CP gc_pat_global-gty
-                 AND lv_type_name_u NP gc_pat_global-gty_t )
+                 lv_type_name_u CP lc_pattern-global_type_struct
+                 AND lv_type_name_u NP lc_pattern-global_type_table )
 
           WHEN lv_type_is_tab = abap_true
-          THEN xsdbool( lv_type_name_u CP gc_pat_global-gty_t )
+          THEN xsdbool( lv_type_name_u CP lc_pattern-global_type_table )
 
-          ELSE xsdbool( lv_type_name_u CP gc_pat_global-gty )
+          ELSE xsdbool( lv_type_name_u CP lc_pattern-global_type_struct )
         ).
 
         IF lv_type_ok = abap_false.
           IF ls_stmt_info2-is_local_scope = abap_true AND lv_type_is_tab = abap_true.
-            MESSAGE w056(z_gsp04_message) WITH lv_type_name INTO lv_text.
+            MESSAGE w056(z_gsp04_message) WITH lv_type_name lc_pattern-local_type_table INTO lv_text.
           ELSEIF ls_stmt_info2-is_local_scope = abap_true.
-            MESSAGE w057(z_gsp04_message) WITH lv_type_name INTO lv_text.
+            MESSAGE w057(z_gsp04_message) WITH lv_type_name lc_pattern-local_type_struct INTO lv_text.
           ELSEIF lv_type_is_tab = abap_true.
-            MESSAGE w058(z_gsp04_message) WITH lv_type_name INTO lv_text.
+            MESSAGE w058(z_gsp04_message) WITH lv_type_name lc_pattern-global_type_table INTO lv_text.
           ELSE.
-            MESSAGE w059(z_gsp04_message) WITH lv_type_name INTO lv_text.
+            MESSAGE w059(z_gsp04_message) WITH lv_type_name lc_pattern-global_type_struct INTO lv_text.
           ENDIF.
 
           APPEND VALUE zst_error(
@@ -4707,13 +4402,12 @@ METHOD nm_additional_naming_checks.
         WHILE lv_tok_idx2 < ls_stmt-to.
           lv_tok_idx2 += 1.
 
-          READ TABLE it_tokens INDEX lv_tok_idx2 INTO ls_par_tok.
+          READ TABLE it_tokens INDEX lv_tok_idx2 INTO DATA(ls_par_tok).
           IF sy-subrc <> 0.
             EXIT.
           ENDIF.
 
-          lv_u = ls_par_tok-str.
-          TRANSLATE lv_u TO UPPER CASE.
+          lv_u = to_upper( ls_par_tok-str ).
 
           IF lv_u = gc_keyword-colon OR lv_u = gc_keyword-comma.
             CLEAR: lv_name, lv_row.
@@ -4736,18 +4430,17 @@ METHOD nm_additional_naming_checks.
                 OR lv_u = gc_keyword-checkbox
                 OR lv_u = gc_keyword-radiobutton ).
 
-            lv_name_u = lv_name.
-            TRANSLATE lv_name_u TO UPPER CASE.
+            lv_name_u = to_upper( lv_name ).
 
             IF lv_u = gc_keyword-checkbox.
-              lv_par_pat = gc_pat_sel-cb.
-              lv_ok      = xsdbool( lv_name_u CP gc_pat_sel-cb ).
+              lv_par_pat = lc_pattern-selection_checkbox.
+              lv_ok      = xsdbool( lv_name_u CP lc_pattern-selection_checkbox ).
             ELSEIF lv_u = gc_keyword-radiobutton.
-              lv_par_pat = gc_pat_sel-rb.
-              lv_ok      = xsdbool( lv_name_u CP gc_pat_sel-rb ).
+              lv_par_pat = lc_pattern-selection_radiobutton.
+              lv_ok      = xsdbool( lv_name_u CP lc_pattern-selection_radiobutton ).
             ELSE.
-              lv_par_pat = gc_pat_sel-p.
-              lv_ok      = xsdbool( lv_name_u CP gc_pat_sel-p ).
+              lv_par_pat = lc_pattern-selection_parameter.
+              lv_ok      = xsdbool( lv_name_u CP lc_pattern-selection_parameter ).
             ENDIF.
 
             IF strlen( lv_name_u ) > 8.
@@ -4769,17 +4462,16 @@ METHOD nm_additional_naming_checks.
           ENDIF.
 
           IF lv_u = gc_keyword-group.
-            READ TABLE it_tokens INDEX ( lv_tok_idx2 + 1 ) INTO ls_rg_tok.
+            READ TABLE it_tokens INDEX ( lv_tok_idx2 + 1 ) INTO DATA(ls_rg_tok).
             IF sy-subrc = 0.
               lv_name = ls_rg_tok-str.
               SHIFT lv_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
 
-              lv_name_u = lv_name.
-              TRANSLATE lv_name_u TO UPPER CASE.
+              lv_name_u = to_upper( lv_name ).
               lv_row = ls_rg_tok-row.
 
-              IF lv_name_u NP gc_pat_sel-rg OR strlen( lv_name_u ) > 4.
-                MESSAGE w061(z_gsp04_message) WITH lv_name INTO lv_text.
+              IF lv_name_u NP lc_pattern-selection_group OR strlen( lv_name_u ) > 4.
+                MESSAGE w061(z_gsp04_message) WITH lv_name lc_pattern-selection_group INTO lv_text.
                 APPEND VALUE zst_error(
                   rule     = gc_rule_nm-prefix_rule
                   sev      = gc_severity-warning
@@ -4804,13 +4496,12 @@ METHOD nm_additional_naming_checks.
         WHILE lv_tok_idx2 < ls_stmt-to.
           lv_tok_idx2 += 1.
 
-          READ TABLE it_tokens INDEX lv_tok_idx2 INTO ls_sel_tok.
+          READ TABLE it_tokens INDEX lv_tok_idx2 INTO DATA(ls_sel_tok).
           IF sy-subrc <> 0.
             EXIT.
           ENDIF.
 
-          lv_u = ls_sel_tok-str.
-          TRANSLATE lv_u TO UPPER CASE.
+          lv_u = to_upper( ls_sel_tok-str ).
 
           IF lv_u = gc_keyword-colon OR lv_u = gc_keyword-comma.
             CLEAR: lv_name, lv_row.
@@ -4832,11 +4523,10 @@ METHOD nm_additional_naming_checks.
                 OR lv_u = gc_keyword-type
                 OR lv_u = gc_keyword-like ).
 
-            lv_name_u = lv_name.
-            TRANSLATE lv_name_u TO UPPER CASE.
+            lv_name_u = to_upper( lv_name ).
 
-            IF lv_name_u NP gc_pat_sel-s OR strlen( lv_name_u ) > 8.
-              MESSAGE w062(z_gsp04_message) WITH lv_name INTO lv_text.
+            IF lv_name_u NP lc_pattern-selection_select_option OR strlen( lv_name_u ) > 8.
+              MESSAGE w062(z_gsp04_message) WITH lv_name lc_pattern-selection_select_option INTO lv_text.
               APPEND VALUE zst_error(
                 rule     = gc_rule_nm-prefix_rule
                 sev      = gc_severity-warning
@@ -4859,13 +4549,12 @@ METHOD nm_additional_naming_checks.
         WHILE lv_tok_idx2 < ls_stmt-to.
           lv_tok_idx2 += 1.
 
-          READ TABLE it_tokens INDEX lv_tok_idx2 INTO ls_blk_tok.
+          READ TABLE it_tokens INDEX lv_tok_idx2 INTO DATA(ls_blk_tok).
           IF sy-subrc <> 0.
             EXIT.
           ENDIF.
 
-          lv_u = ls_blk_tok-str.
-          TRANSLATE lv_u TO UPPER CASE.
+          lv_u = to_upper( ls_blk_tok-str ).
 
           IF lv_u <> gc_keyword-block.
             CONTINUE.
@@ -4876,12 +4565,11 @@ METHOD nm_additional_naming_checks.
             lv_name = ls_next-str.
             SHIFT lv_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
 
-            lv_name_u = lv_name.
-            TRANSLATE lv_name_u TO UPPER CASE.
+            lv_name_u = to_upper( lv_name ).
             lv_row = ls_next-row.
 
-            IF lv_name_u NP gc_pat_sel-bl.
-              MESSAGE w063(z_gsp04_message) WITH lv_name INTO lv_text.
+            IF lv_name_u NP lc_pattern-selection_block.
+              MESSAGE w063(z_gsp04_message) WITH lv_name lc_pattern-selection_block INTO lv_text.
               APPEND VALUE zst_error(
                 rule     = gc_rule_nm-prefix_rule
                 sev      = gc_severity-warning
@@ -4904,12 +4592,11 @@ METHOD nm_additional_naming_checks.
           lv_name = ls_next-str.
           SHIFT lv_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
 
-          lv_name_u = lv_name.
-          TRANSLATE lv_name_u TO UPPER CASE.
+          lv_name_u = to_upper( lv_name ).
           lv_row = ls_next-row.
 
-          IF lv_name_u NP gc_pat_sig-f.
-            MESSAGE w064(z_gsp04_message) WITH lv_name INTO lv_text.
+          IF lv_name_u NP lc_pattern-form_name.
+            MESSAGE w064(z_gsp04_message) WITH lv_name lc_pattern-form_name INTO lv_text.
             APPEND VALUE zst_error(
               rule     = gc_rule_nm-prefix_rule
               sev      = gc_severity-warning
@@ -4927,13 +4614,12 @@ METHOD nm_additional_naming_checks.
         WHILE lv_tok_idx2 < ls_stmt-to.
           lv_tok_idx2 += 1.
 
-          READ TABLE it_tokens INDEX lv_tok_idx2 INTO ls_form_tok.
+          READ TABLE it_tokens INDEX lv_tok_idx2 INTO DATA(ls_form_tok).
           IF sy-subrc <> 0.
             EXIT.
           ENDIF.
 
-          lv_u = ls_form_tok-str.
-          TRANSLATE lv_u TO UPPER CASE.
+          lv_u = to_upper( ls_form_tok-str ).
 
           CASE lv_u.
             WHEN gc_keyword-tables
@@ -4957,6 +4643,20 @@ METHOD nm_additional_naming_checks.
           ENDCASE.
 
           IF lv_sig_wait = abap_true
+           AND ( lv_u = gc_keyword-default
+              OR lv_u = gc_keyword-optional ).
+            CONTINUE.
+          ENDIF.
+
+          IF lv_sig_wait = abap_true.
+            READ TABLE it_tokens INDEX ( lv_tok_idx2 - 1 ) INTO DATA(ls_prev_sig_tok).
+            IF sy-subrc = 0
+               AND to_upper( ls_prev_sig_tok-str ) = gc_keyword-default.
+              CONTINUE.
+            ENDIF.
+          ENDIF.
+
+          IF lv_sig_wait = abap_true
             AND ls_form_tok-type = gc_token_type-identifier.
             lv_sig_name = ls_form_tok-str.
             SHIFT lv_sig_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
@@ -4973,81 +4673,23 @@ METHOD nm_additional_naming_checks.
               OR lv_u = gc_keyword-comma
               OR lv_u = gc_keyword-dot ).
 
-            lv_sig_name_u = lv_sig_name.
-            TRANSLATE lv_sig_name_u TO UPPER CASE.
+            lv_sig_name_u = to_upper( lv_sig_name ).
 
             IF lv_sig_sec = gc_sig_nm-tables
                OR lv_u = gc_keyword-structure.
               lv_sig_kind = gc_kind_nm-table.
 
             ELSEIF lv_u = gc_keyword-type OR lv_u = gc_keyword-like.
-              lv_sig_kind = gc_kind_nm-value.
-              lv_sig_probe_idx = lv_tok_idx2.
-
-              WHILE lv_sig_probe_idx < ls_stmt-to.
-                lv_sig_probe_idx += 1.
-
-                READ TABLE it_tokens INDEX lv_sig_probe_idx INTO ls_tok.
-                IF sy-subrc <> 0.
-                  EXIT.
-                ENDIF.
-
-                lv_tok_u = ls_tok-str.
-                TRANSLATE lv_tok_u TO UPPER CASE.
-
-                IF lv_tok_u = gc_keyword-comma OR lv_tok_u = gc_keyword-dot.
-                  EXIT.
-                ENDIF.
-
-                IF lv_tok_u = gc_keyword-table
-                   OR lv_tok_u = gc_keyword-standard
-                   OR lv_tok_u = gc_keyword-sorted
-                   OR lv_tok_u = gc_keyword-hashed.
-                  lv_sig_kind = gc_kind_nm-table.
-                  CONTINUE.
-                ENDIF.
-
-                IF lv_tok_u = gc_keyword-line.
-                  READ TABLE it_tokens INDEX ( lv_sig_probe_idx + 1 ) INTO ls_next.
-                  IF sy-subrc = 0.
-                    lv_u = ls_next-str.
-                    TRANSLATE lv_u TO UPPER CASE.
-                    IF lv_u = gc_keyword-of.
-                      lv_sig_kind = gc_kind_nm-structure.
-                      EXIT.
-                    ENDIF.
-                  ENDIF.
-                ENDIF.
-
-                IF ls_tok-type = gc_token_type-identifier.
-                  lv_sig_type_name = ls_tok-str.
-                  SHIFT lv_sig_type_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-                  lv_sig_type_name_u = lv_sig_type_name.
-                  TRANSLATE lv_sig_type_name_u TO UPPER CASE.
-
-                  IF lv_sig_type_name_u CP gc_type_pat_nm-any_ty_t
-                     OR lv_sig_type_name_u CP gc_type_pat_nm-tt
-                     OR lv_sig_type_name_u CP gc_type_pat_nm-gty_t
-                     OR lv_sig_type_name_u CP gc_type_pat_nm-lty_t.
-                    lv_sig_kind = gc_kind_nm-table.
-
-                  ELSEIF lv_sig_type_name_u CP gc_type_pat_nm-gty
-                      OR lv_sig_type_name_u CP gc_type_pat_nm-lty.
-                    lv_sig_kind = gc_kind_nm-structure.
-
-                  ELSE.
-                    nm_resolve_type_kind(
-                      EXPORTING
-                        iv_type_name  = lv_sig_type_name_u
-                      IMPORTING
-                        ev_kind       = lv_sig_kind
-                        ev_line_kind  = DATA(lv_sig_line_kind_form)
-                      CHANGING
-                        ct_type_cache = lt_type_cache ).
-                  ENDIF.
-                  EXIT.
-                ENDIF.
-              ENDWHILE.
+              nm_resolve_sig_kind(
+                EXPORTING
+                  it_tokens            = it_tokens
+                  iv_from              = lv_tok_idx2
+                  iv_to                = ls_stmt-to
+                IMPORTING
+                  ev_kind              = lv_sig_kind
+                  ev_last_idx          = lv_sig_probe_idx
+                CHANGING
+                  ct_type_cache        = lt_type_cache ).
 
               lv_tok_idx2 = lv_sig_probe_idx.
             ENDIF.
@@ -5055,40 +4697,40 @@ METHOD nm_additional_naming_checks.
             CLEAR lv_expected_msg.
             CASE lv_sig_sec.
               WHEN gc_sig_nm-tables.
-                lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-pt ).
+                lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-form_using_table ).
                 MESSAGE w044(z_gsp04_message)
-                  WITH gc_keyword-tables gc_sig_desc_nm-internal_table lv_sig_name gc_sig_prefix_nm-pt INTO lv_expected_msg.
+                  WITH gc_keyword-tables lc_desc-internal_table lv_sig_name lc_pattern-form_using_table INTO lv_expected_msg.
 
               WHEN gc_sig_nm-using.
                 CASE lv_sig_kind.
                   WHEN gc_kind_nm-table.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-pt ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-form_using_table ).
                     MESSAGE w044(z_gsp04_message)
-                      WITH gc_keyword-using gc_sig_desc_nm-internal_table lv_sig_name gc_sig_prefix_nm-pt INTO lv_expected_msg.
+                      WITH gc_keyword-using lc_desc-internal_table lv_sig_name lc_pattern-form_using_table INTO lv_expected_msg.
                   WHEN gc_kind_nm-structure.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-ps ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-form_using_structure ).
                     MESSAGE w044(z_gsp04_message)
-                      WITH gc_keyword-using gc_sig_desc_nm-structure lv_sig_name gc_sig_prefix_nm-ps INTO lv_expected_msg.
+                      WITH gc_keyword-using lc_desc-structure lv_sig_name lc_pattern-form_using_structure INTO lv_expected_msg.
                   WHEN OTHERS.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-pv ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-form_using_value ).
                     MESSAGE w044(z_gsp04_message)
-                      WITH gc_keyword-using gc_sig_desc_nm-value lv_sig_name gc_sig_prefix_nm-pv INTO lv_expected_msg.
+                      WITH gc_keyword-using lc_desc-value lv_sig_name lc_pattern-form_using_value INTO lv_expected_msg.
                 ENDCASE.
 
               WHEN gc_sig_nm-changing.
                 CASE lv_sig_kind.
                   WHEN gc_kind_nm-table.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-ct ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-changing_table ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-changing gc_sig_desc_nm-internal_table lv_sig_name gc_sig_prefix_nm-ct INTO lv_expected_msg.
+                      WITH gc_keyword-changing lc_desc-internal_table lv_sig_name lc_pattern-changing_table INTO lv_expected_msg.
                   WHEN gc_kind_nm-structure.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-cs ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-changing_structure ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-changing gc_sig_desc_nm-structure lv_sig_name gc_sig_prefix_nm-cs INTO lv_expected_msg.
+                      WITH gc_keyword-changing lc_desc-structure lv_sig_name lc_pattern-changing_structure INTO lv_expected_msg.
                   WHEN OTHERS.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-cv ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-changing_value ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-changing gc_sig_desc_nm-value lv_sig_name gc_sig_prefix_nm-cv INTO lv_expected_msg.
+                      WITH gc_keyword-changing lc_desc-value lv_sig_name lc_pattern-changing_value INTO lv_expected_msg.
                 ENDCASE.
 
               WHEN OTHERS.
@@ -5113,7 +4755,7 @@ METHOD nm_additional_naming_checks.
         ENDWHILE.
 
         "======================================================
-        " E.2.11) METHODS / CLASS-METHODS params
+        " E.2.9) METHODS / CLASS-METHODS params
         "======================================================
       WHEN gc_keyword-methods
         OR gc_keyword-methods_col
@@ -5127,13 +4769,12 @@ METHOD nm_additional_naming_checks.
         WHILE lv_tok_idx2 < ls_stmt-to.
           lv_tok_idx2 += 1.
 
-          READ TABLE it_tokens INDEX lv_tok_idx2 INTO ls_meth_tok.
+          READ TABLE it_tokens INDEX lv_tok_idx2 INTO DATA(ls_meth_tok).
           IF sy-subrc <> 0.
             EXIT.
           ENDIF.
 
-          lv_u = ls_meth_tok-str.
-          TRANSLATE lv_u TO UPPER CASE.
+          lv_u = to_upper( ls_meth_tok-str ).
 
           CASE lv_u.
             WHEN gc_keyword-importing
@@ -5159,97 +4800,63 @@ METHOD nm_additional_naming_checks.
               CONTINUE.
 
             WHEN gc_keyword-value.
+
+              IF lv_sig_sec <> gc_sig_nm-returning
+                 AND lv_sig_wait = abap_true.
+
+                READ TABLE it_tokens INDEX ( lv_tok_idx2 + 1 ) INTO ls_next.
+                IF sy-subrc = 0.
+                  lv_sig_name = ls_next-str.
+                  REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_sig_name WITH gc_token_nm-empty.
+                  REPLACE ALL OCCURRENCES OF gc_keyword-rparen IN lv_sig_name WITH gc_token_nm-empty.
+                  CONDENSE lv_sig_name NO-GAPS.
+                  SHIFT lv_sig_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
+
+                  lv_sig_row  = ls_next-row.
+                  lv_sig_kind = gc_kind_nm-value.
+                  lv_sig_wait = abap_false.
+                  lv_tok_idx2 = lv_tok_idx2 + 1.
+                ENDIF.
+
+                CONTINUE.
+              ENDIF.
+
               IF lv_sig_sec = gc_sig_nm-returning.
                 READ TABLE it_tokens INDEX ( lv_tok_idx2 + 1 ) INTO ls_next.
                 IF sy-subrc = 0.
                   lv_name = ls_next-str.
-                  SHIFT lv_name LEFT  DELETING LEADING gc_keyword-lparen.
-                  SHIFT lv_name RIGHT DELETING TRAILING gc_keyword-rparen.
-                  SHIFT lv_name LEFT  DELETING LEADING gc_keyword-exclamation_mark.
+                  REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_name WITH gc_token_nm-empty.
+                  REPLACE ALL OCCURRENCES OF gc_keyword-rparen IN lv_name WITH gc_token_nm-empty.
+                  CONDENSE lv_name NO-GAPS.
+                  SHIFT lv_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
 
-                  lv_name_u = lv_name.
-                  TRANSLATE lv_name_u TO UPPER CASE.
+                  lv_name_u = to_upper( lv_name ).
 
-                  lv_sig_kind = gc_kind_nm-value.
-                  lv_sig_probe_idx = lv_tok_idx2.
-
-                  WHILE lv_sig_probe_idx < ls_stmt-to.
-                    lv_sig_probe_idx += 1.
-
-                    READ TABLE it_tokens INDEX lv_sig_probe_idx INTO ls_tok.
-                    IF sy-subrc <> 0.
-                      EXIT.
-                    ENDIF.
-
-                    lv_tok_u = ls_tok-str.
-                    TRANSLATE lv_tok_u TO UPPER CASE.
-
-                    IF lv_tok_u = gc_keyword-type OR lv_tok_u = gc_keyword-like.
-                      CONTINUE.
-                    ENDIF.
-
-                    IF lv_tok_u = gc_keyword-table
-                       OR lv_tok_u = gc_keyword-standard
-                       OR lv_tok_u = gc_keyword-sorted
-                       OR lv_tok_u = gc_keyword-hashed.
-                      lv_sig_kind = gc_kind_nm-table.
-                      CONTINUE.
-                    ENDIF.
-
-                    IF lv_tok_u = gc_keyword-line.
-                      READ TABLE it_tokens INDEX ( lv_sig_probe_idx + 1 ) INTO ls_next.
-                      IF sy-subrc = 0.
-                        lv_u = ls_next-str.
-                        TRANSLATE lv_u TO UPPER CASE.
-                        IF lv_u = gc_keyword-of.
-                          lv_sig_kind = gc_kind_nm-structure.
-                          EXIT.
-                        ENDIF.
-                      ENDIF.
-                    ENDIF.
-
-                    IF ls_tok-type = gc_token_type-identifier.
-                      lv_sig_type_name = ls_tok-str.
-                      SHIFT lv_sig_type_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-                      lv_sig_type_name_u = lv_sig_type_name.
-                      TRANSLATE lv_sig_type_name_u TO UPPER CASE.
-
-                      IF lv_sig_type_name_u CP gc_type_pat_nm-any_ty_t
-                         OR lv_sig_type_name_u CP gc_type_pat_nm-tt
-                         OR lv_sig_type_name_u CP gc_type_pat_nm-gty_t
-                         OR lv_sig_type_name_u CP gc_type_pat_nm-lty_t.
-                        lv_sig_kind = gc_kind_nm-table.
-                      ELSEIF lv_sig_type_name_u CP gc_type_pat_nm-gty
-                          OR lv_sig_type_name_u CP gc_type_pat_nm-lty
-                          OR lv_sig_type_name_u CP gc_type_pat_nm-ty.
-                        lv_sig_kind = gc_kind_nm-structure.
-                      ELSE.
-                        nm_resolve_type_kind(
-                          EXPORTING
-                            iv_type_name  = lv_sig_type_name_u
-                          IMPORTING
-                            ev_kind       = lv_sig_kind
-                            ev_line_kind  = DATA(lv_sig_line_kind_ret)
-                          CHANGING
-                            ct_type_cache = lt_type_cache ).
-                      ENDIF.
-                      EXIT.
-                    ENDIF.
-                  ENDWHILE.
+                  nm_resolve_sig_kind(
+                    EXPORTING
+                      it_tokens            = it_tokens
+                      iv_from              = lv_tok_idx2
+                      iv_to                = ls_stmt-to
+                    IMPORTING
+                      ev_kind              = lv_sig_kind
+                    CHANGING
+                      ct_type_cache        = lt_type_cache ).
 
                   CASE lv_sig_kind.
                     WHEN gc_kind_nm-table.
-                      lv_ok = xsdbool( lv_name_u CP gc_sig_pat_nm-rt ).
+                      lv_ok = xsdbool( lv_name_u CP lc_pattern-returning_table ).
                       MESSAGE w046(z_gsp04_message)
-                        WITH gc_keyword-returning gc_sig_desc_nm-internal_table lv_name gc_sig_prefix_nm-rt INTO lv_text.
+                        WITH gc_keyword-returning lc_desc-internal_table lv_name lc_pattern-returning_table INTO lv_text.
+
                     WHEN gc_kind_nm-structure.
-                      lv_ok = xsdbool( lv_name_u CP gc_sig_pat_nm-rs ).
+                      lv_ok = xsdbool( lv_name_u CP lc_pattern-returning_structure ).
                       MESSAGE w046(z_gsp04_message)
-                        WITH gc_keyword-returning gc_sig_desc_nm-structure lv_name gc_sig_prefix_nm-rs INTO lv_text.
+                        WITH gc_keyword-returning lc_desc-structure lv_name lc_pattern-returning_structure INTO lv_text.
+
                     WHEN OTHERS.
-                      lv_ok = xsdbool( lv_name_u CP gc_sig_pat_nm-rv ).
+                      lv_ok = xsdbool( lv_name_u CP lc_pattern-returning_value ).
                       MESSAGE w046(z_gsp04_message)
-                        WITH gc_keyword-returning gc_sig_desc_nm-value lv_name gc_sig_prefix_nm-rv INTO lv_text.
+                        WITH gc_keyword-returning lc_desc-value lv_name lc_pattern-returning_value INTO lv_text.
                   ENDCASE.
 
                   IF lv_ok = abap_false.
@@ -5263,11 +4870,26 @@ METHOD nm_additional_naming_checks.
                   ENDIF.
                 ENDIF.
               ENDIF.
+
               CONTINUE.
 
             WHEN gc_keyword-comma OR gc_keyword-dot.
             WHEN OTHERS.
           ENDCASE.
+
+          IF lv_sig_wait = abap_true
+           AND ( lv_u = gc_keyword-default
+              OR lv_u = gc_keyword-optional ).
+            CONTINUE.
+          ENDIF.
+
+          IF lv_sig_wait = abap_true.
+            READ TABLE it_tokens INDEX ( lv_tok_idx2 - 1 ) INTO ls_prev_sig_tok.
+            IF sy-subrc = 0
+               AND to_upper( ls_prev_sig_tok-str ) = gc_keyword-default.
+              CONTINUE.
+            ENDIF.
+          ENDIF.
 
           IF lv_sig_wait = abap_true
             AND ls_meth_tok-type = gc_token_type-identifier.
@@ -5285,79 +4907,30 @@ METHOD nm_additional_naming_checks.
                 OR lv_u = gc_keyword-comma
                 OR lv_u = gc_keyword-dot ).
 
-            lv_sig_name_u = lv_sig_name.
-            TRANSLATE lv_sig_name_u TO UPPER CASE.
+            IF to_upper( lv_sig_name ) CP gc_keyword-value_star.
+              REPLACE FIRST OCCURRENCE OF gc_keyword-value_lparen IN lv_sig_name WITH '' IGNORING CASE.
+            ENDIF.
+
+            REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_sig_name WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-rparen IN lv_sig_name WITH gc_token_nm-empty.
+            CONDENSE lv_sig_name NO-GAPS.
+            SHIFT lv_sig_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
+
+            lv_sig_name_u = to_upper( lv_sig_name ).
 
             IF lv_u = gc_keyword-type OR lv_u = gc_keyword-like.
-              lv_sig_kind = gc_kind_nm-value.
-              lv_sig_probe_idx = lv_tok_idx2.
+              nm_resolve_sig_kind(
+                EXPORTING
+                  it_tokens            = it_tokens
+                  iv_from              = lv_tok_idx2
+                  iv_to                = ls_stmt-to
+                IMPORTING
+                  ev_kind              = lv_sig_kind
+                  ev_last_idx          = lv_sig_probe_idx
+                CHANGING
+                  ct_type_cache        = lt_type_cache ).
 
-              WHILE lv_sig_probe_idx < ls_stmt-to.
-                lv_sig_probe_idx += 1.
-
-                READ TABLE it_tokens INDEX lv_sig_probe_idx INTO ls_tok.
-                IF sy-subrc <> 0.
-                  EXIT.
-                ENDIF.
-
-                lv_tok_u = ls_tok-str.
-                TRANSLATE lv_tok_u TO UPPER CASE.
-
-                IF lv_tok_u = gc_keyword-comma OR lv_tok_u = gc_keyword-dot.
-                  EXIT.
-                ENDIF.
-
-                IF lv_tok_u = gc_keyword-table
-                   OR lv_tok_u = gc_keyword-standard
-                   OR lv_tok_u = gc_keyword-sorted
-                   OR lv_tok_u = gc_keyword-hashed.
-                  lv_sig_kind = gc_kind_nm-table.
-                  CONTINUE.
-                ENDIF.
-
-                IF lv_tok_u = gc_keyword-line.
-                  READ TABLE it_tokens INDEX ( lv_sig_probe_idx + 1 ) INTO ls_next.
-                  IF sy-subrc = 0.
-                    lv_u = ls_next-str.
-                    TRANSLATE lv_u TO UPPER CASE.
-                    IF lv_u = gc_keyword-of.
-                      lv_sig_kind = gc_kind_nm-structure.
-                      EXIT.
-                    ENDIF.
-                  ENDIF.
-                ENDIF.
-
-                IF ls_tok-type = gc_token_type-identifier.
-                  lv_sig_type_name = ls_tok-str.
-                  SHIFT lv_sig_type_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-                  lv_sig_type_name_u = lv_sig_type_name.
-                  TRANSLATE lv_sig_type_name_u TO UPPER CASE.
-
-                  IF lv_sig_type_name_u CP gc_type_pat_nm-any_ty_t
-                     OR lv_sig_type_name_u CP gc_type_pat_nm-tt
-                     OR lv_sig_type_name_u CP gc_type_pat_nm-gty_t
-                     OR lv_sig_type_name_u CP gc_type_pat_nm-lty_t.
-                    lv_sig_kind = gc_kind_nm-table.
-
-                  ELSEIF lv_sig_type_name_u CP gc_type_pat_nm-gty
-                      OR lv_sig_type_name_u CP gc_type_pat_nm-lty
-                      OR lv_sig_type_name_u CP gc_type_pat_nm-ty.
-                    lv_sig_kind = gc_kind_nm-structure.
-
-                  ELSE.
-                    nm_resolve_type_kind(
-                      EXPORTING
-                        iv_type_name  = lv_sig_type_name_u
-                      IMPORTING
-                        ev_kind       = lv_sig_kind
-                        ev_line_kind  = DATA(lv_sig_line_kind_meth)
-                      CHANGING
-                        ct_type_cache = lt_type_cache ).
-                  ENDIF.
-
-                  EXIT.
-                ENDIF.
-              ENDWHILE.
+              lv_tok_idx2 = lv_sig_probe_idx.
             ENDIF.
 
             CLEAR lv_expected_msg.
@@ -5365,49 +4938,49 @@ METHOD nm_additional_naming_checks.
               WHEN gc_sig_nm-importing.
                 CASE lv_sig_kind.
                   WHEN gc_kind_nm-table.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-it ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-importing_table ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-importing gc_sig_desc_nm-internal_table lv_sig_name gc_sig_prefix_nm-it INTO lv_expected_msg.
+                      WITH gc_keyword-importing lc_desc-internal_table lv_sig_name lc_pattern-importing_table INTO lv_expected_msg.
                   WHEN gc_kind_nm-structure.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-is ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-importing_structure ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-importing gc_sig_desc_nm-structure lv_sig_name gc_sig_prefix_nm-is INTO lv_expected_msg.
+                      WITH gc_keyword-importing lc_desc-structure lv_sig_name lc_pattern-importing_structure INTO lv_expected_msg.
                   WHEN OTHERS.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-iv ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-importing_value ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-importing gc_sig_desc_nm-value lv_sig_name gc_sig_prefix_nm-iv INTO lv_expected_msg.
+                      WITH gc_keyword-importing lc_desc-value lv_sig_name lc_pattern-importing_value INTO lv_expected_msg.
                 ENDCASE.
 
               WHEN gc_sig_nm-exporting.
                 CASE lv_sig_kind.
                   WHEN gc_kind_nm-table.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-et ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-exporting_table ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-exporting gc_sig_desc_nm-internal_table lv_sig_name gc_sig_prefix_nm-et INTO lv_expected_msg.
+                      WITH gc_keyword-exporting lc_desc-internal_table lv_sig_name lc_pattern-exporting_table INTO lv_expected_msg.
                   WHEN gc_kind_nm-structure.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-es ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-exporting_structure ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-exporting gc_sig_desc_nm-structure lv_sig_name gc_sig_prefix_nm-es INTO lv_expected_msg.
+                      WITH gc_keyword-exporting lc_desc-structure lv_sig_name lc_pattern-exporting_structure INTO lv_expected_msg.
                   WHEN OTHERS.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-ev ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-exporting_value ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-exporting gc_sig_desc_nm-value lv_sig_name gc_sig_prefix_nm-ev INTO lv_expected_msg.
+                      WITH gc_keyword-exporting lc_desc-value lv_sig_name lc_pattern-exporting_value INTO lv_expected_msg.
                 ENDCASE.
 
               WHEN gc_sig_nm-changing.
                 CASE lv_sig_kind.
                   WHEN gc_kind_nm-table.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-ct ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-changing_table ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-changing gc_sig_desc_nm-internal_table lv_sig_name gc_sig_prefix_nm-ct INTO lv_expected_msg.
+                      WITH gc_keyword-changing lc_desc-internal_table lv_sig_name lc_pattern-changing_table INTO lv_expected_msg.
                   WHEN gc_kind_nm-structure.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-cs ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-changing_structure ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-changing gc_sig_desc_nm-structure lv_sig_name gc_sig_prefix_nm-cs INTO lv_expected_msg.
+                      WITH gc_keyword-changing lc_desc-structure lv_sig_name lc_pattern-changing_structure INTO lv_expected_msg.
                   WHEN OTHERS.
-                    lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-cv ).
+                    lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-changing_value ).
                     MESSAGE w046(z_gsp04_message)
-                      WITH gc_keyword-changing gc_sig_desc_nm-value lv_sig_name gc_sig_prefix_nm-cv INTO lv_expected_msg.
+                      WITH gc_keyword-changing lc_desc-value lv_sig_name lc_pattern-changing_value INTO lv_expected_msg.
                 ENDCASE.
 
               WHEN OTHERS.
@@ -5426,8 +4999,8 @@ METHOD nm_additional_naming_checks.
 
             CLEAR lv_sig_name.
             lv_sig_wait = xsdbool(
-              lv_u = gc_keyword-comma AND
-              lv_sig_sec IS NOT INITIAL ).
+              lv_sig_sec IS NOT INITIAL
+              AND lv_u <> gc_keyword-dot ).
           ENDIF.
         ENDWHILE.
     ENDCASE.
@@ -5442,7 +5015,7 @@ METHOD nm_additional_naming_checks.
 
     SHIFT lv_fm_src_u LEFT DELETING LEADING space.
 
-    IF lv_fm_src_u CP gc_lit_nm-fm_start_pat.
+    IF lv_fm_src_u CP gc_keyword-func_pat.
       lv_in_fm_iface = abap_true.
       CLEAR lv_sig_sec.
       CONTINUE.
@@ -5500,7 +5073,7 @@ METHOD nm_additional_naming_checks.
 
     lv_sig_name = ``.     "CLEAR
 
-    FIND FIRST OCCURRENCE OF PCRE gc_lit_nm-fm_value_regex
+    FIND FIRST OCCURRENCE OF PCRE gc_rx_nm-fm_value
       IN lv_fm_iface_line
       SUBMATCHES lv_sig_name.
 
@@ -5551,21 +5124,16 @@ METHOD nm_additional_naming_checks.
 
         lv_sig_type_name_u = to_upper( lv_sig_type_name ).
 
-        IF lv_sig_type_name_u CP gc_type_pat_nm-any_ty_t
-           OR lv_sig_type_name_u CP gc_type_pat_nm-tt
-           OR lv_sig_type_name_u CP gc_type_pat_nm-gty_t
-           OR lv_sig_type_name_u CP gc_type_pat_nm-lty_t.
+        IF lv_sig_type_name_u CP lc_pattern-global_type_table
+           OR lv_sig_type_name_u CP lc_pattern-local_type_table.
 
           lv_sig_kind = gc_kind_nm-table.
 
-        ELSEIF lv_sig_type_name_u CP gc_type_pat_nm-gty
-            OR lv_sig_type_name_u CP gc_type_pat_nm-lty
-            OR lv_sig_type_name_u CP gc_type_pat_nm-ty.
-
+        ELSEIF lv_sig_type_name_u CP lc_pattern-global_type_struct
+            OR lv_sig_type_name_u CP lc_pattern-local_type_struct.
           lv_sig_kind = gc_kind_nm-structure.
 
         ELSE.
-
           nm_resolve_type_kind(
             EXPORTING
               iv_type_name  = lv_sig_type_name_u
@@ -5574,7 +5142,6 @@ METHOD nm_additional_naming_checks.
               ev_line_kind  = DATA(lv_sig_line_kind_fm)
             CHANGING
               ct_type_cache = lt_type_cache ).
-
         ENDIF.
       ENDIF.
     ENDIF.
@@ -5587,30 +5154,30 @@ METHOD nm_additional_naming_checks.
 
         CASE lv_sig_kind.
           WHEN gc_kind_nm-table.
-            lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-it ).
+            lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-importing_table ).
             MESSAGE w047(z_gsp04_message)
               WITH gc_keyword-importing
-                   gc_sig_desc_nm-internal_table
+                   lc_desc-internal_table
                    lv_sig_name
-                   gc_sig_prefix_nm-it
+                   lc_pattern-importing_table
               INTO lv_expected_msg.
 
           WHEN gc_kind_nm-structure.
-            lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-is ).
+            lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-importing_structure ).
             MESSAGE w047(z_gsp04_message)
               WITH gc_keyword-importing
-                   gc_sig_desc_nm-structure
+                   lc_desc-structure
                    lv_sig_name
-                   gc_sig_prefix_nm-is
+                   lc_pattern-importing_structure
               INTO lv_expected_msg.
 
           WHEN OTHERS.
-            lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-iv ).
+            lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-importing_value ).
             MESSAGE w047(z_gsp04_message)
               WITH gc_keyword-importing
-                   gc_sig_desc_nm-value
+                   lc_desc-value
                    lv_sig_name
-                   gc_sig_prefix_nm-iv
+                   lc_pattern-importing_value
               INTO lv_expected_msg.
         ENDCASE.
 
@@ -5618,30 +5185,30 @@ METHOD nm_additional_naming_checks.
 
         CASE lv_sig_kind.
           WHEN gc_kind_nm-table.
-            lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-et ).
+            lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-exporting_table ).
             MESSAGE w047(z_gsp04_message)
               WITH gc_keyword-exporting
-                   gc_sig_desc_nm-internal_table
+                   lc_desc-internal_table
                    lv_sig_name
-                   gc_sig_prefix_nm-et
+                   lc_pattern-exporting_table
               INTO lv_expected_msg.
 
           WHEN gc_kind_nm-structure.
-            lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-es ).
+            lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-exporting_structure ).
             MESSAGE w047(z_gsp04_message)
               WITH gc_keyword-exporting
-                   gc_sig_desc_nm-structure
+                   lc_desc-structure
                    lv_sig_name
-                   gc_sig_prefix_nm-es
+                   lc_pattern-exporting_structure
               INTO lv_expected_msg.
 
           WHEN OTHERS.
-            lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-ev ).
+            lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-exporting_value ).
             MESSAGE w047(z_gsp04_message)
               WITH gc_keyword-exporting
-                   gc_sig_desc_nm-value
+                   lc_desc-value
                    lv_sig_name
-                   gc_sig_prefix_nm-ev
+                   lc_pattern-exporting_value
               INTO lv_expected_msg.
         ENDCASE.
 
@@ -5649,41 +5216,41 @@ METHOD nm_additional_naming_checks.
 
         CASE lv_sig_kind.
           WHEN gc_kind_nm-table.
-            lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-ct ).
+            lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-changing_table ).
             MESSAGE w047(z_gsp04_message)
               WITH gc_keyword-changing
-                   gc_sig_desc_nm-internal_table
+                   lc_desc-internal_table
                    lv_sig_name
-                   gc_sig_prefix_nm-ct
+                   lc_pattern-changing_table
               INTO lv_expected_msg.
 
           WHEN gc_kind_nm-structure.
-            lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-cs ).
+            lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-changing_structure ).
             MESSAGE w047(z_gsp04_message)
               WITH gc_keyword-changing
-                   gc_sig_desc_nm-structure
+                   lc_desc-structure
                    lv_sig_name
-                   gc_sig_prefix_nm-cs
+                   lc_pattern-changing_structure
               INTO lv_expected_msg.
 
           WHEN OTHERS.
-            lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-cv ).
+            lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-changing_value ).
             MESSAGE w047(z_gsp04_message)
               WITH gc_keyword-changing
-                   gc_sig_desc_nm-value
+                   lc_desc-value
                    lv_sig_name
-                   gc_sig_prefix_nm-cv
+                   lc_pattern-changing_value
               INTO lv_expected_msg.
         ENDCASE.
 
       WHEN gc_sig_nm-tables.
 
-        lv_ok = xsdbool( lv_sig_name_u CP gc_sig_pat_nm-tt ).
+        lv_ok = xsdbool( lv_sig_name_u CP lc_pattern-fm_tables ).
         MESSAGE w047(z_gsp04_message)
           WITH gc_keyword-tables
-               gc_sig_desc_nm-internal_table
+               lc_desc-internal_table
                lv_sig_name
-               gc_sig_prefix_nm-tt
+               lc_pattern-fm_tables
           INTO lv_expected_msg.
 
       WHEN OTHERS.
@@ -5739,8 +5306,8 @@ METHOD nm_additional_naming_checks.
       IF lv_name IS NOT INITIAL.
         lv_name_u = to_upper( lv_name ).
 
-        IF lv_name_u CP gc_pat_sig-wa.
-          MESSAGE w011(z_gsp04_message) WITH lv_name INTO lv_text.
+        IF lv_name_u CP lc_pattern-obsolete_work_area.
+          MESSAGE w011(z_gsp04_message) WITH lv_name lc_pattern-obsolete_work_area INTO lv_text.
 
           APPEND VALUE zst_error(
             rule     = gc_rule_nm-wa_prefix_obsolete
@@ -5793,8 +5360,8 @@ METHOD nm_additional_naming_checks.
 
       lv_name_u = to_upper( lv_name ).
 
-      IF lv_name_u CP gc_pat_sig-wa.
-        MESSAGE w011(z_gsp04_message) WITH lv_name INTO lv_text.
+      IF lv_name_u CP lc_pattern-obsolete_work_area.
+        MESSAGE w011(z_gsp04_message) WITH lv_name lc_pattern-obsolete_work_area INTO lv_text.
 
         APPEND VALUE zst_error(
           rule     = gc_rule_nm-wa_prefix_obsolete
@@ -5812,7 +5379,7 @@ METHOD nm_additional_naming_checks.
   "------------------------------------------------------------
   " G) Post-processing
   "------------------------------------------------------------
-  LOOP AT it_pending INTO ls_p.
+  LOOP AT it_pending INTO DATA(ls_p).
     APPEND VALUE zst_error(
       rule     = gc_rule_nm-prefix_rule
       sev      = gc_severity-warning
@@ -5824,183 +5391,37 @@ METHOD nm_additional_naming_checks.
 ENDMETHOD.
 
 
-METHOD nm_build_stmt.
-
-  TYPES: BEGIN OF lty_scope_rule,
-           keyword TYPE string,
-           action  TYPE c LENGTH 1,
-         END OF lty_scope_rule.
-
-  TYPES lty_t_scope_rule TYPE SORTED TABLE OF lty_scope_rule
-                          WITH UNIQUE KEY keyword.
-
-  CONSTANTS:
-    lc_action_begin        TYPE c LENGTH 1 VALUE 'B',
-    lc_action_end          TYPE c LENGTH 1 VALUE 'E',
-    lc_action_global_event TYPE c LENGTH 1 VALUE 'G'.
-
-  DATA(lt_scope_rule) = VALUE lty_t_scope_rule(
-    ( keyword = gc_keyword-form               action = lc_action_begin )
-    ( keyword = gc_keyword-method             action = lc_action_begin )
-    ( keyword = gc_keyword-func               action = lc_action_begin )
-    ( keyword = gc_keyword-module             action = lc_action_begin )
-
-    ( keyword = gc_keyword-endform            action = lc_action_end )
-    ( keyword = gc_keyword-endmethod          action = lc_action_end )
-    ( keyword = gc_keyword-endfunc            action = lc_action_end )
-    ( keyword = gc_keyword-endmodule          action = lc_action_end )
-
-    ( keyword = gc_keyword-initialization     action = lc_action_global_event )
-    ( keyword = gc_keyword-start_of_selection action = lc_action_global_event )
-    ( keyword = gc_keyword-end_of_selection   action = lc_action_global_event )
-    ( keyword = gc_keyword-top_of_page        action = lc_action_global_event )
-    ( keyword = gc_keyword-end_of_page        action = lc_action_global_event )
-  ).
-
-  DATA(ls_state)    = VALUE gty_nm_scope_state(
-    depth           = 0
-    in_event_local  = abap_false
-    current_routine = gc_scope-global ).
-
-  CLEAR rt_stmt_info.
-
-  LOOP AT it_stmts ASSIGNING FIELD-SYMBOL(<ls_stmt>).
-
-    IF <ls_stmt>-from > <ls_stmt>-to.
-      CONTINUE.
-    ENDIF.
-
-    READ TABLE it_tokens
-      REFERENCE INTO DATA(lr_first)
-      INDEX <ls_stmt>-from.
-
-    IF sy-subrc <> 0 OR lr_first IS NOT BOUND.
-      CONTINUE.
-    ENDIF.
-
-    DATA(lv_first_u) = to_upper( lr_first->str ).
-
-    READ TABLE lt_scope_rule
-      WITH TABLE KEY keyword = lv_first_u
-      INTO DATA(ls_scope_rule).
-
-    IF sy-subrc = 0.
-
-      CASE ls_scope_rule-action.
-
-        WHEN lc_action_begin.
-
-          ls_state-depth += 1.
-          ls_state-in_event_local = abap_false.
-
-          READ TABLE it_tokens
-            REFERENCE INTO DATA(lr_routine_name)
-            INDEX ( <ls_stmt>-from + 1 ).
-
-          IF sy-subrc = 0 AND lr_routine_name IS BOUND.
-            ls_state-current_routine = to_upper( lr_routine_name->str ).
-          ELSE.
-            ls_state-current_routine = gc_scope-block.
-          ENDIF.
-
-        WHEN lc_action_end.
-
-          IF ls_state-depth > 0.
-            ls_state-depth -= 1.
-          ENDIF.
-
-          ls_state-in_event_local = abap_false.
-
-          IF ls_state-depth = 0.
-            ls_state-current_routine = gc_scope-global.
-          ENDIF.
-
-        WHEN lc_action_global_event.
-
-          ls_state-in_event_local  = abap_false.
-          ls_state-current_routine = lv_first_u.
-
-      ENDCASE.
-
-    ELSEIF lv_first_u = gc_keyword-at.
-
-      DATA(lv_at_next_u)  = ``.     "CLEAR
-      DATA(lv_at_third_u) = ``.     "CLEAR
-
-      READ TABLE it_tokens
-        REFERENCE INTO DATA(lr_at_next)
-        INDEX ( <ls_stmt>-from + 1 ).
-
-      IF sy-subrc = 0 AND lr_at_next IS BOUND.
-        lv_at_next_u = to_upper( lr_at_next->str ).
-      ENDIF.
-
-      READ TABLE it_tokens
-        REFERENCE INTO DATA(lr_at_third)
-        INDEX ( <ls_stmt>-from + 2 ).
-
-      IF sy-subrc = 0 AND lr_at_third IS BOUND.
-        lv_at_third_u = to_upper( lr_at_third->str ).
-      ENDIF.
-
-      CASE lv_at_next_u.
-
-        WHEN gc_keyword-selection_screen.
-
-          ls_state-in_event_local = abap_true.
-
-          ls_state-current_routine = COND string(
-            WHEN lv_at_third_u = 'OUTPUT'
-            THEN 'AT SELECTION-SCREEN OUTPUT'
-            WHEN lv_at_third_u = 'ON'
-            THEN 'AT SELECTION-SCREEN ON'
-            ELSE 'AT SELECTION-SCREEN' ).
-
-        WHEN 'LINE-SELECTION'.
-
-          ls_state-in_event_local  = abap_false.
-          ls_state-current_routine = 'AT LINE-SELECTION'.
-
-        WHEN 'USER-COMMAND'.
-
-          ls_state-in_event_local  = abap_false.
-          ls_state-current_routine = 'AT USER-COMMAND'.
-
-        WHEN OTHERS.
-
-          ls_state-in_event_local = abap_false.
-
-          IF lv_at_next_u IS INITIAL.
-            ls_state-current_routine = gc_keyword-at.
-          ELSE.
-            ls_state-current_routine = |AT { lv_at_next_u }|.
-          ENDIF.
-
-      ENDCASE.
-
-    ENDIF.
-
-    APPEND VALUE gty_stmt_info(
-      from            = <ls_stmt>-from
-      to              = <ls_stmt>-to
-      first_u         = lv_first_u
-      is_local_scope  = xsdbool(
-                          ls_state-depth > 0
-                          OR ls_state-in_event_local = abap_true )
-      is_data_stmt    = xsdbool(
-                          lv_first_u = gc_keyword-data
-                          OR lv_first_u = gc_keyword-data_col
-                          OR lv_first_u = gc_keyword-class_data
-                          OR lv_first_u = gc_keyword-class_data_col )
-      current_routine = ls_state-current_routine
-    ) TO rt_stmt_info.
-
-  ENDLOOP.
-
-ENDMETHOD.
-
-
 METHOD nm_data_checks.
+
+  "============================================================
+  " Naming policy - customizable by project/company
+  "============================================================
+  CONSTANTS:
+    BEGIN OF lc_pattern,
+      global_type_struct  TYPE string VALUE 'GTY_*',
+      global_type_table   TYPE string VALUE 'GTY_T_*',
+      local_type_struct   TYPE string VALUE 'LTY_*',
+      local_type_table    TYPE string VALUE 'LTY_T_*',
+
+      global_constant     TYPE string VALUE 'GC_*',
+      global_value        TYPE string VALUE 'GV_*',
+      global_structure    TYPE string VALUE 'GS_*',
+      global_table        TYPE string VALUE 'GT_*',
+      global_data_ref     TYPE string VALUE 'GR_*',
+      global_object_ref   TYPE string VALUE 'GO_*',
+      global_macro        TYPE string VALUE 'GM_*',
+      global_field_symbol TYPE string VALUE '<GFS_*>',
+
+      local_constant      TYPE string VALUE 'LC_*',
+      local_value         TYPE string VALUE 'LV_*',
+      local_structure     TYPE string VALUE 'LS_*',
+      local_table         TYPE string VALUE 'LT_*',
+      local_data_ref      TYPE string VALUE 'LR_*',
+      local_object_ref    TYPE string VALUE 'LO_*',
+      local_macro         TYPE string VALUE 'LM_*',
+      local_field_symbol  TYPE string VALUE '<LFS_*>',
+    END OF lc_pattern.
+
   TYPES: BEGIN OF lty_seen,
            name_u TYPE string,
            row    TYPE i,
@@ -6011,15 +5432,9 @@ METHOD nm_data_checks.
         lt_decl_kind_map TYPE gty_t_name_kind,
         lt_type_cache    TYPE gty_t_name_kind.
 
-  DATA: ls_t                TYPE stokex,
-        ls_prev_id          TYPE stokex,
+  DATA: ls_prev_id          TYPE stokex,
         ls_prev2            TYPE stokex,
         ls_prev3            TYPE stokex,
-        ls_next             TYPE stokex,
-        ls_probe            TYPE stokex,
-        ls_stmt_info        TYPE gty_stmt_info,
-        ls_u                TYPE gty_use,
-        ls_kind             TYPE gty_name_kind,
         lv_text             TYPE string,
         lv_stmt_idx         TYPE sy-tabix VALUE 0,
         lv_tok_idx          TYPE sy-tabix,
@@ -6057,14 +5472,13 @@ METHOD nm_data_checks.
   "------------------------------------------------------------
   " A) Build semantic type map for local TYPES
   "------------------------------------------------------------
-  LOOP AT it_stmt_info INTO ls_stmt_info.
-    READ TABLE it_tokens INDEX ls_stmt_info-from INTO ls_t.
+  LOOP AT it_stmt_info INTO DATA(ls_stmt_info).
+    READ TABLE it_tokens INDEX ls_stmt_info-from INTO DATA(ls_t).
     IF sy-subrc <> 0 OR ls_t-row > iv_curr_src_lines.
       CONTINUE.
     ENDIF.
 
-    lv_u = ls_t-str.
-    TRANSLATE lv_u TO UPPER CASE.
+    lv_u = to_upper( ls_t-str ).
 
     IF lv_u <> gc_keyword-types
        AND lv_u <> gc_keyword-types_col.
@@ -6084,13 +5498,12 @@ METHOD nm_data_checks.
     WHILE lv_probe_idx < ls_stmt_info-to.
       lv_probe_idx += 1.
 
-      READ TABLE it_tokens INDEX lv_probe_idx INTO ls_probe.
+      READ TABLE it_tokens INDEX lv_probe_idx INTO DATA(ls_probe).
       IF sy-subrc <> 0.
         EXIT.
       ENDIF.
 
-      lv_probe_u = ls_probe-str.
-      TRANSLATE lv_probe_u TO UPPER CASE.
+      lv_probe_u = to_upper( ls_probe-str ).
 
       IF lv_probe_u = gc_keyword-begin.
         WHILE lv_probe_idx < ls_stmt_info-to.
@@ -6101,8 +5514,7 @@ METHOD nm_data_checks.
             EXIT.
           ENDIF.
 
-          lv_probe_u = ls_probe-str.
-          TRANSLATE lv_probe_u TO UPPER CASE.
+          lv_probe_u = to_upper( ls_probe-str ).
 
           IF lv_probe_u = gc_keyword-of.
             CONTINUE.
@@ -6111,8 +5523,7 @@ METHOD nm_data_checks.
           IF ls_probe-type = gc_token_type-identifier.
             lv_name = ls_probe-str.
             SHIFT lv_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-            lv_name_u = lv_name.
-            TRANSLATE lv_name_u TO UPPER CASE.
+            lv_name_u = to_upper( lv_name ).
             lv_decl_kind = gc_kind_nm-structure.
             EXIT.
           ENDIF.
@@ -6124,8 +5535,7 @@ METHOD nm_data_checks.
          AND lv_probe_u <> gc_keyword-of.
         lv_name = ls_probe-str.
         SHIFT lv_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-        lv_name_u = lv_name.
-        TRANSLATE lv_name_u TO UPPER CASE.
+        lv_name_u = to_upper( lv_name ).
         EXIT.
       ENDIF.
     ENDWHILE.
@@ -6145,8 +5555,7 @@ METHOD nm_data_checks.
           EXIT.
         ENDIF.
 
-        lv_probe_u = ls_probe-str.
-        TRANSLATE lv_probe_u TO UPPER CASE..
+        lv_probe_u = to_upper( ls_probe-str ).
 
         IF lv_probe_u = gc_keyword-ref.
           lv_decl_kind = gc_kind_nm-object.
@@ -6169,12 +5578,11 @@ METHOD nm_data_checks.
                  lv_resolved_kind,
                  lv_resolved_line.
 
-          READ TABLE it_tokens INDEX ( lv_probe_idx + 1 ) INTO ls_next.
+          READ TABLE it_tokens INDEX ( lv_probe_idx + 1 ) INTO DATA(ls_next).
           IF sy-subrc = 0.
             lv_ref_name = ls_next-str.
             SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-            lv_ref_name_u = lv_ref_name.
-            TRANSLATE lv_ref_name_u TO UPPER CASE.
+            lv_ref_name_u = to_upper( lv_ref_name ).
 
             IF lv_ref_name_u = gc_builtin_type_nm-abap_string
                OR lv_ref_name_u = gc_builtin_type_nm-abap_xstring
@@ -6193,7 +5601,7 @@ METHOD nm_data_checks.
               EXIT.
             ENDIF.
 
-            READ TABLE lt_type_kind WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
+            READ TABLE lt_type_kind WITH TABLE KEY name_u = lv_ref_name_u INTO DATA(ls_kind).
             IF sy-subrc = 0.
               IF ls_kind-kind = gc_kind_nm-table.
                 IF ls_kind-line_kind IS NOT INITIAL.
@@ -6207,15 +5615,15 @@ METHOD nm_data_checks.
               EXIT.
             ENDIF.
 
-            lv_resolved_kind = ``.     "CLEAR
-            lv_resolved_line = ``.     "CLEAR
+            CLEAR: lv_resolved_kind,
+                   lv_resolved_line.
 
             nm_resolve_type_kind(
               EXPORTING
                 iv_type_name  = lv_ref_name_u
               IMPORTING
-                ev_kind       = lv_decl_kind
-                ev_line_kind  = lv_line_kind
+                ev_kind       = lv_resolved_kind
+                ev_line_kind  = lv_resolved_line
               CHANGING
                 ct_type_cache = lt_type_cache ).
 
@@ -6225,7 +5633,7 @@ METHOD nm_data_checks.
               ELSE.
                 lv_line_kind = gc_kind_nm-structure.
               ENDIF.
-            ELSE.
+            ELSEIF lv_resolved_kind IS NOT INITIAL.
               lv_line_kind = lv_resolved_kind.
             ENDIF.
 
@@ -6236,16 +5644,14 @@ METHOD nm_data_checks.
         IF lv_probe_u = gc_keyword-line.
           READ TABLE it_tokens INDEX ( lv_probe_idx + 1 ) INTO ls_next.
           IF sy-subrc = 0.
-            lv_u = ls_next-str.
-            TRANSLATE lv_u TO UPPER CASE.
+            lv_u = to_upper( ls_next-str ).
 
             IF lv_u = gc_keyword-of.
               READ TABLE it_tokens INDEX ( lv_probe_idx + 2 ) INTO ls_next.
               IF sy-subrc = 0.
                 lv_ref_name = ls_next-str.
                 SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-                lv_ref_name_u = lv_ref_name.
-                TRANSLATE lv_ref_name_u TO UPPER CASE.
+                lv_ref_name_u = to_upper( lv_ref_name ).
 
                 " 1) Resolve from previously built TYPES map
                 READ TABLE lt_type_kind WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
@@ -6262,7 +5668,7 @@ METHOD nm_data_checks.
                   EXIT.
                 ENDIF.
 
-                " 2) Resolve from cache / DDIC / fallback
+                " 2) Resolve from cache / DDIC
                 lv_resolved_kind = ``.     "CLEAR
                 lv_resolved_line = ``.     "CLEAR
 
@@ -6277,12 +5683,12 @@ METHOD nm_data_checks.
 
                 IF lv_resolved_kind = gc_kind_nm-table.
                   IF lv_resolved_line IS NOT INITIAL.
-                    lv_decl_kind = lv_resolved_line.
+                    lv_line_kind = lv_resolved_line.
                   ELSE.
-                    lv_decl_kind = gc_kind_nm-structure.
+                    lv_line_kind = gc_kind_nm-structure.
                   ENDIF.
-                ELSE.
-                  lv_decl_kind = lv_resolved_kind.
+                ELSEIF lv_resolved_kind IS NOT INITIAL.
+                  lv_line_kind = lv_resolved_kind.
                 ENDIF.
 
                 EXIT.
@@ -6313,8 +5719,7 @@ METHOD nm_data_checks.
           AND lv_probe_u <> gc_keyword-like.
           lv_ref_name = ls_probe-str.
           SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-          lv_ref_name_u = lv_ref_name.
-          TRANSLATE lv_ref_name_u TO UPPER CASE.
+          lv_ref_name_u = to_upper( lv_ref_name ).
 
           READ TABLE lt_type_kind WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
           IF sy-subrc = 0.
@@ -6355,13 +5760,13 @@ METHOD nm_data_checks.
     lv_tok_idx = sy-tabix.
 
     IF lv_stmt_idx = 0.
-      ADD 1 TO lv_stmt_idx.
+      lv_stmt_idx += 1.
       READ TABLE it_stmt_info INDEX lv_stmt_idx INTO ls_stmt_info.
       IF sy-subrc <> 0.
         EXIT.
       ENDIF.
     ELSEIF lv_tok_idx > ls_stmt_info-to.
-      ADD 1 TO lv_stmt_idx.
+      lv_stmt_idx += 1.
       READ TABLE it_stmt_info INDEX lv_stmt_idx INTO ls_stmt_info.
       IF sy-subrc <> 0.
         EXIT.
@@ -6382,27 +5787,23 @@ METHOD nm_data_checks.
            lv_inline,
            lv_inline_u.
 
-    lv_u = ls_t-str.
-    TRANSLATE lv_u TO UPPER CASE.
+    lv_u = to_upper( ls_t-str ).
 
     " Compact token: DATA(name) / @DATA(name)
     IF lv_u CS gc_token_nm-data_lparen.
       READ TABLE it_tokens INDEX ( lv_tok_idx - 1 ) INTO ls_prev_id.
       IF sy-subrc = 0.
-        lv_prev_u = ls_prev_id-str.
-        TRANSLATE lv_prev_u TO UPPER CASE.
+        lv_prev_u = to_upper( ls_prev_id-str ).
       ENDIF.
 
       READ TABLE it_tokens INDEX ( lv_tok_idx - 2 ) INTO ls_prev2.
       IF sy-subrc = 0.
-        lv_prev2_u = ls_prev2-str.
-        TRANSLATE lv_prev2_u TO UPPER CASE.
+        lv_prev2_u = to_upper( ls_prev2-str ).
       ENDIF.
 
       READ TABLE it_tokens INDEX ( lv_tok_idx - 3 ) INTO ls_prev3.
       IF sy-subrc = 0.
-        lv_prev3_u = ls_prev3-str.
-        TRANSLATE lv_prev3_u TO UPPER CASE.
+        lv_prev3_u = to_upper( ls_prev3-str ).
       ENDIF.
 
       lv_inline = ls_t-str.
@@ -6419,8 +5820,7 @@ METHOD nm_data_checks.
         CONTINUE.
       ENDIF.
 
-      lv_prev_u = ls_prev_id-str.
-      TRANSLATE lv_prev_u TO UPPER CASE.
+      lv_prev_u = to_upper( ls_prev_id-str ).
       IF lv_prev_u <> gc_keyword-data.
         CONTINUE.
       ENDIF.
@@ -6434,14 +5834,12 @@ METHOD nm_data_checks.
 
       READ TABLE it_tokens INDEX ( lv_tok_idx - 2 ) INTO ls_prev2.
       IF sy-subrc = 0.
-        lv_prev2_u = ls_prev2-str.
-        TRANSLATE lv_prev2_u TO UPPER CASE.
+        lv_prev2_u = to_upper( ls_prev2-str ).
       ENDIF.
 
       READ TABLE it_tokens INDEX ( lv_tok_idx - 3 ) INTO ls_prev3.
       IF sy-subrc = 0.
-        lv_prev3_u = ls_prev3-str.
-        TRANSLATE lv_prev3_u TO UPPER CASE.
+        lv_prev3_u = to_upper( ls_prev3-str ).
       ENDIF.
 
     ELSE.
@@ -6452,12 +5850,10 @@ METHOD nm_data_checks.
       CONTINUE.
     ENDIF.
 
-    lv_inline_u = lv_inline.
-    TRANSLATE lv_inline_u TO UPPER CASE.
+    lv_inline_u = to_upper( lv_inline ).
 
     READ TABLE lt_seen
-      WITH TABLE KEY name_u = lv_inline_u row = ls_t-row
-      TRANSPORTING NO FIELDS.
+      WITH TABLE KEY name_u = lv_inline_u row = ls_t-row TRANSPORTING NO FIELDS.
     IF sy-subrc = 0.
       CONTINUE.
     ENDIF.
@@ -6488,8 +5884,7 @@ METHOD nm_data_checks.
             EXIT.
           ENDIF.
 
-          lv_probe_u = ls_probe-str.
-          TRANSLATE lv_probe_u TO UPPER CASE.
+          lv_probe_u = to_upper( ls_probe-str ).
 
           IF lv_probe_u = gc_kw_nm-count
              OR lv_probe_u CS gc_token_nm-count_lparen.
@@ -6498,7 +5893,7 @@ METHOD nm_data_checks.
           ENDIF.
 
           IF lv_probe_u = gc_kw_nm-reference.
-            lv_decl_kind = gc_kind_nm-object.
+            lv_decl_kind = gc_kind_nm-data_ref.
             EXIT.
           ENDIF.
 
@@ -6507,8 +5902,7 @@ METHOD nm_data_checks.
              AND lv_probe_u <> gc_keyword-like.
             lv_ref_name = ls_probe-str.
             SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-            lv_ref_name_u = lv_ref_name.
-            TRANSLATE lv_ref_name_u TO UPPER CASE.
+            lv_ref_name_u = to_upper( lv_ref_name ).
 
             READ TABLE lt_decl_kind_map WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
             IF sy-subrc = 0 AND ( ls_kind-kind = gc_kind_nm-table OR ls_kind-kind = gc_kind_nm-range ).
@@ -6542,16 +5936,14 @@ METHOD nm_data_checks.
             EXIT.
           ENDIF.
 
-          lv_probe_u = ls_probe-str.
-          TRANSLATE lv_probe_u TO UPPER CASE.
+          lv_probe_u = to_upper( ls_probe-str ).
 
           IF ls_probe-type = gc_token_type-identifier
              AND lv_probe_u <> gc_keyword-type
              AND lv_probe_u <> gc_keyword-like.
             lv_ref_name = ls_probe-str.
             SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-            lv_ref_name_u = lv_ref_name.
-            TRANSLATE lv_ref_name_u TO UPPER CASE.
+            lv_ref_name_u = to_upper( lv_ref_name ).
 
             READ TABLE lt_decl_kind_map WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
             IF sy-subrc = 0 AND ( ls_kind-kind = gc_kind_nm-table OR ls_kind-kind = gc_kind_nm-range ).
@@ -6572,7 +5964,7 @@ METHOD nm_data_checks.
         lv_decl_kind = gc_kind_nm-value.
 
       ELSEIF lv_prev3_u = gc_kw_nm-reference AND lv_prev2_u = gc_kw_nm-into.
-        lv_decl_kind = gc_kind_nm-object.
+        lv_decl_kind = gc_kind_nm-data_ref.
       ENDIF.
     ENDIF.
 
@@ -6582,6 +5974,7 @@ METHOD nm_data_checks.
              lv_resolved_line.
 
       lv_probe_idx = lv_tok_idx.
+
       WHILE lv_probe_idx < ls_stmt_info-to.
         lv_probe_idx += 1.
 
@@ -6590,8 +5983,7 @@ METHOD nm_data_checks.
           EXIT.
         ENDIF.
 
-        lv_probe_u = ls_probe-str.
-        TRANSLATE lv_probe_u TO UPPER CASE.
+        lv_probe_u = to_upper( ls_probe-str ).
 
         IF lv_probe_u = gc_keyword-equal
            OR lv_probe_u = gc_token_nm-cast_assign
@@ -6599,10 +5991,62 @@ METHOD nm_data_checks.
           CONTINUE.
         ENDIF.
 
+        IF ls_probe-type = gc_token_type-identifier
+           AND lv_probe_u NS gc_token_nm-static_call
+           AND lv_probe_u NS gc_token_nm-instance_call
+           AND lv_probe_u NS gc_keyword-value
+           AND lv_probe_u NS gc_kw_nm-corresponding
+           AND lv_probe_u NS gc_kw_nm-conv
+           AND lv_probe_u NS gc_kw_nm-new
+           AND lv_probe_u NS gc_kw_nm-cast.
+
+          CLEAR lv_u.
+          READ TABLE it_tokens INDEX ( lv_probe_idx + 1 ) INTO ls_next.
+          IF sy-subrc = 0.
+            lv_u = to_upper( ls_next-str ).
+          ENDIF.
+
+          IF lv_probe_u CS gc_keyword-lparen
+             OR lv_u = gc_keyword-lparen.
+            lv_decl_kind = gc_kind_nm-value.
+            EXIT.
+          ENDIF.
+        ENDIF.
+
+        IF ls_probe-type = gc_token_type-identifier.
+
+          CLEAR lv_prev_u.
+          READ TABLE it_tokens INDEX ( lv_probe_idx - 1 ) INTO ls_prev_id.
+          IF sy-subrc = 0.
+            lv_prev_u = to_upper( ls_prev_id-str ).
+          ENDIF.
+
+          CLEAR lv_u.
+          READ TABLE it_tokens INDEX ( lv_probe_idx + 1 ) INTO ls_next.
+          IF sy-subrc = 0.
+            lv_u = to_upper( ls_next-str ).
+          ENDIF.
+
+          IF lv_probe_u CS gc_token_nm-static_call
+             OR lv_probe_u CS gc_token_nm-instance_call
+             OR lv_prev_u = gc_token_nm-static_call
+             OR lv_prev_u = gc_token_nm-instance_call
+             OR lv_u = gc_token_nm-static_call
+             OR lv_u = gc_token_nm-instance_call.
+            lv_decl_kind = gc_kind_nm-object.
+            EXIT.
+          ENDIF.
+
+        ENDIF.
+
         IF lv_probe_u = gc_kw_nm-new
-           OR lv_probe_u = gc_kw_nm-cast
-           OR lv_probe_u = gc_keyword-ref.
+           OR lv_probe_u = gc_kw_nm-cast.
           lv_decl_kind = gc_kind_nm-object.
+          EXIT.
+        ENDIF.
+
+        IF lv_probe_u = gc_keyword-ref.
+          lv_decl_kind = gc_kind_nm-data_ref.
           EXIT.
         ENDIF.
 
@@ -6613,83 +6057,24 @@ METHOD nm_data_checks.
           READ TABLE it_tokens INDEX ( lv_probe_idx + 1 ) INTO ls_next.
           IF sy-subrc = 0.
             lv_ref_name = ls_next-str.
+            REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_ref_name WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-rparen IN lv_ref_name WITH gc_token_nm-empty.
+            CONDENSE lv_ref_name NO-GAPS.
             SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-            lv_ref_name_u = lv_ref_name.
-            TRANSLATE lv_ref_name_u TO UPPER CASE.
+            lv_ref_name_u = to_upper( lv_ref_name ).
 
-            READ TABLE lt_type_kind WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
+            READ TABLE lt_type_kind
+              WITH TABLE KEY name_u = lv_ref_name_u
+              INTO ls_kind.
             IF sy-subrc = 0.
               lv_decl_kind = ls_kind-kind.
               lv_line_kind = ls_kind-line_kind.
               EXIT.
             ENDIF.
 
-            READ TABLE lt_decl_kind_map WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
-            IF sy-subrc = 0.
-              lv_decl_kind = ls_kind-kind.
-              lv_line_kind = ls_kind-line_kind.
-              EXIT.
-            ENDIF.
-
-            nm_resolve_type_kind(
-              EXPORTING
-                iv_type_name  = lv_ref_name_u
-              IMPORTING
-                ev_kind       = lv_decl_kind
-                ev_line_kind  = lv_line_kind
-              CHANGING
-                ct_type_cache = lt_type_cache ).
-
-            IF lv_decl_kind <> gc_kind_nm-value
-               OR lv_line_kind IS NOT INITIAL.
-              EXIT.
-            ENDIF.
-            EXIT.
-          ENDIF.
-
-          IF ls_probe-type = gc_token_type-identifier.
-            lv_ref_name = ls_probe-str.
-            SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-            lv_ref_name_u = lv_ref_name.
-            TRANSLATE lv_ref_name_u TO UPPER CASE.
-
-            " OO method call in RHS: class=>method( ) / oref->method( )
-            " -> treat as object reference for inline naming
-            CLEAR lv_prev_u.
-            READ TABLE it_tokens INDEX ( lv_probe_idx - 1 ) INTO ls_prev_id.
-            IF sy-subrc = 0.
-              lv_prev_u = ls_prev_id-str.
-              TRANSLATE lv_prev_u TO UPPER CASE.
-            ENDIF.
-
-            CLEAR lv_u.
-            READ TABLE it_tokens INDEX ( lv_probe_idx + 1 ) INTO ls_next.
-            IF sy-subrc = 0.
-              lv_u = ls_next-str.
-              TRANSLATE lv_u TO UPPER CASE.
-            ENDIF.
-
-            IF lv_ref_name_u CS gc_token_nm-static_call
-               OR lv_ref_name_u CS gc_token_nm-instance_call
-               OR ( lv_prev_u = gc_token_nm-static_call
-                 AND ( lv_ref_name_u = gc_rtti_method_nm-describe_by_name
-                    OR lv_ref_name_u = gc_rtti_method_nm-describe_by_data
-                    OR lv_ref_name_u = gc_rtti_method_nm-describe_by_data_ref
-                    OR lv_ref_name_u = gc_rtti_method_nm-describe_by_object_ref ) )
-               OR ( lv_u = gc_token_nm-static_call
-                 OR lv_u = gc_token_nm-instance_call ).
-              lv_decl_kind = gc_kind_nm-object.
-              EXIT.
-            ENDIF.
-
-            READ TABLE lt_decl_kind_map WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
-            IF sy-subrc = 0.
-              lv_decl_kind = ls_kind-kind.
-              lv_line_kind = ls_kind-line_kind.
-              EXIT.
-            ENDIF.
-
-            READ TABLE lt_type_kind WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
+            READ TABLE lt_decl_kind_map
+              WITH TABLE KEY name_u = lv_ref_name_u
+              INTO ls_kind.
             IF sy-subrc = 0.
               lv_decl_kind = ls_kind-kind.
               lv_line_kind = ls_kind-line_kind.
@@ -6710,25 +6095,25 @@ METHOD nm_data_checks.
               EXIT.
             ENDIF.
 
-            CONTINUE.
-          ENDIF.
-
-          IF lv_probe_u = gc_builtin_type_nm-abap_string
-             OR lv_probe_u = gc_builtin_type_nm-abap_xstring
-             OR lv_probe_u = gc_builtin_type_nm-abap_c
-             OR lv_probe_u = gc_builtin_type_nm-abap_n
-             OR lv_probe_u = gc_builtin_type_nm-abap_d
-             OR lv_probe_u = gc_builtin_type_nm-abap_t
-             OR lv_probe_u = gc_builtin_type_nm-abap_i
-             OR lv_probe_u = gc_builtin_type_nm-abap_int8
-             OR lv_probe_u = gc_builtin_type_nm-abap_f
-             OR lv_probe_u = gc_builtin_type_nm-abap_p
-             OR lv_probe_u = gc_builtin_type_nm-abap_decfloat16
-             OR lv_probe_u = gc_builtin_type_nm-abap_decfloat34
-             OR lv_probe_u = gc_builtin_type_nm-abap_utclong.
-            lv_decl_kind = gc_kind_nm-value.
             EXIT.
           ENDIF.
+        ENDIF.
+
+        IF lv_probe_u = gc_builtin_type_nm-abap_string
+           OR lv_probe_u = gc_builtin_type_nm-abap_xstring
+           OR lv_probe_u = gc_builtin_type_nm-abap_c
+           OR lv_probe_u = gc_builtin_type_nm-abap_n
+           OR lv_probe_u = gc_builtin_type_nm-abap_d
+           OR lv_probe_u = gc_builtin_type_nm-abap_t
+           OR lv_probe_u = gc_builtin_type_nm-abap_i
+           OR lv_probe_u = gc_builtin_type_nm-abap_int8
+           OR lv_probe_u = gc_builtin_type_nm-abap_f
+           OR lv_probe_u = gc_builtin_type_nm-abap_p
+           OR lv_probe_u = gc_builtin_type_nm-abap_decfloat16
+           OR lv_probe_u = gc_builtin_type_nm-abap_decfloat34
+           OR lv_probe_u = gc_builtin_type_nm-abap_utclong.
+          lv_decl_kind = gc_kind_nm-value.
+          EXIT.
         ENDIF.
       ENDWHILE.
     ENDIF.
@@ -6737,46 +6122,50 @@ METHOD nm_data_checks.
       lv_ok_inline = COND abap_bool(
         WHEN ls_stmt_info-is_local_scope = abap_true
         THEN xsdbool(
-               lv_inline_u CP gc_pat_local-lc    OR
-               lv_inline_u CP gc_pat_local-lv    OR
-               lv_inline_u CP gc_pat_local-ls    OR
-               lv_inline_u CP gc_pat_local-lt    OR
-               lv_inline_u CP gc_pat_local-lr    OR
-               lv_inline_u CP gc_pat_local-lm    OR
-               lv_inline_u CP gc_pat_local-lty   OR
-               lv_inline_u CP gc_pat_local-lty_t OR
-               lv_inline_u CP gc_pat_local-lfs   OR
-               lv_inline_u CP gc_pat_ref_nm-local_object             )
-        ELSE xsdbool(
-               lv_inline_u CP gc_pat_global-gc    OR
-               lv_inline_u CP gc_pat_global-gv    OR
-               lv_inline_u CP gc_pat_global-gs    OR
-               lv_inline_u CP gc_pat_global-gt    OR
-               lv_inline_u CP gc_pat_global-gr    OR
-               lv_inline_u CP gc_pat_global-gm    OR
-               lv_inline_u CP gc_pat_global-gty   OR
-               lv_inline_u CP gc_pat_global-gty_t OR
-               lv_inline_u CP gc_pat_global-gfs   OR
-               lv_inline_u CP gc_pat_ref_nm-global_object              )
+           lv_inline_u CP lc_pattern-local_constant     OR
+           lv_inline_u CP lc_pattern-local_value        OR
+           lv_inline_u CP lc_pattern-local_structure    OR
+           lv_inline_u CP lc_pattern-local_table        OR
+           lv_inline_u CP lc_pattern-local_data_ref     OR
+           lv_inline_u CP lc_pattern-local_macro        OR
+           lv_inline_u CP lc_pattern-local_type_struct  OR
+           lv_inline_u CP lc_pattern-local_type_table   OR
+           lv_inline_u CP lc_pattern-local_field_symbol OR
+           lv_inline_u CP lc_pattern-local_object_ref )
+    ELSE xsdbool(
+           lv_inline_u CP lc_pattern-global_constant     OR
+           lv_inline_u CP lc_pattern-global_value        OR
+           lv_inline_u CP lc_pattern-global_structure    OR
+           lv_inline_u CP lc_pattern-global_table        OR
+           lv_inline_u CP lc_pattern-global_data_ref     OR
+           lv_inline_u CP lc_pattern-global_macro        OR
+           lv_inline_u CP lc_pattern-global_type_struct  OR
+           lv_inline_u CP lc_pattern-global_type_table   OR
+           lv_inline_u CP lc_pattern-global_field_symbol OR
+           lv_inline_u CP lc_pattern-global_object_ref )
       ).
     ELSE.
       lv_ok_inline = COND abap_bool(
+        WHEN ls_stmt_info-is_local_scope = abap_true AND lv_decl_kind = gc_kind_nm-data_ref
+        THEN xsdbool( lv_inline_u CP lc_pattern-local_data_ref )
         WHEN ls_stmt_info-is_local_scope = abap_true AND lv_decl_kind = gc_kind_nm-object
-        THEN xsdbool( lv_inline_u CP gc_pat_ref_nm-local_object )
+        THEN xsdbool( lv_inline_u CP lc_pattern-local_object_ref )
         WHEN ls_stmt_info-is_local_scope = abap_true AND lv_decl_kind = gc_kind_nm-table
-        THEN xsdbool( lv_inline_u CP gc_pat_local-lt )
+        THEN xsdbool( lv_inline_u CP lc_pattern-local_table )
         WHEN ls_stmt_info-is_local_scope = abap_true AND lv_decl_kind = gc_kind_nm-structure
-        THEN xsdbool( lv_inline_u CP gc_pat_local-ls )
+        THEN xsdbool( lv_inline_u CP lc_pattern-local_structure )
         WHEN ls_stmt_info-is_local_scope = abap_true
-        THEN xsdbool( lv_inline_u CP gc_pat_local-lv )
+        THEN xsdbool( lv_inline_u CP lc_pattern-local_value )
 
+        WHEN lv_decl_kind = gc_kind_nm-data_ref
+        THEN xsdbool( lv_inline_u CP lc_pattern-global_data_ref )
         WHEN lv_decl_kind = gc_kind_nm-object
-        THEN xsdbool( lv_inline_u CP gc_pat_ref_nm-global_object )
+        THEN xsdbool( lv_inline_u CP lc_pattern-global_object_ref )
         WHEN lv_decl_kind = gc_kind_nm-table
-        THEN xsdbool( lv_inline_u CP gc_pat_global-gt )
+        THEN xsdbool( lv_inline_u CP lc_pattern-global_table )
         WHEN lv_decl_kind = gc_kind_nm-structure
-        THEN xsdbool( lv_inline_u CP gc_pat_global-gs )
-        ELSE xsdbool( lv_inline_u CP gc_pat_global-gv )
+        THEN xsdbool( lv_inline_u CP lc_pattern-global_structure )
+        ELSE xsdbool( lv_inline_u CP lc_pattern-global_value )
       ).
 
       READ TABLE lt_decl_kind_map WITH TABLE KEY name_u = lv_inline_u TRANSPORTING NO FIELDS.
@@ -6794,25 +6183,29 @@ METHOD nm_data_checks.
     IF lv_ok_inline = abap_false AND lv_decl_kind <> gc_kind_nm-unknown.
       IF ls_stmt_info-is_local_scope = abap_true.
         CASE lv_decl_kind.
+          WHEN gc_kind_nm-data_ref.
+            MESSAGE w049(z_gsp04_message) WITH gc_msg_nm-inline lv_inline lc_pattern-local_data_ref INTO lv_text.
           WHEN gc_kind_nm-object.
-            MESSAGE w049(z_gsp04_message) WITH gc_msg_scope_nm-inline lv_inline gc_prefix_nm-lo INTO lv_text.
+            MESSAGE w049(z_gsp04_message) WITH gc_msg_nm-inline lv_inline lc_pattern-local_object_ref INTO lv_text.
           WHEN gc_kind_nm-table.
-            MESSAGE w066(z_gsp04_message) WITH gc_msg_scope_nm-inline lv_inline gc_prefix_nm-lt INTO lv_text.
+            MESSAGE w066(z_gsp04_message) WITH gc_msg_nm-inline lv_inline lc_pattern-local_table INTO lv_text.
           WHEN gc_kind_nm-structure.
-            MESSAGE w067(z_gsp04_message) WITH gc_msg_scope_nm-inline lv_inline gc_prefix_nm-ls INTO lv_text.
+            MESSAGE w067(z_gsp04_message) WITH gc_msg_nm-inline lv_inline lc_pattern-local_structure INTO lv_text.
           WHEN OTHERS.
-            MESSAGE w068(z_gsp04_message) WITH gc_msg_scope_nm-inline lv_inline gc_prefix_nm-lv INTO lv_text.
+            MESSAGE w068(z_gsp04_message) WITH gc_msg_nm-inline lv_inline lc_pattern-local_value INTO lv_text.
         ENDCASE.
       ELSE.
         CASE lv_decl_kind.
+          WHEN gc_kind_nm-data_ref.
+            MESSAGE w049(z_gsp04_message) WITH gc_msg_nm-global_inline lv_inline lc_pattern-global_data_ref INTO lv_text.
           WHEN gc_kind_nm-object.
-            MESSAGE w049(z_gsp04_message) WITH gc_msg_scope_nm-global_inline lv_inline gc_prefix_nm-go INTO lv_text.
+            MESSAGE w049(z_gsp04_message) WITH gc_msg_nm-global_inline lv_inline lc_pattern-global_object_ref INTO lv_text.
           WHEN gc_kind_nm-table.
-            MESSAGE w066(z_gsp04_message) WITH gc_msg_scope_nm-global_inline lv_inline gc_prefix_nm-gt INTO lv_text.
+            MESSAGE w066(z_gsp04_message) WITH gc_msg_nm-global_inline lv_inline lc_pattern-global_table INTO lv_text.
           WHEN gc_kind_nm-structure.
-            MESSAGE w067(z_gsp04_message) WITH gc_msg_scope_nm-global_inline lv_inline gc_prefix_nm-gs INTO lv_text.
+            MESSAGE w067(z_gsp04_message) WITH gc_msg_nm-global_inline lv_inline lc_pattern-global_structure INTO lv_text.
           WHEN OTHERS.
-            MESSAGE w068(z_gsp04_message) WITH gc_msg_scope_nm-global_inline lv_inline gc_prefix_nm-gv INTO lv_text.
+            MESSAGE w068(z_gsp04_message) WITH gc_msg_nm-global_inline lv_inline lc_pattern-global_value INTO lv_text.
         ENDCASE.
       ENDIF.
 
@@ -6837,7 +6230,7 @@ METHOD nm_data_checks.
     lv_tok_idx = sy-tabix.
 
     IF lv_stmt_idx = 0.
-      ADD 1 TO lv_stmt_idx.
+      lv_stmt_idx += 1.
       READ TABLE it_stmt_info INDEX lv_stmt_idx INTO ls_stmt_info.
       IF sy-subrc <> 0.
         EXIT.
@@ -6846,7 +6239,7 @@ METHOD nm_data_checks.
              lv_stmt_is_inline.
 
     ELSEIF lv_tok_idx > ls_stmt_info-to.
-      ADD 1 TO lv_stmt_idx.
+      lv_stmt_idx += 1.
       READ TABLE it_stmt_info INDEX lv_stmt_idx INTO ls_stmt_info.
       IF sy-subrc <> 0.
         EXIT.
@@ -6876,8 +6269,7 @@ METHOD nm_data_checks.
       CONTINUE.
     ENDIF.
 
-    lv_u = ls_t-str.
-    TRANSLATE lv_u TO UPPER CASE.
+    lv_u = to_upper( ls_t-str ).
 
     IF ls_t-type = gc_token_type-identifier.
       IF lv_u <> gc_keyword-data
@@ -6915,13 +6307,11 @@ METHOD nm_data_checks.
     ENDIF.
 
     lv_name   = ls_prev_id-str.
-    lv_name_u = lv_name.
+    lv_name_u = to_upper( lv_name ).
     lv_row    = ls_prev_id-row.
-    TRANSLATE lv_name_u TO UPPER CASE.
 
     READ TABLE lt_seen
-      WITH TABLE KEY name_u = lv_name_u row = lv_row
-      TRANSPORTING NO FIELDS.
+      WITH TABLE KEY name_u = lv_name_u row = lv_row TRANSPORTING NO FIELDS.
     IF sy-subrc = 0.
       CONTINUE.
     ENDIF.
@@ -6932,16 +6322,16 @@ METHOD nm_data_checks.
     ) INTO TABLE lt_seen.
 
     lv_has_local_prefix = xsdbool(
-      lv_name_u CP gc_pat_local-lc    OR
-      lv_name_u CP gc_pat_local-lv    OR
-      lv_name_u CP gc_pat_local-ls    OR
-      lv_name_u CP gc_pat_local-lt    OR
-      lv_name_u CP gc_pat_local-lr    OR
-      lv_name_u CP gc_pat_local-lm    OR
-      lv_name_u CP gc_pat_local-lty   OR
-      lv_name_u CP gc_pat_local-lty_t OR
-      lv_name_u CP gc_pat_local-lfs   OR
-      lv_name_u CP gc_pat_ref_nm-local_object             ).
+           lv_inline_u CP lc_pattern-local_constant     OR
+           lv_inline_u CP lc_pattern-local_value        OR
+           lv_inline_u CP lc_pattern-local_structure    OR
+           lv_inline_u CP lc_pattern-local_table        OR
+           lv_inline_u CP lc_pattern-local_data_ref     OR
+           lv_inline_u CP lc_pattern-local_macro        OR
+           lv_inline_u CP lc_pattern-local_type_struct  OR
+           lv_inline_u CP lc_pattern-local_type_table   OR
+           lv_inline_u CP lc_pattern-local_field_symbol OR
+           lv_inline_u CP lc_pattern-local_object_ref   ).
 
     CLEAR: lv_decl_kind,
            lv_line_kind.
@@ -6956,8 +6346,7 @@ METHOD nm_data_checks.
         EXIT.
       ENDIF.
 
-      lv_probe_u = ls_probe-str.
-      TRANSLATE lv_probe_u TO UPPER CASE.
+      lv_probe_u = to_upper( ls_probe-str ).
 
       IF lv_probe_u = gc_keyword-ref.
         lv_decl_kind = gc_kind_nm-object.
@@ -6967,16 +6356,14 @@ METHOD nm_data_checks.
       IF lv_probe_u = gc_keyword-line.
         READ TABLE it_tokens INDEX ( lv_probe_idx + 1 ) INTO ls_next.
         IF sy-subrc = 0.
-          lv_u = ls_next-str.
-          TRANSLATE lv_u TO UPPER CASE.
+          lv_u = to_upper( ls_next-str ).
 
           IF lv_u = gc_keyword-of.
             READ TABLE it_tokens INDEX ( lv_probe_idx + 2 ) INTO ls_next.
             IF sy-subrc = 0.
               lv_ref_name = ls_next-str.
               SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-              lv_ref_name_u = lv_ref_name.
-              TRANSLATE lv_ref_name_u TO UPPER CASE.
+              lv_ref_name_u = to_upper( lv_ref_name ).
 
               " 1) Resolve from declaration map built in this method
               READ TABLE lt_decl_kind_map WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
@@ -7008,12 +6395,12 @@ METHOD nm_data_checks.
 
               IF lv_resolved_kind = gc_kind_nm-table.
                 IF lv_resolved_line IS NOT INITIAL.
-                  lv_decl_kind = lv_resolved_line.
+                  lv_line_kind = lv_resolved_line.
                 ELSE.
-                  lv_decl_kind = gc_kind_nm-structure.
+                  lv_line_kind = gc_kind_nm-structure.
                 ENDIF.
-              ELSE.
-                lv_decl_kind = lv_resolved_kind.
+              ELSEIF lv_resolved_kind IS NOT INITIAL.
+                lv_line_kind = lv_resolved_kind.
               ENDIF.
               EXIT.
             ENDIF.
@@ -7030,20 +6417,6 @@ METHOD nm_data_checks.
             EXIT.
           ENDIF.
 
-          " 4) Fallback for unresolved local/program type names
-          IF lv_ref_name_u CP gc_type_pat_nm-gty_t
-             OR lv_ref_name_u CP gc_type_pat_nm-lty_t
-             OR lv_ref_name_u CP gc_type_pat_nm-tt
-             OR lv_ref_name_u CP gc_type_pat_nm-any_ty_t.
-            lv_decl_kind = gc_kind_nm-structure.
-          ELSEIF lv_ref_name_u CP gc_type_pat_nm-gty
-              OR lv_ref_name_u CP gc_type_pat_nm-lty
-              OR lv_ref_name_u CP gc_type_pat_nm-ty.
-            lv_decl_kind = gc_kind_nm-structure.
-          ELSE.
-            lv_decl_kind = gc_kind_nm-value.
-          ENDIF.
-          EXIT.
         ENDIF.
       ENDIF.
 
@@ -7067,8 +6440,7 @@ METHOD nm_data_checks.
         IF sy-subrc = 0.
           lv_ref_name = ls_next-str.
           SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-          lv_ref_name_u = lv_ref_name.
-          TRANSLATE lv_ref_name_u TO UPPER CASE.
+          lv_ref_name_u = to_upper( lv_ref_name ).
 
           IF lv_ref_name_u = gc_builtin_type_nm-abap_string
              OR lv_ref_name_u = gc_builtin_type_nm-abap_xstring
@@ -7101,14 +6473,27 @@ METHOD nm_data_checks.
             EXIT.
           ENDIF.
 
+          CLEAR: lv_resolved_kind,
+                 lv_resolved_line.
+
           nm_resolve_type_kind(
             EXPORTING
               iv_type_name  = lv_ref_name_u
             IMPORTING
-              ev_kind       = lv_decl_kind
-              ev_line_kind  = lv_line_kind
+              ev_kind       = lv_resolved_kind
+              ev_line_kind  = lv_resolved_line
             CHANGING
               ct_type_cache = lt_type_cache ).
+
+          IF lv_resolved_kind = gc_kind_nm-table.
+            IF lv_resolved_line IS NOT INITIAL.
+              lv_line_kind = lv_resolved_line.
+            ELSE.
+              lv_line_kind = gc_kind_nm-structure.
+            ENDIF.
+          ELSEIF lv_resolved_kind IS NOT INITIAL.
+            lv_line_kind = lv_resolved_kind.
+          ENDIF.
         ENDIF.
         EXIT.
       ENDIF.
@@ -7133,8 +6518,7 @@ METHOD nm_data_checks.
       IF ls_probe-type = gc_token_type-identifier.
         lv_ref_name = ls_probe-str.
         SHIFT lv_ref_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
-        lv_ref_name_u = lv_ref_name.
-        TRANSLATE lv_ref_name_u TO UPPER CASE.
+        lv_ref_name_u = to_upper( lv_ref_name ).
 
         READ TABLE lt_type_kind WITH TABLE KEY name_u = lv_ref_name_u INTO ls_kind.
         IF sy-subrc = 0.
@@ -7164,8 +6548,7 @@ METHOD nm_data_checks.
 
     IF ls_stmt_info-is_local_scope = abap_false.
       READ TABLE ct_global_decl
-        WITH TABLE KEY name_u = lv_name_u
-        TRANSPORTING NO FIELDS.
+        WITH TABLE KEY name_u = lv_name_u TRANSPORTING NO FIELDS.
       IF sy-subrc <> 0.
         INSERT VALUE gty_global_decl(
           name_u = lv_name_u
@@ -7187,46 +6570,54 @@ METHOD nm_data_checks.
     ) INTO TABLE lt_decl_kind_map.
 
     lv_ok = COND abap_bool(
+      WHEN ls_stmt_info-is_local_scope = abap_true AND lv_decl_kind = gc_kind_nm-data_ref
+      THEN xsdbool( lv_name_u CP lc_pattern-local_data_ref )
       WHEN ls_stmt_info-is_local_scope = abap_true AND lv_decl_kind = gc_kind_nm-object
-      THEN xsdbool( lv_name_u CP gc_pat_ref_nm-local_object )
+      THEN xsdbool( lv_name_u CP lc_pattern-local_object_ref )
       WHEN ls_stmt_info-is_local_scope = abap_true AND lv_decl_kind = gc_kind_nm-table
-      THEN xsdbool( lv_name_u CP gc_pat_local-lt )
+      THEN xsdbool( lv_name_u CP lc_pattern-local_table )
       WHEN ls_stmt_info-is_local_scope = abap_true AND lv_decl_kind = gc_kind_nm-structure
-      THEN xsdbool( lv_name_u CP gc_pat_local-ls )
+      THEN xsdbool( lv_name_u CP lc_pattern-local_structure )
       WHEN ls_stmt_info-is_local_scope = abap_true
-      THEN xsdbool( lv_name_u CP gc_pat_local-lv )
+      THEN xsdbool( lv_name_u CP lc_pattern-local_value )
 
+      WHEN lv_decl_kind = gc_kind_nm-data_ref
+      THEN xsdbool( lv_name_u CP lc_pattern-global_data_ref )
       WHEN lv_decl_kind = gc_kind_nm-object
-      THEN xsdbool( lv_name_u CP gc_pat_ref_nm-global_object )
+      THEN xsdbool( lv_name_u CP lc_pattern-global_object_ref )
       WHEN lv_decl_kind = gc_kind_nm-table
-      THEN xsdbool( lv_name_u CP gc_pat_global-gt )
+      THEN xsdbool( lv_name_u CP lc_pattern-global_table )
       WHEN lv_decl_kind = gc_kind_nm-structure
-      THEN xsdbool( lv_name_u CP gc_pat_global-gs )
-      ELSE xsdbool( lv_name_u CP gc_pat_global-gv )
+      THEN xsdbool( lv_name_u CP lc_pattern-global_structure )
+      ELSE xsdbool( lv_name_u CP lc_pattern-global_value )
     ).
 
     IF lv_ok = abap_false.
       IF ls_stmt_info-is_local_scope = abap_true.
         CASE lv_decl_kind.
+          WHEN gc_kind_nm-data_ref.
+            MESSAGE w049(z_gsp04_message) WITH gc_msg_nm-local lv_name lc_pattern-local_data_ref INTO lv_text.
           WHEN gc_kind_nm-object.
-            MESSAGE w049(z_gsp04_message) WITH gc_msg_scope_nm-local lv_name gc_prefix_nm-lo INTO lv_text.
+            MESSAGE w049(z_gsp04_message) WITH gc_msg_nm-local lv_name lc_pattern-local_object_ref INTO lv_text.
           WHEN gc_kind_nm-table.
-            MESSAGE w066(z_gsp04_message) WITH gc_msg_scope_nm-local lv_name gc_prefix_nm-lt INTO lv_text.
+            MESSAGE w066(z_gsp04_message) WITH gc_msg_nm-local lv_name lc_pattern-local_table INTO lv_text.
           WHEN gc_kind_nm-structure.
-            MESSAGE w067(z_gsp04_message) WITH gc_msg_scope_nm-local lv_name gc_prefix_nm-ls INTO lv_text.
+            MESSAGE w067(z_gsp04_message) WITH gc_msg_nm-local lv_name lc_pattern-local_structure INTO lv_text.
           WHEN OTHERS.
-            MESSAGE w068(z_gsp04_message) WITH gc_msg_scope_nm-local lv_name gc_prefix_nm-lv INTO lv_text.
+            MESSAGE w068(z_gsp04_message) WITH gc_msg_nm-local lv_name lc_pattern-local_value INTO lv_text.
         ENDCASE.
       ELSE.
         CASE lv_decl_kind.
+          WHEN gc_kind_nm-data_ref.
+            MESSAGE w049(z_gsp04_message) WITH gc_msg_nm-global lv_name lc_pattern-global_data_ref INTO lv_text.
           WHEN gc_kind_nm-object.
-            MESSAGE w049(z_gsp04_message) WITH gc_msg_scope_nm-global lv_name gc_prefix_nm-go INTO lv_text.
+            MESSAGE w049(z_gsp04_message) WITH gc_msg_nm-global lv_name lc_pattern-global_object_ref INTO lv_text.
           WHEN gc_kind_nm-table.
-            MESSAGE w066(z_gsp04_message) WITH gc_msg_scope_nm-global lv_name gc_prefix_nm-gt INTO lv_text.
+            MESSAGE w066(z_gsp04_message) WITH gc_msg_nm-global lv_name lc_pattern-global_table INTO lv_text.
           WHEN gc_kind_nm-structure.
-            MESSAGE w067(z_gsp04_message) WITH gc_msg_scope_nm-global lv_name gc_prefix_nm-gs INTO lv_text.
+            MESSAGE w067(z_gsp04_message) WITH gc_msg_nm-global lv_name lc_pattern-global_structure INTO lv_text.
           WHEN OTHERS.
-            MESSAGE w068(z_gsp04_message) WITH gc_msg_scope_nm-global lv_name gc_prefix_nm-gv INTO lv_text.
+            MESSAGE w068(z_gsp04_message) WITH gc_msg_nm-global lv_name lc_pattern-global_value INTO lv_text.
         ENDCASE.
       ENDIF.
 
@@ -7261,14 +6652,14 @@ METHOD nm_data_checks.
     lv_tok_idx = sy-tabix.
 
     IF lv_stmt_idx = 0.
-      ADD 1 TO lv_stmt_idx.
+      lv_stmt_idx += 1.
       READ TABLE it_stmt_info INDEX lv_stmt_idx INTO ls_stmt_info.
       IF sy-subrc <> 0.
         EXIT.
       ENDIF.
 
     ELSEIF lv_tok_idx > ls_stmt_info-to.
-      ADD 1 TO lv_stmt_idx.
+      lv_stmt_idx += 1.
       READ TABLE it_stmt_info INDEX lv_stmt_idx INTO ls_stmt_info.
       IF sy-subrc <> 0.
         EXIT.
@@ -7280,19 +6671,17 @@ METHOD nm_data_checks.
       CONTINUE.
     ENDIF.
 
-    lv_id_u = ls_t-str.
-    TRANSLATE lv_id_u TO UPPER CASE.
+    lv_id_u = to_upper( ls_t-str ).
 
     READ TABLE ct_global_decl
-      WITH TABLE KEY name_u = lv_id_u
-      TRANSPORTING NO FIELDS.
+      WITH TABLE KEY name_u = lv_id_u TRANSPORTING NO FIELDS.
     IF sy-subrc <> 0.
       CONTINUE.
     ENDIF.
 
     READ TABLE ct_use
       WITH TABLE KEY name_u = lv_id_u
-      INTO ls_u.
+      INTO DATA(ls_u).
     IF sy-subrc <> 0.
       CLEAR ls_u.
       ls_u-name_u = lv_id_u.
@@ -7306,108 +6695,256 @@ ENDMETHOD.
 
 METHOD nm_resolve_type_kind.
 
-  DATA(lv_type_name_u) = to_upper( iv_type_name ).
-  DATA lo_type_descr  TYPE REF TO cl_abap_typedescr.   "CLEAR
-  DATA lo_table_descr TYPE REF TO cl_abap_tabledescr.  "CLEAR
-  DATA lo_line_descr  TYPE REF TO cl_abap_typedescr.   "CLEAR
+  "============================================================
+  " Naming policy - customizable by project/company
+  "============================================================
+  CONSTANTS:
+    BEGIN OF lc_pattern,
+      global_structure  TYPE string VALUE 'GTY_*',
+      global_table_type TYPE string VALUE 'GTY_T_*',
+      local_structure   TYPE string VALUE 'LTY_*',
+      local_table_type  TYPE string VALUE 'LTY_T_*',
+    END OF lc_pattern.
 
-  SHIFT lv_type_name_u LEFT DELETING LEADING gc_keyword-exclamation_mark.
+  DATA(lv_type_name_upper) = to_upper( iv_type_name ).
 
-  ev_kind      = gc_kind_nm-value.
-  ev_line_kind = ``.     "CLEAR
+  DATA lo_runtime_type_descr TYPE REF TO cl_abap_typedescr.
+  DATA lo_table_type_descr   TYPE REF TO cl_abap_tabledescr.
+  DATA lo_table_line_descr   TYPE REF TO cl_abap_typedescr.
+  DATA lv_cache_allowed      TYPE abap_bool VALUE abap_true.
 
-  IF lv_type_name_u IS INITIAL.
+  SHIFT lv_type_name_upper LEFT DELETING LEADING gc_keyword-exclamation_mark.
+
+  CLEAR: ev_kind,
+         ev_line_kind.
+
+  IF lv_type_name_upper IS INITIAL.
     RETURN.
   ENDIF.
+  "------------------------------------------------------------
+  " Catch invalid token must not go into RTTI
+  "------------------------------------------------------------
+  IF lv_type_name_upper = gc_keyword-equal
+   OR lv_type_name_upper = gc_keyword-hash
+   OR lv_type_name_upper = gc_keyword-lparen
+   OR lv_type_name_upper = gc_keyword-rparen
+   OR lv_type_name_upper CS gc_keyword-lparen
+   OR lv_type_name_upper CS gc_keyword-rparen
+   OR lv_type_name_upper CS gc_keyword-comma
+   OR lv_type_name_upper CS gc_keyword-colon
+   OR lv_type_name_upper CS gc_keyword-semicolon
+   OR lv_type_name_upper CS gc_keyword-quote
+   OR lv_type_name_upper CS gc_keyword-empty_single_bt
+   OR lv_type_name_upper CS gc_keyword-empty_single_pipe
+   OR lv_type_name_upper CP gc_keyword-invalid_assign_pat.
 
+    ev_kind          = gc_kind_nm-value.
+    ev_line_kind     = ``.
+    lv_cache_allowed = abap_false.
+    RETURN.
+
+  ENDIF.
+  "------------------------------------------------------------
+  " 1) Cache first - avoid repeated RTTI/DDIC calls
+  "------------------------------------------------------------
   READ TABLE ct_type_cache
-    ASSIGNING FIELD-SYMBOL(<ls_cache>)
-    WITH TABLE KEY name_u = lv_type_name_u.
+    ASSIGNING FIELD-SYMBOL(<lfs_cached_type>)
+    WITH TABLE KEY name_u = lv_type_name_upper.
 
   IF sy-subrc = 0.
-    ev_kind      = <ls_cache>-kind.
-    ev_line_kind = <ls_cache>-line_kind.
+    ev_kind      = <lfs_cached_type>-kind.
+    ev_line_kind = <lfs_cached_type>-line_kind.
     RETURN.
   ENDIF.
 
-  IF lv_type_name_u = gc_builtin_type_nm-abap_string
-     OR lv_type_name_u = gc_builtin_type_nm-abap_xstring
-     OR lv_type_name_u = gc_builtin_type_nm-abap_c
-     OR lv_type_name_u = gc_builtin_type_nm-abap_n
-     OR lv_type_name_u = gc_builtin_type_nm-abap_d
-     OR lv_type_name_u = gc_builtin_type_nm-abap_t
-     OR lv_type_name_u = gc_builtin_type_nm-abap_i
-     OR lv_type_name_u = gc_builtin_type_nm-abap_int8
-     OR lv_type_name_u = gc_builtin_type_nm-abap_f
-     OR lv_type_name_u = gc_builtin_type_nm-abap_p
-     OR lv_type_name_u = gc_builtin_type_nm-abap_decfloat16
-     OR lv_type_name_u = gc_builtin_type_nm-abap_decfloat34
-     OR lv_type_name_u = gc_builtin_type_nm-abap_utclong.
+  "------------------------------------------------------------
+  " 2) Built-in ABAP types are scalar/value types
+  "------------------------------------------------------------
+  IF lv_type_name_upper = gc_builtin_type_nm-abap_string
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_xstring
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_c
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_n
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_d
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_t
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_i
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_int8
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_f
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_p
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_decfloat16
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_decfloat34
+     OR lv_type_name_upper = gc_builtin_type_nm-abap_utclong.
 
     ev_kind = gc_kind_nm-value.
 
-  ELSEIF lv_type_name_u CP gc_type_pat_nm-any_ty_t
-      OR lv_type_name_u CP gc_type_pat_nm-tt
-      OR lv_type_name_u CP gc_type_pat_nm-gty_t
-      OR lv_type_name_u CP gc_type_pat_nm-lty_t.
-
-    ev_kind      = gc_kind_nm-table.
-    ev_line_kind = gc_kind_nm-structure.
-
-  ELSEIF lv_type_name_u CP gc_type_pat_nm-gty
-      OR lv_type_name_u CP gc_type_pat_nm-lty
-      OR lv_type_name_u CP gc_type_pat_nm-ty.
-
-    ev_kind = gc_kind_nm-structure.
-
   ELSE.
 
-    CALL METHOD cl_abap_typedescr=>describe_by_name
+    "----------------------------------------------------------
+    " 3) Try real runtime/DDIC type resolution
+    "----------------------------------------------------------
+    cl_abap_typedescr=>describe_by_name(
       EXPORTING
-        p_name         = lv_type_name_u
+        p_name         = lv_type_name_upper
       RECEIVING
-        p_descr_ref    = lo_type_descr
+        p_descr_ref    = lo_runtime_type_descr
       EXCEPTIONS
         type_not_found = 1
-        OTHERS         = 2.
+        OTHERS         = 2 ).
 
-    IF sy-subrc = 0 AND lo_type_descr IS BOUND.
+    IF sy-subrc = 0 AND lo_runtime_type_descr IS BOUND.
 
-      IF lo_type_descr IS INSTANCE OF cl_abap_tabledescr.
+      IF lo_runtime_type_descr IS INSTANCE OF cl_abap_tabledescr.
         ev_kind = gc_kind_nm-table.
 
-        lo_table_descr ?= lo_type_descr.
-        lo_line_descr = lo_table_descr->get_table_line_type( ).
+        lo_table_type_descr ?= lo_runtime_type_descr.
+        lo_table_line_descr = lo_table_type_descr->get_table_line_type( ).
 
-        IF lo_line_descr IS INSTANCE OF cl_abap_structdescr.
+        IF lo_table_line_descr IS INSTANCE OF cl_abap_structdescr.
           ev_line_kind = gc_kind_nm-structure.
-        ELSEIF lo_line_descr IS INSTANCE OF cl_abap_refdescr.
+        ELSEIF lo_table_line_descr IS INSTANCE OF cl_abap_refdescr.
           ev_line_kind = gc_kind_nm-object.
         ELSE.
           ev_line_kind = gc_kind_nm-value.
         ENDIF.
 
-      ELSEIF lo_type_descr IS INSTANCE OF cl_abap_structdescr.
+      ELSEIF lo_runtime_type_descr IS INSTANCE OF cl_abap_structdescr.
         ev_kind = gc_kind_nm-structure.
 
-      ELSEIF lo_type_descr IS INSTANCE OF cl_abap_refdescr.
+      ELSEIF lo_runtime_type_descr IS INSTANCE OF cl_abap_refdescr.
         ev_kind = gc_kind_nm-object.
 
       ELSE.
         ev_kind = gc_kind_nm-value.
       ENDIF.
 
-    ELSE.
-      ev_kind = gc_kind_nm-value.
-    ENDIF.
+      "----------------------------------------------------------
+      " 4) Project/company fallback naming convention
+      "----------------------------------------------------------
+    ELSEIF lv_type_name_upper CP lc_pattern-global_table_type
+        OR lv_type_name_upper CP lc_pattern-local_table_type.
 
+      ev_kind      = gc_kind_nm-table.
+      ev_line_kind = gc_kind_nm-unknown.
+
+    ELSEIF lv_type_name_upper CP lc_pattern-global_structure
+        OR lv_type_name_upper CP lc_pattern-local_structure.
+
+      ev_kind = gc_kind_nm-structure.
+
+    ELSE.
+      ev_kind          = gc_kind_nm-value.
+      ev_line_kind     = ``.
+      lv_cache_allowed = abap_false.
+    ENDIF.
   ENDIF.
 
-  INSERT VALUE gty_name_kind(
-    name_u    = lv_type_name_u
-    kind      = ev_kind
-    line_kind = ev_line_kind
-  ) INTO TABLE ct_type_cache.
+  "------------------------------------------------------------
+  " 5) Store resolved result in cache
+  "------------------------------------------------------------
+  IF lv_cache_allowed = abap_true.
+    READ TABLE ct_type_cache
+      WITH TABLE KEY name_u = lv_type_name_upper
+      TRANSPORTING NO FIELDS.
+
+    IF sy-subrc <> 0.
+      INSERT VALUE gty_name_kind(
+        name_u    = lv_type_name_upper
+        kind      = ev_kind
+        line_kind = ev_line_kind
+      ) INTO TABLE ct_type_cache.
+    ENDIF.
+  ENDIF.
+
+ENDMETHOD.
+
+
+METHOD nm_resolve_sig_kind.
+
+  DATA: lv_probe_idx     TYPE sy-tabix,
+        lv_tok_u         TYPE string,
+        lv_type_name     TYPE string,
+        lv_type_name_u   TYPE string,
+        lv_resolved_kind TYPE gty_nm_kind,
+        lv_line_kind     TYPE gty_nm_kind.
+
+  CLEAR: ev_kind,
+         ev_last_idx.
+
+  ev_kind      = gc_kind_nm-value.
+  ev_last_idx  = iv_from.
+  lv_probe_idx = iv_from.
+
+  WHILE lv_probe_idx < iv_to.
+    lv_probe_idx += 1.
+
+    READ TABLE it_tokens INDEX lv_probe_idx INTO DATA(ls_tok).
+    IF sy-subrc <> 0.
+      EXIT.
+    ENDIF.
+
+    lv_tok_u = to_upper( ls_tok-str ).
+
+    IF lv_tok_u = gc_keyword-comma
+       OR lv_tok_u = gc_keyword-dot.
+      EXIT.
+    ENDIF.
+
+    IF lv_tok_u = gc_keyword-type
+       OR lv_tok_u = gc_keyword-like.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_tok_u = gc_keyword-table
+       OR lv_tok_u = gc_keyword-standard
+       OR lv_tok_u = gc_keyword-sorted
+       OR lv_tok_u = gc_keyword-hashed.
+      ev_kind = gc_kind_nm-table.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_tok_u = gc_keyword-line.
+      READ TABLE it_tokens INDEX ( lv_probe_idx + 1 ) INTO DATA(ls_next).
+      IF sy-subrc = 0
+         AND to_upper( ls_next-str ) = gc_keyword-of.
+        ev_kind = gc_kind_nm-structure.
+        EXIT.
+      ENDIF.
+    ENDIF.
+
+    IF ls_tok-type <> gc_token_type-identifier.
+      CONTINUE.
+    ENDIF.
+
+    lv_type_name = ls_tok-str.
+
+    REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_type_name WITH gc_token_nm-empty.
+    REPLACE ALL OCCURRENCES OF gc_keyword-rparen IN lv_type_name WITH gc_token_nm-empty.
+    CONDENSE lv_type_name NO-GAPS.
+    SHIFT lv_type_name LEFT DELETING LEADING gc_keyword-exclamation_mark.
+
+    lv_type_name_u = to_upper( lv_type_name ).
+
+    CLEAR: lv_resolved_kind,
+           lv_line_kind.
+
+    nm_resolve_type_kind(
+      EXPORTING
+        iv_type_name  = lv_type_name_u
+      IMPORTING
+        ev_kind       = lv_resolved_kind
+        ev_line_kind  = lv_line_kind
+      CHANGING
+        ct_type_cache = ct_type_cache ).
+
+    IF lv_resolved_kind IS INITIAL.
+      ev_kind = gc_kind_nm-value.
+    ELSE.
+      ev_kind = lv_resolved_kind.
+    ENDIF.
+
+    EXIT.
+  ENDWHILE.
+
+  ev_last_idx = lv_probe_idx.
 
 ENDMETHOD.
 ENDCLASS.

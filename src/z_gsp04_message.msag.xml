@@ -71,7 +71,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>011</MSGNR>
-     <TEXT>Variable starts with WA_ (obsolete): &amp;1</TEXT>
+     <TEXT>Variable &amp;1 uses obsolete work-area pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -302,91 +302,91 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>050</MSGNR>
-     <TEXT>Structured constant &amp;1 should follow global constant prefix GC_*.</TEXT>
+     <TEXT>Structured constant &amp;1 should follow global constant pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>051</MSGNR>
-     <TEXT>Constant &amp;1 should follow local constant prefix LC_*.</TEXT>
+     <TEXT>Constant &amp;1 should follow local constant pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>052</MSGNR>
-     <TEXT>Constant &amp;1 should follow local constant prefix GC_*.</TEXT>
+     <TEXT>Constant &amp;1 should follow global constant pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>053</MSGNR>
-     <TEXT>STATICS variable &amp;1 should follow prefix ST_*.</TEXT>
+     <TEXT>STATICS variable &amp;1 should follow pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>054</MSGNR>
-     <TEXT>Field-symbol &amp;1 should follow local prefix &lt;LFS_*&gt;.</TEXT>
+     <TEXT>Field-symbol &amp;1 should follow local pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>055</MSGNR>
-     <TEXT>Field-symbol &amp;1 should follow global prefix &lt;GFS_*&gt;.</TEXT>
+     <TEXT>Field-symbol &amp;1 should follow global pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>056</MSGNR>
-     <TEXT>Type &amp;1 should follow local table-type prefix LTY_T_*.</TEXT>
+     <TEXT>Type &amp;1 should follow local table-type pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>057</MSGNR>
-     <TEXT>Type &amp;1 should follow local type prefix LTY_*.</TEXT>
+     <TEXT>Type &amp;1 should follow local type pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>058</MSGNR>
-     <TEXT>Type &amp;1 should follow global table-type prefix GTY_T_*.</TEXT>
+     <TEXT>Type &amp;1 should follow global table-type pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>059</MSGNR>
-     <TEXT>Type &amp;1 should follow global type prefix GTY_*.</TEXT>
+     <TEXT>Type &amp;1 should follow global type pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>060</MSGNR>
-     <TEXT>Selection-screen parameter &amp;1 should follow prefix &amp;2</TEXT>
+     <TEXT>Selection-screen parameter &amp;1 should follow pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>061</MSGNR>
-     <TEXT>Radio button group &amp;1 should follow prefix RG*</TEXT>
+     <TEXT>Radio button group &amp;1 should follow pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>062</MSGNR>
-     <TEXT>Select-option &amp;1 should follow prefix S_*</TEXT>
+     <TEXT>Select-option &amp;1 should follow pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>063</MSGNR>
-     <TEXT>Selection-screen block &amp;1 should follow prefix BL_*.</TEXT>
+     <TEXT>Selection-screen block &amp;1 should follow pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>064</MSGNR>
-     <TEXT>FORM name &amp;1 should follow prefix F_*.</TEXT>
+     <TEXT>FORM name &amp;1 should follow pattern &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
