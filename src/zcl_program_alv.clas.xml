@@ -250,21 +250,6 @@
      <DESCRIPT>Get Class Include</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CMPNAME>MO_ALV</CMPNAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Basis Class for Simple Tables</DESCRIPT>
-    </SEOCOMPOTX>
-    <SEOCOMPOTX>
-     <CMPNAME>MO_EVENTS</CMPNAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Events in Simple, Two-Dimensional Tables</DESCRIPT>
-    </SEOCOMPOTX>
-    <SEOCOMPOTX>
-     <CMPNAME>MT_ANALYSIS_ALL</CMPNAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Error Result Table</DESCRIPT>
-    </SEOCOMPOTX>
-    <SEOCOMPOTX>
      <CMPNAME>NAVIGATE_ANALYSIS_HIT</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Prepare analysis data</DESCRIPT>

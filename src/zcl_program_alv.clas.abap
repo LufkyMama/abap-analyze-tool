@@ -4,10 +4,7 @@ class ZCL_PROGRAM_ALV definition
   create public .
 
 public section.
-
   types:
-*  types:
-*    ty_t_where_used_alv TYPE STANDARD TABLE OF ty_where_used_alv WITH EMPTY KEY .
     BEGIN OF gty_alv_header,
         object_name TYPE string,
         object_type TYPE string,
@@ -54,9 +51,11 @@ public section.
       !IV_DATA type ZCL_PROGRAM_WHEREUSED=>TY_FOUNDS
       !IS_HEADER type GTY_ALV_HEADER optional .
   PROTECTED SECTION.
-private section.
-
-  types:
+PRIVATE SECTION.
+  "-------------------------------------------------
+  "                  Types
+  "-------------------------------------------------
+  TYPES:
     BEGIN OF gty_error_alv,
       line        TYPE zst_error-line,
       line_txt    TYPE string,
@@ -71,59 +70,64 @@ private section.
       chk_date    TYPE zst_error-chk_date,
       chk_usr     TYPE zst_error-chk_usr,
       cell_color  TYPE lvc_t_scol,
-    END OF gty_error_alv.
-  types:
-    gty_t_error_alv TYPE STANDARD TABLE OF gty_error_alv WITH EMPTY KEY.
-
-  data MT_ANALYSIS_DISP type GTY_T_ERROR_ALV.
-  data GS_HIT           type GTY_WU_HIT.
-  data MT_DATA          type ZTT_ERROR.
-  data MT_WU_DISP       type GTY_T_WU_HIT .
-  data MT_ANALYSIS_ALL  type ZTT_ERROR.
-  data MV_CURRENT_VIEW  type STRING.
-  data MO_EVENTS        type ref to CL_SALV_EVENTS_TABLE.
-  data MO_ALV           type ref to CL_SALV_TABLE.
-
+    END OF gty_error_alv .
+  TYPES:
+    gty_t_error_alv TYPE STANDARD TABLE OF gty_error_alv WITH EMPTY KEY .
+  "-------------------------------------------------
+  "                  Attributes
+  "-------------------------------------------------
+  DATA gt_analysis_disp   TYPE gty_t_error_alv .
+  DATA gt_data            TYPE ztt_error .
+  DATA gt_wu_disp         TYPE gty_t_wu_hit .
+  DATA gt_analysis_all    TYPE ztt_error .
+  DATA gv_current_view    TYPE string .
+  DATA gs_analysis_header TYPE gty_alv_header .
+  DATA gt_analysis_alv    TYPE gty_t_error_alv .
+  DATA go_events          TYPE REF TO cl_salv_events_table .
+  DATA go_alv             TYPE REF TO cl_salv_table .
+  "-------------------------------------------------
+  "                  CONSTANTS
+  "-------------------------------------------------
   CONSTANTS:
-  BEGIN OF gc_col,
-    object_name    TYPE lvc_fname VALUE 'OBJECT_NAME',
-    hit_source     TYPE lvc_fname VALUE 'HIT_SOURCE',
-    obj_type       TYPE lvc_fname VALUE 'OBJ_TYPE',
-    short_text     TYPE lvc_fname VALUE 'SHORT_TEXT',
-    used_in_prog   TYPE lvc_fname VALUE 'USED_IN_PROG',
-    changed_by     TYPE lvc_fname VALUE 'CHANGED_BY',
-    changed_on     TYPE lvc_fname VALUE 'CHANGED_ON',
-    author         TYPE lvc_fname VALUE 'AUTHOR',
-    package        TYPE lvc_fname VALUE 'PACKAGE',
-    include        TYPE lvc_fname VALUE 'INCLUDE',
-    include_txt    TYPE lvc_fname VALUE 'INCLUDE_TXT',
-    line           TYPE lvc_fname VALUE 'LINE',
-    line_txt       TYPE lvc_fname VALUE 'LINE_TXT',
-    sev            TYPE lvc_fname VALUE 'SEV',
-    cell_color     TYPE lvc_fname VALUE 'CELL_COLOR',
-    objname        TYPE lvc_fname VALUE 'OBJNAME',
-    objtype        TYPE lvc_fname VALUE 'OBJTYPE',
-    nav_obj_name   TYPE lvc_fname VALUE 'NAV_OBJ_NAME',
-    nav_obj_type   TYPE lvc_fname VALUE 'NAV_OBJ_TYPE',
-    nav_pgmid      TYPE lvc_fname VALUE 'NAV_PGMID',
-    nav_used_name  TYPE lvc_fname VALUE 'NAV_USED_NAME',
-    nav_used_type  TYPE lvc_fname VALUE 'NAV_USED_TYPE',
-    nav_line       TYPE lvc_fname VALUE 'NAV_LINE',
-    nav_include    TYPE lvc_fname VALUE 'NAV_INCLUDE',
-    nav_method     TYPE lvc_fname VALUE 'NAV_METHOD_NAME',
-    nav_func_group TYPE lvc_fname VALUE 'NAV_FUNC_GROUP',
-    nav_kind_raw   TYPE lvc_fname VALUE 'NAV_KIND_RAW',
-    used_cls_raw   TYPE lvc_fname VALUE 'USED_CLS_RAW',
-    used_obj_raw   TYPE lvc_fname VALUE 'USED_OBJ_RAW',
-    category       TYPE lvc_fname VALUE 'CATEGORY',
-  END OF gc_col.
-  constants:
+    BEGIN OF gc_col,
+      object_name    TYPE lvc_fname VALUE 'OBJECT_NAME',
+      hit_source     TYPE lvc_fname VALUE 'HIT_SOURCE',
+      obj_type       TYPE lvc_fname VALUE 'OBJ_TYPE',
+      short_text     TYPE lvc_fname VALUE 'SHORT_TEXT',
+      used_in_prog   TYPE lvc_fname VALUE 'USED_IN_PROG',
+      changed_by     TYPE lvc_fname VALUE 'CHANGED_BY',
+      changed_on     TYPE lvc_fname VALUE 'CHANGED_ON',
+      author         TYPE lvc_fname VALUE 'AUTHOR',
+      package        TYPE lvc_fname VALUE 'PACKAGE',
+      include        TYPE lvc_fname VALUE 'INCLUDE',
+      include_txt    TYPE lvc_fname VALUE 'INCLUDE_TXT',
+      line           TYPE lvc_fname VALUE 'LINE',
+      line_txt       TYPE lvc_fname VALUE 'LINE_TXT',
+      sev            TYPE lvc_fname VALUE 'SEV',
+      cell_color     TYPE lvc_fname VALUE 'CELL_COLOR',
+      objname        TYPE lvc_fname VALUE 'OBJNAME',
+      objtype        TYPE lvc_fname VALUE 'OBJTYPE',
+      nav_obj_name   TYPE lvc_fname VALUE 'NAV_OBJ_NAME',
+      nav_obj_type   TYPE lvc_fname VALUE 'NAV_OBJ_TYPE',
+      nav_pgmid      TYPE lvc_fname VALUE 'NAV_PGMID',
+      nav_used_name  TYPE lvc_fname VALUE 'NAV_USED_NAME',
+      nav_used_type  TYPE lvc_fname VALUE 'NAV_USED_TYPE',
+      nav_line       TYPE lvc_fname VALUE 'NAV_LINE',
+      nav_include    TYPE lvc_fname VALUE 'NAV_INCLUDE',
+      nav_method     TYPE lvc_fname VALUE 'NAV_METHOD_NAME',
+      nav_func_group TYPE lvc_fname VALUE 'NAV_FUNC_GROUP',
+      nav_kind_raw   TYPE lvc_fname VALUE 'NAV_KIND_RAW',
+      used_cls_raw   TYPE lvc_fname VALUE 'USED_CLS_RAW',
+      used_obj_raw   TYPE lvc_fname VALUE 'USED_OBJ_RAW',
+      category       TYPE lvc_fname VALUE 'CATEGORY',
+    END OF gc_col .
+  CONSTANTS:
     BEGIN OF gc_repo,
       report_name TYPE syrepid     VALUE 'Z_ANALYZE_TOOL',
       pfstatus    TYPE sypfkey     VALUE 'ZSALV_STATUS',
       pgmid_r3tr  TYPE tadir-pgmid VALUE 'R3TR',
-    END OF gc_repo.
-  constants:
+    END OF gc_repo .
+  CONSTANTS:
     BEGIN OF gc_objtype,
       incl TYPE char4     VALUE 'INCL',
       prog TYPE char4     VALUE 'PROG',
@@ -136,119 +140,130 @@ private section.
       tabl TYPE char4     VALUE 'TABL',
       dtel TYPE char4     VALUE 'DTEL',
       msag TYPE char4     VALUE 'MSAG',
-    END OF gc_objtype.
-  constants:
+    END OF gc_objtype .
+  CONSTANTS:
     BEGIN OF gc_prog,
       prefix_sapl  TYPE string      VALUE 'SAPL',
       class_suffix TYPE string      VALUE 'CP',
       subc_include TYPE trdir-subc  VALUE 'I',
     END OF gc_prog .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_operation,
       show TYPE c LENGTH 10 VALUE 'SHOW',
-    END OF gc_operation.
-  constants:
+    END OF gc_operation .
+  CONSTANTS:
     BEGIN OF gc_disp,
       form        TYPE string VALUE 'FORM',
       method_impl TYPE string VALUE 'METHOD_IMPL',
       unknown     TYPE string VALUE 'UNKNOWN',
-    END OF gc_disp.
-  constants:
+    END OF gc_disp .
+  CONSTANTS:
     BEGIN OF gc_kind,
       ic TYPE c LENGTH 2 VALUE 'IC',
       fo TYPE c LENGTH 2 VALUE 'FO',
       fu TYPE c LENGTH 2 VALUE 'FU',
       ty TYPE c LENGTH 2 VALUE 'TY',
-    END OF gc_kind.
-  constants:
+    END OF gc_kind .
+  CONSTANTS:
     BEGIN OF gc_token,
       method_sep    TYPE string     VALUE '=>',
       prefix_slash  TYPE c LENGTH 1 VALUE '\',
       prefix_colon  TYPE c LENGTH 1 VALUE ':',
       pattern       TYPE c LENGTH 1 VALUE '=',
       class_include TYPE string     VALUE '*=*',
-    END OF gc_token.
-  constants:
+    END OF gc_token .
+  CONSTANTS:
     BEGIN OF gc_hit_source,
       comm           TYPE c LENGTH 4  VALUE 'COMM',
       comment_source TYPE c LENGTH 14 VALUE 'COMMENT SOURCE',
       cross_ref      TYPE c LENGTH 9  VALUE 'CROSS-REF',
-    END OF gc_hit_source.
-  constants:
+    END OF gc_hit_source .
+  CONSTANTS:
     BEGIN OF gc_category,
       hardcode    TYPE string VALUE 'HARDCODE',
       naming      TYPE string VALUE 'NAMING',
       clean_code  TYPE string VALUE 'CLEAN_CODE',
       performance TYPE string VALUE 'PERFORMANCE',
       obsolete    TYPE string VALUE 'OBSOLETE',
-    END OF gc_category.
-
-  constants GC_TZONE_VN type TTZZ-TZONE value 'UTC+7'.
-
+    END OF gc_category .
+  CONSTANTS gc_tzone_vn TYPE ttzz-tzone VALUE 'UTC+7' .
   CONSTANTS:
-  BEGIN OF gc_view,
-    all TYPE string VALUE 'ALL',
-  END OF gc_view.
-
+    BEGIN OF gc_view,
+      all TYPE string VALUE 'ALL',
+    END OF gc_view .
   CONSTANTS:
-  BEGIN OF gc_sev,
-    error   TYPE zst_error-sev VALUE 'E',
-    warning TYPE zst_error-sev VALUE 'W',
-    sev     TYPE string        VALUE 'SEV',
-  END OF gc_sev.
-
-  methods NAVIGATE_ANALYSIS_HIT
-    importing
-      !IS_HIT type GTY_ERROR_ALV.
-  methods GET_CLASS_INCLUDE_TEXT
-    importing
-      !IV_CLASS_NAME type SEOCLSNAME
-      !IV_INCLUDE type PROGRAMM
-    returning
-      value(RT_TEXT) type STRING.
-  methods ON_HOTSPOT_CLICK
-    for event LINK_CLICK of CL_SALV_EVENTS_TABLE
-    importing
-      !ROW
-      !COLUMN .
-  methods BUILD_WHERE_USED_DISPLAY
-    importing
-      !IV_FOUNDS type ZCL_PROGRAM_WHEREUSED=>TY_FOUNDS
-    returning
-      value(RT_DISP) type GTY_T_WU_HIT.
-  methods PARSE_USED_TOKEN
-    importing
-      !IV_USED_OBJ type STRING
-      !IV_USED_CLS type RSUSED_CLS
-      !IV_PROGRAM type PROGNAME optional
-      !IV_OBJECT_ROW type RSFINDLST-OBJECT_ROW optional
-    exporting
-      !EV_OBJ_TYPE type CHAR10
-      !EV_OBJ_NAME type STRING
-      !EV_NAV_PGMID type TADIR-PGMID
-      !EV_NAV_OBJECT type TADIR-OBJECT
-      !EV_NAV_NAME type SOBJ_NAME
-      !EV_NAV_INCLUDE type PROGRAMM
-      !EV_NAV_LINE type I .
-  methods ENRICH_WHERE_USED_HIT
-    changing
-      !CS_HIT type GTY_WU_HIT.
-  methods ON_SALV_LINK_CLICK
-    for event LINK_CLICK of CL_SALV_EVENTS_TABLE
-    importing
-      !ROW
-      !COLUMN .
-  methods NAVIGATE_WHERE_USED_HIT
-    importing
-      !IS_HIT type GTY_WU_HIT
-      !IV_COLUMN type SALV_DE_COLUMN.
-  methods ON_USER_COMMAND
-    for event ADDED_FUNCTION of CL_SALV_EVENTS_TABLE
-    importing
-      !E_SALV_FUNCTION .
-  methods FILTER_ANALYSIS_BY_CATEGORY
-    importing
-      !IV_CATEGORY type STRING optional.
+    BEGIN OF gc_sev,
+      error   TYPE zst_error-sev VALUE 'E',
+      warning TYPE zst_error-sev VALUE 'W',
+      sev     TYPE string        VALUE 'SEV',
+    END OF gc_sev .
+  "-------------------------------------------------
+  "                  METHODS
+  "-------------------------------------------------
+  METHODS navigate_analysis_hit
+    IMPORTING
+      !is_hit TYPE gty_error_alv .
+  METHODS get_class_include_text
+    IMPORTING
+      !iv_class_name TYPE seoclsname
+      !iv_include    TYPE programm
+    RETURNING
+      VALUE(rt_text) TYPE string .
+  METHODS on_hotspot_click
+    FOR EVENT link_click OF cl_salv_events_table
+    IMPORTING
+      !row
+      !column .
+  METHODS build_where_used_display
+    IMPORTING
+      !iv_founds     TYPE zcl_program_whereused=>ty_founds
+    RETURNING
+      VALUE(rt_disp) TYPE gty_t_wu_hit .
+  METHODS parse_used_token
+    IMPORTING
+      !iv_used_obj    TYPE string
+      !iv_used_cls    TYPE rsused_cls
+      !iv_program     TYPE progname OPTIONAL
+      !iv_object_row  TYPE rsfindlst-object_row OPTIONAL
+    EXPORTING
+      !ev_obj_type    TYPE char10
+      !ev_obj_name    TYPE string
+      !ev_nav_pgmid   TYPE tadir-pgmid
+      !ev_nav_object  TYPE tadir-object
+      !ev_nav_name    TYPE sobj_name
+      !ev_nav_include TYPE programm
+      !ev_nav_line    TYPE i .
+  METHODS enrich_where_used_hit
+    CHANGING
+      !cs_hit TYPE gty_wu_hit .
+  METHODS on_salv_link_click
+    FOR EVENT link_click OF cl_salv_events_table
+    IMPORTING
+      !row
+      !column .
+  METHODS navigate_where_used_hit
+    IMPORTING
+      !is_hit    TYPE gty_wu_hit
+      !iv_column TYPE salv_de_column .
+  METHODS on_user_command
+    FOR EVENT added_function OF cl_salv_events_table
+    IMPORTING
+      !e_salv_function .
+  METHODS filter_analysis_by_category
+    IMPORTING
+      !iv_category TYPE string OPTIONAL .
+  METHODS build_analysis_display_data
+    IMPORTING
+      !it_data        TYPE ztt_error
+    EXPORTING
+      !ev_warn_count  TYPE i
+      !ev_err_count   TYPE i
+      !ev_total_count TYPE i .
+  METHODS set_analysis_header
+    IMPORTING
+      !iv_warn_count  TYPE i
+      !iv_err_count   TYPE i
+      !iv_total_count TYPE i .
 ENDCLASS.
 
 
@@ -519,6 +534,11 @@ METHOD display_analysis_alv.
 
   DATA(ls_header) = is_header.
 
+  IF ls_header-object_name IS INITIAL
+     AND gs_analysis_header-object_name IS NOT INITIAL.
+    ls_header = gs_analysis_header.
+  ENDIF.
+
   IF ls_header-object_name IS INITIAL.
     ls_header-object_name = TEXT-c32.
   ENDIF.
@@ -534,101 +554,111 @@ METHOD display_analysis_alv.
   IF ls_header-checked_at IS INITIAL.
     ls_header-checked_at = lv_vn_time.
   ENDIF.
+
+  gs_analysis_header = ls_header.
   "---------------------------------------------------------
   " Build ALV display table
   "---------------------------------------------------------
-  CLEAR mt_data.
-  mt_data = it_data.
+  CLEAR gt_data.
+  gt_data = it_data.
 
-  IF mt_analysis_all IS INITIAL.
-    mt_analysis_all = it_data.
-    mv_current_view = gc_view-all.
+  IF gt_analysis_all IS INITIAL.
+    gt_analysis_all = it_data.
+    gv_current_view = gc_view-all.
   ENDIF.
 
-  IF mv_current_view IS INITIAL OR mv_current_view = gc_view-all.
-    mt_analysis_all = it_data.
+  IF gv_current_view IS INITIAL OR gv_current_view = gc_view-all.
+    gt_analysis_all = it_data.
   ENDIF.
 
 
-  CLEAR: lt_alv, lv_warn_count, lv_err_count.
+*  CLEAR: mt_analysis_alv, lv_warn_count, lv_err_count.
+*
+*  LOOP AT mt_data INTO DATA(ls_err).
+*    CLEAR ls_alv.
+*    MOVE-CORRESPONDING ls_err TO ls_alv.
+*
+*    " Include hiển thị
+*    ls_alv-include_txt = ls_err-include.
+*
+*    IF ls_err-objtype = gc_objtype-clas
+*       AND ls_err-objname IS NOT INITIAL
+*       AND ls_err-include IS NOT INITIAL.
+*      ls_alv-include_txt = me->get_class_include_text(
+*                             iv_class_name = CONV seoclsname( ls_err-objname )
+*                             iv_include    = CONV programm( ls_err-include ) ).
+*    ENDIF.
+*
+*    " Line hiển thị
+*    IF ls_err-line > 0.
+*      ls_alv-line_txt = CONV string( ls_err-line ).
+*    ELSE.
+*      CLEAR ls_alv-line_txt.
+*    ENDIF.
+*
+*    " Count severity
+*    CASE ls_err-sev.
+*      WHEN gc_sev-warning.
+*        lv_warn_count = lv_warn_count + 1.
+*      WHEN gc_sev-error.
+*        lv_err_count = lv_err_count + 1.
+*    ENDCASE.
+*
+*    APPEND ls_alv TO mt_analysis_alv.
+*  ENDLOOP.
+*  lv_total_count = lv_err_count + lv_warn_count.
+*  "---------------------------------------------------------
+*  " Cell color
+*  "---------------------------------------------------------
+*  LOOP AT mt_analysis_alv ASSIGNING <lfs_alv>.
+*    CLEAR: <lfs_alv>-cell_color, ls_scol.
+*
+*    ls_scol-fname = gc_sev-sev.
+*
+*    CASE <lfs_alv>-sev.
+*      WHEN gc_sev-error.
+*        ls_scol-color-col = 6.
+*        ls_scol-color-int = 1.
+*        ls_scol-color-inv = 0.
+*      WHEN gc_sev-warning.
+*        ls_scol-color-col = 3.
+*        ls_scol-color-int = 1.
+*        ls_scol-color-inv = 0.
+*      WHEN OTHERS.
+*        CONTINUE.
+*    ENDCASE.
+*
+*    INSERT ls_scol INTO TABLE <lfs_alv>-cell_color.
+*  ENDLOOP.
+*
+*  " Lưu bảng display để hotspot click dùng lại
+*  CLEAR mt_analysis_disp.
+*  mt_analysis_disp = mt_analysis_alv.
 
-  LOOP AT mt_data INTO DATA(ls_err).
-    CLEAR ls_alv.
-    MOVE-CORRESPONDING ls_err TO ls_alv.
-
-    " Include hiển thị
-    ls_alv-include_txt = ls_err-include.
-
-    IF ls_err-objtype = gc_objtype-clas
-       AND ls_err-objname IS NOT INITIAL
-       AND ls_err-include IS NOT INITIAL.
-      ls_alv-include_txt = me->get_class_include_text(
-                             iv_class_name = CONV seoclsname( ls_err-objname )
-                             iv_include    = CONV programm( ls_err-include ) ).
-    ENDIF.
-
-    " Line hiển thị
-    IF ls_err-line > 0.
-      ls_alv-line_txt = CONV string( ls_err-line ).
-    ELSE.
-      CLEAR ls_alv-line_txt.
-    ENDIF.
-
-    " Count severity
-    CASE ls_err-sev.
-      WHEN gc_sev-warning.
-        lv_warn_count = lv_warn_count + 1.
-      WHEN gc_sev-error.
-        lv_err_count = lv_err_count + 1.
-    ENDCASE.
-
-    APPEND ls_alv TO lt_alv.
-  ENDLOOP.
-  lv_total_count = lv_err_count + lv_warn_count.
-  "---------------------------------------------------------
-  " Cell color
-  "---------------------------------------------------------
-  LOOP AT lt_alv ASSIGNING <lfs_alv>.
-    CLEAR: <lfs_alv>-cell_color, ls_scol.
-
-    ls_scol-fname = gc_sev-sev.
-
-    CASE <lfs_alv>-sev.
-      WHEN gc_sev-error.
-        ls_scol-color-col = 6.
-        ls_scol-color-int = 1.
-        ls_scol-color-inv = 0.
-      WHEN gc_sev-warning.
-        ls_scol-color-col = 3.
-        ls_scol-color-int = 1.
-        ls_scol-color-inv = 0.
-      WHEN OTHERS.
-        CONTINUE.
-    ENDCASE.
-
-    INSERT ls_scol INTO TABLE <lfs_alv>-cell_color.
-  ENDLOOP.
-
-  " Lưu bảng display để hotspot click dùng lại
-  CLEAR mt_analysis_disp.
-  mt_analysis_disp = lt_alv.
+  me->build_analysis_display_data(
+  EXPORTING
+    it_data        = gt_data
+  IMPORTING
+    ev_warn_count  = lv_warn_count
+    ev_err_count   = lv_err_count
+    ev_total_count = lv_total_count ).
 
   TRY.
       cl_salv_table=>factory(
         IMPORTING
-          r_salv_table = mo_alv
+          r_salv_table = go_alv
         CHANGING
-          t_table      = lt_alv ).
+          t_table      = gt_analysis_alv ).
 
-      mo_alv->get_functions( )->set_all( abap_true ).
-      mo_alv->get_display_settings( )->set_striped_pattern( abap_true ).
+      go_alv->get_functions( )->set_all( abap_true ).
+      go_alv->get_display_settings( )->set_striped_pattern( abap_true ).
 
-      mo_alv->set_screen_status(
+      go_alv->set_screen_status(
         pfstatus      = gc_repo-pfstatus
         report        = gc_repo-report_name
-        set_functions = mo_alv->c_functions_all ).
+        set_functions = go_alv->c_functions_all ).
 
-      lo_columns = mo_alv->get_columns( ).
+      lo_columns = go_alv->get_columns( ).
       lo_columns->set_optimize( abap_true ).
       lo_columns->set_color_column( gc_col-cell_color ).
 
@@ -688,111 +718,116 @@ METHOD display_analysis_alv.
         CATCH cx_salv_not_found.
       ENDTRY.
 
-      "Header
-      DATA(lo_grid_header) = NEW cl_salv_form_layout_grid( ).
-      " Info box bên trái
-      DATA(lo_grp_info) = NEW cl_salv_form_groupbox(
-        header = CONV string( TEXT-c26 ) ).
+*      "Header
+*      DATA(lo_grid_header) = NEW cl_salv_form_layout_grid( ).
+*      " Info box bên trái
+*      DATA(lo_grp_info) = NEW cl_salv_form_groupbox(
+*        header = CONV string( TEXT-c26 ) ).
+*
+*      lo_grid_header->set_element(
+*        row       = 1
+*        column    = 1
+*        r_element = lo_grp_info ).
+*
+*      DATA(lo_info_grid) = lo_grp_info->create_grid( ).
+*      lo_info_grid->create_label(
+*        row    = 1
+*        column = 1
+*        text   = TEXT-c20 ).
+*
+*      lo_info_grid->create_text(
+*        row    = 1
+*        column = 2
+*        text   =  ls_header-object_name  ).
+*
+*      lo_info_grid->create_label(
+*        row    = 2
+*        column = 1
+*        text   = TEXT-c19 ).
+*
+*      lo_info_grid->create_text(
+*        row    = 2
+*        column = 2
+*        text   = CONV string( ls_header-checked_by ) ).
+*
+*      lo_info_grid->create_label(
+*        row    = 3
+*        column = 1
+*        text   = TEXT-c21 ).
+*
+*      lo_info_grid->create_text(
+*        row    = 3
+*        column = 2
+*        text   = ls_header-checked_on ).
+*
+*      lo_info_grid->create_label(
+*        row    = 4
+*        column = 1
+*        text   = TEXT-c22 ).
+*
+*      lo_info_grid->create_text(
+*        row    = 4
+*        column = 2
+*        text   = |{ ls_header-checked_at TIME = USER }| ).
+*
+*      " Summary box bên phải
+*      DATA(lo_grp_summary) = NEW cl_salv_form_groupbox(
+*        header = CONV string( TEXT-c27 ) ).
+*
+*      lo_grid_header->set_element(
+*        row       = 1
+*        column    = 3
+*        r_element = lo_grp_summary ).
+*
+*      DATA(lo_sum_grid) = lo_grp_summary->create_grid( ).
+*      lo_sum_grid->create_label(
+*        row    = 1
+*        column = 1
+*        text   = TEXT-c28 ).
+*
+*      lo_sum_grid->create_text(
+*        row    = 1
+*        column = 2
+*        text   = mv_current_view ).
+*      lo_sum_grid->create_label(
+*        row    = 2
+*        column = 1
+*        text   = TEXT-c29 ).
+*
+*      lo_sum_grid->create_text(
+*        row    = 2
+*        column = 2
+*        text   = CONV string( lv_err_count ) ).
+*
+*      lo_sum_grid->create_label(
+*        row    = 3
+*        column = 1
+*        text   = TEXT-c30 ).
+*
+*      lo_sum_grid->create_text(
+*        row    = 3
+*        column = 2
+*        text   = CONV string( lv_warn_count ) ).
+*
+*      lo_sum_grid->create_label(
+*        row    = 4
+*        column = 1
+*        text   =  TEXT-c31 ).
+*
+*      lo_sum_grid->create_text(
+*        row    = 4
+*        column = 2
+*        text   = CONV string( lv_total_count ) ).
+*      mo_alv->set_top_of_list( lo_grid_header ).
 
-      lo_grid_header->set_element(
-        row       = 1
-        column    = 1
-        r_element = lo_grp_info ).
-
-      DATA(lo_info_grid) = lo_grp_info->create_grid( ).
-      lo_info_grid->create_label(
-        row    = 1
-        column = 1
-        text   = TEXT-c20 ).
-
-      lo_info_grid->create_text(
-        row    = 1
-        column = 2
-        text   =  ls_header-object_name  ).
-
-      lo_info_grid->create_label(
-        row    = 2
-        column = 1
-        text   = TEXT-c19 ).
-
-      lo_info_grid->create_text(
-        row    = 2
-        column = 2
-        text   = CONV string( ls_header-checked_by ) ).
-
-      lo_info_grid->create_label(
-        row    = 3
-        column = 1
-        text   = TEXT-c21 ).
-
-      lo_info_grid->create_text(
-        row    = 3
-        column = 2
-        text   = ls_header-checked_on ).
-
-      lo_info_grid->create_label(
-        row    = 4
-        column = 1
-        text   = TEXT-c22 ).
-
-      lo_info_grid->create_text(
-        row    = 4
-        column = 2
-        text   = |{ ls_header-checked_at TIME = USER }| ).
-
-      " Summary box bên phải
-      DATA(lo_grp_summary) = NEW cl_salv_form_groupbox(
-        header = CONV string( TEXT-c27 ) ).
-
-      lo_grid_header->set_element(
-        row       = 1
-        column    = 3
-        r_element = lo_grp_summary ).
-
-      DATA(lo_sum_grid) = lo_grp_summary->create_grid( ).
-      lo_sum_grid->create_label(
-        row    = 1
-        column = 1
-        text   = TEXT-c28 ).
-
-      lo_sum_grid->create_text(
-        row    = 1
-        column = 2
-        text   = mv_current_view ).
-      lo_sum_grid->create_label(
-        row    = 2
-        column = 1
-        text   = TEXT-c29 ).
-
-      lo_sum_grid->create_text(
-        row    = 2
-        column = 2
-        text   = CONV string( lv_err_count ) ).
-
-      lo_sum_grid->create_label(
-        row    = 3
-        column = 1
-        text   = TEXT-c30 ).
-
-      lo_sum_grid->create_text(
-        row    = 3
-        column = 2
-        text   = CONV string( lv_warn_count ) ).
-
-      lo_sum_grid->create_label(
-        row    = 4
-        column = 1
-        text   =  TEXT-c31 ).
-
-      lo_sum_grid->create_text(
-        row    = 4
-        column = 2
-        text   = CONV string( lv_total_count ) ).
-      mo_alv->set_top_of_list( lo_grid_header ).
-      mo_events = mo_alv->get_event( ).
-      SET HANDLER me->on_hotspot_click FOR mo_events.
-      SET HANDLER me->on_user_command  FOR mo_events.
-      mo_alv->display( ).
+      me->set_analysis_header(
+        iv_warn_count  = lv_warn_count
+        iv_err_count   = lv_err_count
+        iv_total_count = lv_total_count ).
+      go_events = go_alv->get_event( ).
+      SET HANDLER me->on_hotspot_click FOR go_events.
+      SET HANDLER me->on_user_command  FOR go_events.
+      go_alv->display( ).
 
     CATCH cx_salv_msg.
       MESSAGE e032(zgsp04_analyzetool).
@@ -825,9 +860,9 @@ types:
         lv_vn_date     TYPE sydatum,
         lv_vn_time     TYPE syuzeit.
 
-  mt_wu_disp = me->build_where_used_display( iv_data ).
+  gt_wu_disp = me->build_where_used_display( iv_data ).
 
-  IF me->mt_wu_disp IS INITIAL.
+  IF me->gt_wu_disp IS INITIAL.
     MESSAGE e030(zgsp04_analyzetool).
     RETURN.
   ENDIF.
@@ -865,7 +900,7 @@ types:
         IMPORTING
           r_salv_table = lo_alv
         CHANGING
-          t_table      = me->mt_wu_disp ).
+          t_table      = me->gt_wu_disp ).
 
       lo_alv->get_functions( )->set_all( abap_true ).
 
@@ -1602,7 +1637,7 @@ METHOD on_hotspot_click.
 
  DATA ls_hit TYPE gty_error_alv.
 
-  READ TABLE mt_analysis_disp INTO ls_hit INDEX row.
+  READ TABLE gt_analysis_disp INTO ls_hit INDEX row.
   IF sy-subrc <> 0.
     RETURN.
   ENDIF.
@@ -1620,7 +1655,7 @@ ENDMETHOD.
 METHOD on_salv_link_click.
 
   DATA ls_hit TYPE gty_wu_hit.
-  READ TABLE mt_wu_disp INTO ls_hit INDEX row.
+  READ TABLE gt_wu_disp INTO ls_hit INDEX row.
   IF sy-subrc <> 0.
     RETURN.
   ENDIF.
@@ -1904,24 +1939,79 @@ ENDMETHOD.
 
 METHOD filter_analysis_by_category.
 
-  DATA lt_filtered TYPE ztt_error.
+  DATA: lt_filtered    TYPE ztt_error,
+        lv_old_view    TYPE string,
+        lv_warn_count  TYPE i,
+        lv_err_count   TYPE i,
+        lv_total_count TYPE i.
+
+  lv_old_view = gv_current_view.
 
   CLEAR lt_filtered.
 
-  IF iv_category IS INITIAL.
-    lt_filtered = mt_analysis_all.
-    mv_current_view = gc_view-all.
+  "--------------------------------------------------
+  " ALL view
+  "--------------------------------------------------
+  IF iv_category IS INITIAL
+     OR iv_category = gc_view-all.
+
+    IF gt_analysis_all IS INITIAL.
+      MESSAGE s081(z_gsp04_message) WITH gc_view-all.
+      RETURN.
+    ENDIF.
+
+    lt_filtered     = gt_analysis_all.
+    gv_current_view = gc_view-all.
+
   ELSE.
-    LOOP AT mt_analysis_all INTO DATA(ls_err)
-         WHERE category = iv_category.
+
+    "--------------------------------------------------
+    " Category view
+    "--------------------------------------------------
+    LOOP AT gt_analysis_all INTO DATA(ls_err)
+      WHERE category = iv_category.
       APPEND ls_err TO lt_filtered.
     ENDLOOP.
-    mv_current_view = iv_category.
+
+    " Nếu view không có data thì giữ nguyên màn hình hiện tại
+    IF lt_filtered IS INITIAL.
+      gv_current_view = lv_old_view.
+      MESSAGE s021(z_gsp04_message) WITH iv_category.
+      RETURN.
+    ENDIF.
+
+    gv_current_view = iv_category.
+
   ENDIF.
 
-  me->display_analysis_alv(
+  "--------------------------------------------------
+  " Rebuild current ALV data only
+  "--------------------------------------------------
+  CLEAR gt_data.
+  gt_data = lt_filtered.
+
+  me->build_analysis_display_data(
     EXPORTING
-      it_data = lt_filtered ).
+      it_data        = gt_data
+    IMPORTING
+      ev_warn_count  = lv_warn_count
+      ev_err_count   = lv_err_count
+      ev_total_count = lv_total_count ).
+
+  "--------------------------------------------------
+  " Update header/summary
+  "--------------------------------------------------
+  me->set_analysis_header(
+    iv_warn_count  = lv_warn_count
+    iv_err_count   = lv_err_count
+    iv_total_count = lv_total_count ).
+
+  "--------------------------------------------------
+  " Refresh current ALV screen, do not open new screen
+  "--------------------------------------------------
+  IF go_alv IS BOUND.
+    go_alv->refresh( ).
+  ENDIF.
 
 ENDMETHOD.
 
@@ -1993,7 +2083,8 @@ METHOD on_user_command.
 
   CASE e_salv_function.
     WHEN gc_view-all.
-      me->filter_analysis_by_category( ).
+      me->filter_analysis_by_category(
+      iv_category = gc_view-all ).
 
     WHEN gc_category-hardcode.
       me->filter_analysis_by_category(
@@ -2016,6 +2107,206 @@ METHOD on_user_command.
         iv_category = gc_category-clean_code ).
 
   ENDCASE.
+
+ENDMETHOD.
+
+
+METHOD build_analysis_display_data.
+
+  DATA: ls_alv  TYPE gty_error_alv,
+        ls_scol TYPE lvc_s_scol.
+
+  FIELD-SYMBOLS:
+    <lfs_alv> TYPE gty_error_alv.
+
+  CLEAR: gt_analysis_alv,
+         gt_analysis_disp,
+         ev_warn_count,
+         ev_err_count,
+         ev_total_count.
+
+  LOOP AT it_data INTO DATA(ls_err).
+
+    CLEAR ls_alv.
+    MOVE-CORRESPONDING ls_err TO ls_alv.
+
+    " Include display text
+    ls_alv-include_txt = ls_err-include.
+
+    IF ls_err-objtype = gc_objtype-clas
+       AND ls_err-objname IS NOT INITIAL
+       AND ls_err-include IS NOT INITIAL.
+
+      ls_alv-include_txt = me->get_class_include_text(
+                             iv_class_name = CONV seoclsname( ls_err-objname )
+                             iv_include    = CONV programm( ls_err-include ) ).
+    ENDIF.
+
+    " Line display text
+    IF ls_err-line > 0.
+      ls_alv-line_txt = CONV string( ls_err-line ).
+    ELSE.
+      CLEAR ls_alv-line_txt.
+    ENDIF.
+
+    " Severity count
+    CASE ls_err-sev.
+      WHEN gc_sev-warning.
+        ev_warn_count = ev_warn_count + 1.
+      WHEN gc_sev-error.
+        ev_err_count = ev_err_count + 1.
+    ENDCASE.
+
+    APPEND ls_alv TO gt_analysis_alv.
+
+  ENDLOOP.
+
+  ev_total_count = ev_warn_count + ev_err_count.
+
+  " Cell color
+  LOOP AT gt_analysis_alv ASSIGNING <lfs_alv>.
+
+    CLEAR: <lfs_alv>-cell_color,
+           ls_scol.
+
+    ls_scol-fname = gc_sev-sev.
+
+    CASE <lfs_alv>-sev.
+      WHEN gc_sev-error.
+        ls_scol-color-col = 6.
+        ls_scol-color-int = 1.
+        ls_scol-color-inv = 0.
+
+      WHEN gc_sev-warning.
+        ls_scol-color-col = 3.
+        ls_scol-color-int = 1.
+        ls_scol-color-inv = 0.
+
+      WHEN OTHERS.
+        CONTINUE.
+    ENDCASE.
+
+    INSERT ls_scol INTO TABLE <lfs_alv>-cell_color.
+
+  ENDLOOP.
+
+  " Save current display table for hotspot navigation
+  gt_analysis_disp = gt_analysis_alv.
+
+ENDMETHOD.
+
+
+METHOD set_analysis_header.
+
+  DATA(lo_grid_header) = NEW cl_salv_form_layout_grid( ).
+
+  "---------------------------------------------------------
+  " Info box bên trái
+  "---------------------------------------------------------
+  DATA(lo_grp_info) = NEW cl_salv_form_groupbox(
+    header = CONV string( TEXT-c26 ) ).
+
+  lo_grid_header->set_element(
+    row       = 1
+    column    = 1
+    r_element = lo_grp_info ).
+
+  DATA(lo_info_grid) = lo_grp_info->create_grid( ).
+
+  lo_info_grid->create_label(
+    row    = 1
+    column = 1
+    text   = TEXT-c20 ).
+
+  lo_info_grid->create_text(
+    row    = 1
+    column = 2
+    text   = gs_analysis_header-object_name ).
+
+  lo_info_grid->create_label(
+    row    = 2
+    column = 1
+    text   = TEXT-c19 ).
+
+  lo_info_grid->create_text(
+    row    = 2
+    column = 2
+    text   = CONV string( gs_analysis_header-checked_by ) ).
+
+  lo_info_grid->create_label(
+    row    = 3
+    column = 1
+    text   = TEXT-c21 ).
+
+  lo_info_grid->create_text(
+    row    = 3
+    column = 2
+    text   = gs_analysis_header-checked_on ).
+
+  lo_info_grid->create_label(
+    row    = 4
+    column = 1
+    text   = TEXT-c22 ).
+
+  lo_info_grid->create_text(
+    row    = 4
+    column = 2
+    text   = |{ gs_analysis_header-checked_at TIME = USER }| ).
+
+  "---------------------------------------------------------
+  " Summary box bên phải
+  "---------------------------------------------------------
+  DATA(lo_grp_summary) = NEW cl_salv_form_groupbox(
+    header = CONV string( TEXT-c27 ) ).
+
+  lo_grid_header->set_element(
+    row       = 1
+    column    = 3
+    r_element = lo_grp_summary ).
+
+  DATA(lo_sum_grid) = lo_grp_summary->create_grid( ).
+
+  lo_sum_grid->create_label(
+    row    = 1
+    column = 1
+    text   = TEXT-c28 ).
+
+  lo_sum_grid->create_text(
+    row    = 1
+    column = 2
+    text   = gv_current_view ).
+
+  lo_sum_grid->create_label(
+    row    = 2
+    column = 1
+    text   = TEXT-c29 ).
+
+  lo_sum_grid->create_text(
+    row    = 2
+    column = 2
+    text   = CONV string( iv_err_count ) ).
+
+  lo_sum_grid->create_label(
+    row    = 3
+    column = 1
+    text   = TEXT-c30 ).
+
+  lo_sum_grid->create_text(
+    row    = 3
+    column = 2
+    text   = CONV string( iv_warn_count ) ).
+
+  lo_sum_grid->create_label(
+    row    = 4
+    column = 1
+    text   = TEXT-c31 ).
+
+  lo_sum_grid->create_text(
+    row    = 4
+    column = 2
+    text   = CONV string( iv_total_count ) ).
+
+  go_alv->set_top_of_list( lo_grid_header ).
 
 ENDMETHOD.
 ENDCLASS.

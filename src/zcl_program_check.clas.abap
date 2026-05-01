@@ -1,62 +1,61 @@
-class ZCL_PROGRAM_CHECK definition
-  public
-  final
-  create public .
+CLASS zcl_program_check DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  types:
-    BEGIN OF gty_naming_ctx,
+    TYPES:
+      BEGIN OF gty_naming_ctx,
         obj_type  TYPE tadir-object,
         obj_name  TYPE sobj_name,
         main_prog TYPE progname,
         include   TYPE progname,
       END OF gty_naming_ctx .
 
-  methods ANALYZE_CLEAN_CODE
-    importing
-      !IS_CTX type GTY_NAMING_CTX
-      !IT_SOURCE type STRING_TABLE
-      !IV_CHECK_UNUSED_TEXT type ABAP_BOOL default ABAP_TRUE
-      !IT_USAGE_SOURCE type STRING_TABLE optional
-    returning
-      value(RT_ERRORS) type ZTT_ERROR .
-  methods ANALYZE_HARDCODE
-    importing
-      !IS_CTX type GTY_NAMING_CTX
-      !IT_SOURCE type STRING_TABLE
-    returning
-      value(RT_ERRORS) type ZTT_ERROR .
-  methods ANALYZE_OBSOLETE
-    importing
-      !IS_CTX type GTY_NAMING_CTX
-      !IT_SOURCE type STRING_TABLE
-    returning
-      value(RT_ERRORS) type ZTT_ERROR .
-  methods ANALYZE_NAMING
-    importing
-      !IS_CTX type GTY_NAMING_CTX
-      !IT_SOURCE type STRING_TABLE
-    returning
-      value(RT_ERRORS) type ZTT_ERROR .
-  methods ANALYZE_PERFORMANCE
-    importing
-      !IS_CTX type GTY_NAMING_CTX
-      !IT_SOURCE type STRING_TABLE
-    returning
-      value(RT_ERRORS) type ZTT_ERROR .
+    METHODS analyze_clean_code
+      IMPORTING
+        !is_ctx               TYPE gty_naming_ctx
+        !it_source            TYPE string_table
+        !iv_check_unused_text TYPE abap_bool DEFAULT abap_true
+        !it_usage_source      TYPE string_table OPTIONAL
+      RETURNING
+        VALUE(rt_errors)      TYPE ztt_error .
+    METHODS analyze_hardcode
+      IMPORTING
+        !is_ctx          TYPE gty_naming_ctx
+        !it_source       TYPE string_table
+      RETURNING
+        VALUE(rt_errors) TYPE ztt_error .
+    METHODS analyze_obsolete
+      IMPORTING
+        !is_ctx          TYPE gty_naming_ctx
+        !it_source       TYPE string_table
+      RETURNING
+        VALUE(rt_errors) TYPE ztt_error .
+    METHODS analyze_naming
+      IMPORTING
+        !is_ctx              TYPE gty_naming_ctx
+        !it_source           TYPE string_table
+        !it_class_sig_source TYPE string_table OPTIONAL "NEW
+      RETURNING
+        VALUE(rt_errors)     TYPE ztt_error .
+    METHODS analyze_performance
+      IMPORTING
+        !is_ctx          TYPE gty_naming_ctx
+        !it_source       TYPE string_table
+      RETURNING
+        VALUE(rt_errors) TYPE ztt_error .
   PROTECTED SECTION.
-private section.
+PRIVATE SECTION.
 
-  types:
   "------------------------------------------------------------
   " Shared technical TYPES
   "------------------------------------------------------------
-    gty_t_tok_tab         TYPE STANDARD TABLE OF stokex WITH DEFAULT KEY .
-  types:
-    gty_t_stmt_tab        TYPE STANDARD TABLE OF sstmnt WITH DEFAULT KEY .
-  types:
-    BEGIN OF gty_src_line,
+  TYPES: gty_t_tok_tab         TYPE STANDARD TABLE OF stokex WITH DEFAULT KEY .
+  TYPES: gty_t_stmt_tab        TYPE STANDARD TABLE OF sstmnt WITH DEFAULT KEY .
+
+  TYPES: BEGIN OF gty_src_line,
            row        TYPE i,
            no_comment TYPE string,
            upper      TYPE string,
@@ -64,47 +63,74 @@ private section.
            is_star    TYPE abap_bool,
            is_quote   TYPE abap_bool,
          END OF gty_src_line .
-  types:
-    gty_t_src_line TYPE STANDARD TABLE OF gty_src_line WITH EMPTY KEY .
-  types:
-    BEGIN OF gty_cnt,
-           name TYPE string,
-           cnt  TYPE i,
-         END OF gty_cnt .
-  types:
-    gty_t_cnt TYPE HASHED TABLE OF gty_cnt WITH UNIQUE KEY name .
-  types:
+
+  TYPES: gty_t_src_line TYPE STANDARD TABLE OF gty_src_line WITH EMPTY KEY .
+
+  TYPES:  BEGIN OF gty_cnt,
+            name TYPE string,
+            cnt  TYPE i,
+          END OF gty_cnt .
+
+  TYPES: gty_t_cnt TYPE HASHED TABLE OF gty_cnt WITH UNIQUE KEY name .
+
+  TYPES: BEGIN OF gty_cc_decl,
+           name     TYPE string,
+           line     TYPE i,
+           scope_id TYPE string,
+           base_cnt TYPE i,
+         END OF gty_cc_decl.
+
+  TYPES: gty_t_cc_decl TYPE HASHED TABLE OF gty_cc_decl WITH UNIQUE KEY name scope_id.
+
+  TYPES: BEGIN OF gty_cc_used_text,
+           key TYPE textpool-key,
+         END OF gty_cc_used_text.
+
+  TYPES: gty_t_cc_used_text TYPE HASHED TABLE OF gty_cc_used_text WITH UNIQUE KEY key.
+
+  TYPES: BEGIN OF gty_cc_struct_type_root,
+           name_u TYPE string,
+         END OF gty_cc_struct_type_root.
+
+  TYPES: gty_t_cc_struct_type_root TYPE HASHED TABLE OF gty_cc_struct_type_root WITH UNIQUE KEY name_u.
+
+  TYPES: BEGIN OF gty_cc_decl_prefix,
+           prefix    TYPE string,
+           full_name TYPE string,
+           ambiguous TYPE abap_bool,
+         END OF gty_cc_decl_prefix.
+  TYPES: gty_t_cc_decl_prefix TYPE HASHED TABLE OF gty_cc_decl_prefix WITH UNIQUE KEY prefix.
   "------------------------------------------------------------
   " Shared Naming TYPES
   "------------------------------------------------------------
+  TYPES:
     BEGIN OF gty_global_decl,
-           name_u TYPE string,
-           name   TYPE string,
-           row    TYPE i,
-         END OF gty_global_decl .
-  types:
-    gty_t_global_decl TYPE HASHED TABLE OF gty_global_decl WITH UNIQUE KEY name_u .
-  types:
-    gty_t_routine_set TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line .
-  types:
-    BEGIN OF gty_use,
+      name_u TYPE string,
+      name   TYPE string,
+      row    TYPE i,
+    END OF gty_global_decl .
+
+  TYPES: gty_t_global_decl TYPE HASHED TABLE OF gty_global_decl WITH UNIQUE KEY name_u.
+
+  TYPES: gty_t_routine_set TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line .
+  TYPES: BEGIN OF gty_use,
            name_u   TYPE string,
            routines TYPE gty_t_routine_set,
          END OF gty_use .
-  types:
-    gty_t_use TYPE HASHED TABLE OF gty_use WITH UNIQUE KEY name_u .
-  types:
-    BEGIN OF gty_pending,
+
+  TYPES: gty_t_use TYPE HASHED TABLE OF gty_use WITH UNIQUE KEY name_u .
+
+  TYPES: BEGIN OF gty_pending,
            name_u          TYPE string,
            name            TYPE string,
            row             TYPE i,
            msg             TYPE string,
            is_local_prefix TYPE abap_bool,
          END OF gty_pending .
-  types:
-    gty_t_pending TYPE STANDARD TABLE OF gty_pending WITH EMPTY KEY .
-  types:
-    BEGIN OF gty_stmt_info,
+
+  TYPES: gty_t_pending TYPE STANDARD TABLE OF gty_pending WITH EMPTY KEY .
+
+  TYPES: BEGIN OF gty_stmt_info,
            from            TYPE i,
            to              TYPE i,
            first_u         TYPE string,
@@ -112,34 +138,141 @@ private section.
            is_data_stmt    TYPE abap_bool,
            current_routine TYPE string,
          END OF gty_stmt_info .
-  types:
-    gty_t_stmt_info TYPE STANDARD TABLE OF gty_stmt_info WITH EMPTY KEY .
-  types:
-    gty_nm_kind TYPE c LENGTH 1 .
-  types:
-    BEGIN OF gty_name_kind,
+
+  TYPES: gty_t_stmt_info TYPE STANDARD TABLE OF gty_stmt_info WITH EMPTY KEY .
+  TYPES: gty_nm_kind TYPE c LENGTH 1 .
+
+  TYPES: BEGIN OF gty_name_kind,
            name_u    TYPE string,
            kind      TYPE gty_nm_kind,
            line_kind TYPE gty_nm_kind,
          END OF gty_name_kind .
-  types:
-    gty_t_name_kind TYPE HASHED TABLE OF gty_name_kind WITH UNIQUE KEY name_u .
 
-  data RT_ERRORS type ZTT_ERROR .
-  constants:
+  TYPES: gty_t_name_kind TYPE HASHED TABLE OF gty_name_kind WITH UNIQUE KEY name_u .
+
+  "------------------------------------------------------------
+  " NEW NEW NEW
+  "------------------------------------------------------------
+  TYPES: BEGIN OF gty_nm_method_ret,
+           method_name TYPE string,
+           return_kind TYPE gty_nm_kind,
+         END OF gty_nm_method_ret.
+
+  TYPES: gty_t_nm_method_ret TYPE HASHED TABLE OF gty_nm_method_ret WITH UNIQUE KEY method_name.
+
+  DATA rt_errors TYPE ztt_error .
+  "------------------------------------------------------------
+  " METHODS
+  "------------------------------------------------------------
+  METHODS nm_data_checks
+    IMPORTING
+      !it_tokens          TYPE gty_t_tok_tab
+      !it_stmt_info       TYPE gty_t_stmt_info
+      !iv_curr_src_lines  TYPE i
+      !it_method_ret_kind TYPE gty_t_nm_method_ret OPTIONAL "NEW NEW NEW
+    CHANGING
+      !ct_global_decl     TYPE gty_t_global_decl
+      !ct_use             TYPE gty_t_use
+      !ct_pending         TYPE gty_t_pending
+      !ct_errors          TYPE ztt_error .
+
+  METHODS nm_additional_naming_checks
+    IMPORTING
+      !it_source         TYPE string_table
+      !it_tokens         TYPE gty_t_tok_tab
+      !it_stmts          TYPE gty_t_stmt_tab
+      !it_stmt_info      TYPE gty_t_stmt_info
+      !it_global_decl    TYPE gty_t_global_decl
+      !it_use            TYPE gty_t_use
+      !it_pending        TYPE gty_t_pending
+      !iv_curr_src_lines TYPE i
+    CHANGING
+      !ct_errors         TYPE ztt_error .
+
+  METHODS nm_resolve_type_kind
+    IMPORTING
+      !iv_type_name  TYPE string
+    EXPORTING
+      !ev_kind       TYPE gty_nm_kind
+      !ev_line_kind  TYPE gty_nm_kind
+    CHANGING
+      !ct_type_cache TYPE gty_t_name_kind .
+
+  METHODS nm_resolve_sig_kind
+    IMPORTING
+      !it_tokens     TYPE gty_t_tok_tab
+      !iv_from       TYPE sy-tabix
+      !iv_to         TYPE sy-tabix
+    EXPORTING
+      !ev_kind       TYPE c
+      !ev_last_idx   TYPE sy-tabix
+    CHANGING
+      !ct_type_cache TYPE gty_t_name_kind .
+
+  METHODS cc_preprocess_source
+    IMPORTING
+      !it_source    TYPE string_table
+    RETURNING
+      VALUE(rt_src) TYPE gty_t_src_line .
+
+  METHODS cc_add_usage_count
+    IMPORTING
+      !iv_name TYPE string
+    CHANGING
+      !ct_cnt  TYPE gty_t_cnt .
+
+  METHODS cc_unused_variables
+    IMPORTING
+      !it_source       TYPE string_table
+      !it_usage_source TYPE string_table OPTIONAL
+    RETURNING
+      VALUE(rt_errors) TYPE ztt_error.
+
+  METHODS cc_unused_text_symbols
+    IMPORTING
+      !it_source       TYPE string_table
+      !is_ctx          TYPE gty_naming_ctx
+    RETURNING
+      VALUE(rt_errors) TYPE ztt_error.
+
+  METHODS get_object_author
+    IMPORTING
+      !iv_obj_type     TYPE tadir-object
+      !iv_obj_name     TYPE sobj_name
+    RETURNING
+      VALUE(rt_author) TYPE syuname .
+  "NEW NEW NEW
+  METHODS nm_build_method_ret_kind
+    IMPORTING
+      it_tokens           TYPE gty_t_tok_tab
+    CHANGING
+      ct_type_cache       TYPE gty_t_name_kind
+      ct_method_ret_cache TYPE gty_t_nm_method_ret.
+  METHODS nm_resolve_called_method_kind
+    IMPORTING
+      iv_probe_u         TYPE string
+      iv_prev_u          TYPE string
+      iv_next_u          TYPE string
+      iv_probe_idx       TYPE sy-tabix
+      it_tokens          TYPE gty_t_tok_tab
+      it_method_ret_kind TYPE gty_t_nm_method_ret
+    RETURNING
+      VALUE(rv_kind)     TYPE gty_nm_kind.
+
   "------------------------------------------------------------
   "     CONSTANTS
   "------------------------------------------------------------
+  CONSTANTS:
     BEGIN OF gc_severity,
       error   TYPE symsgty VALUE 'E',
       warning TYPE symsgty VALUE 'W',
     END OF gc_severity .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_token_type,
       identifier TYPE c LENGTH 1 VALUE 'I',
       list       TYPE c LENGTH 1 VALUE ':',
     END OF gc_token_type .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_obj_type,
       prog    TYPE tadir-object VALUE 'PROG',
       clas    TYPE tadir-object VALUE 'CLAS',
@@ -151,7 +284,7 @@ private section.
       r3tr    TYPE tadir-pgmid  VALUE 'R3TR',
       unknown TYPE syuname      VALUE 'UNKNOWN',
     END OF gc_obj_type .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_category,
       hardcode    TYPE string VALUE 'HARDCODE',
       naming      TYPE string VALUE 'NAMING',
@@ -159,7 +292,7 @@ private section.
       obsolete    TYPE string VALUE 'OBSOLETE',
       clean_code  TYPE string VALUE 'CLEAN_CODE',
     END OF gc_category .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_keyword,
       " Declaration / definition keywords
       class_constants     TYPE string VALUE 'CLASS-CONSTANTS',
@@ -291,7 +424,7 @@ private section.
       star                TYPE string     VALUE '*',
       underscore          TYPE c LENGTH 1 VALUE '_',
     END OF gc_keyword .
-  constants:
+  CONSTANTS:
     "--------------------------------------------------
     " Naming convention
     "--------------------------------------------------
@@ -303,7 +436,7 @@ private section.
       tables    TYPE c LENGTH 1 VALUE 'T',
       using     TYPE c LENGTH 1 VALUE 'U',
     END OF gc_sig_nm .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_kind_nm,
       data_ref  TYPE c LENGTH 1 VALUE 'D',
       object    TYPE c LENGTH 1 VALUE 'O',
@@ -313,14 +446,14 @@ private section.
       unknown   TYPE c LENGTH 1 VALUE 'U',
       value     TYPE c LENGTH 1 VALUE 'V',
     END OF gc_kind_nm .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_msg_nm,
       global        TYPE string VALUE 'Global' ##NO_TEXT,
       global_inline TYPE string VALUE 'Global inline' ##NO_TEXT,
       inline        TYPE string VALUE 'Inline' ##NO_TEXT,
       local         TYPE string VALUE 'Local' ##NO_TEXT,
     END OF gc_msg_nm .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_builtin_type_nm,
       abap_string     TYPE string VALUE 'STRING',
       abap_xstring    TYPE string VALUE 'XSTRING',
@@ -336,7 +469,7 @@ private section.
       abap_decfloat34 TYPE string VALUE 'DECFLOAT34',
       abap_utclong    TYPE string VALUE 'UTCLONG',
     END OF gc_builtin_type_nm .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_kw_nm,
       appending     TYPE string VALUE 'APPENDING',
       cast          TYPE string VALUE 'CAST',
@@ -347,7 +480,7 @@ private section.
       new           TYPE string VALUE 'NEW',
       reference     TYPE string VALUE 'REFERENCE',
     END OF gc_kw_nm .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_token_nm,
       empty             TYPE string VALUE '',
       at_data_lparen    TYPE string VALUE '@DATA(',
@@ -358,14 +491,14 @@ private section.
       cast_assign       TYPE string VALUE '?=',
       exact_cast_assign TYPE string VALUE '??=',
     END OF gc_token_nm .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_rx_nm,
       leading_prefix TYPE string VALUE '^[A-Za-z0-9]+_' ##NO_TEXT,
       like_name      TYPE string VALUE 'LIKE\s+([A-Z0-9_=>\-]+)' ##NO_TEXT,
       type_name      TYPE string VALUE 'TYPE\s+([A-Z0-9_=>\-]+)' ##NO_TEXT,
       fm_value       TYPE string VALUE 'VALUE\(([A-Z0-9_!]+)\)' ##NO_TEXT,
     END OF gc_rx_nm .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_iface_phrase_nm,
       hashed_table   TYPE string VALUE ' HASHED TABLE ',
       sorted_table   TYPE string VALUE ' SORTED TABLE ',
@@ -373,17 +506,17 @@ private section.
       structure      TYPE string VALUE ' STRUCTURE ',
       table_of       TYPE string VALUE ' TABLE OF ',
     END OF gc_iface_phrase_nm .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_rule_nm,
       prefix_rule        TYPE string VALUE 'NM_PREFIX_RULE',
       wa_prefix_obsolete TYPE string VALUE 'NM_WA_PREFIX_OBSOLETE',
     END OF gc_rule_nm .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_scope,
       global TYPE string VALUE '<<GLOBAL>>',
       block  TYPE string VALUE '<<BLOCK>>',
     END OF gc_scope .
-  constants:
+  CONSTANTS:
     "--------------------------------------------------
     " Clean code
     "--------------------------------------------------
@@ -393,7 +526,7 @@ private section.
       unused_text_symbol TYPE string VALUE 'CC_UNUSED_TEXT_SYMBOL',
       unused_subroutine  TYPE string VALUE 'CC_UNUSED_SUBROUTINE',
     END OF gc_rule_cc .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_clean_code,
       blank_limit        TYPE i VALUE 3,
       unused_token_limit TYPE i VALUE 1,
@@ -403,22 +536,22 @@ private section.
   "--------------------------------------------------
   " Obsolete
   "--------------------------------------------------
-  constants GC_DIGITS type STRING value '0123456789' ##NO_TEXT.
-  constants GC_TECH_E type STRING value 'E' ##NO_TEXT.
-  constants GC_TECH_W type STRING value 'W' ##NO_TEXT.
-  constants GC_TECH_I type STRING value 'I' ##NO_TEXT.
-  constants GC_TECH_S type STRING value 'S' ##NO_TEXT.
-  constants GC_TECH_A type STRING value 'A' ##NO_TEXT.
-  constants GC_TECH_X type STRING value 'X' ##NO_TEXT.
-  constants GC_TECH_EQ type STRING value 'EQ' ##NO_TEXT.
-  constants GC_TECH_NE type STRING value 'NE' ##NO_TEXT.
-  constants GC_TECH_BT type STRING value 'BT' ##NO_TEXT.
-  constants GC_TECH_CP type STRING value 'CP' ##NO_TEXT.
-  constants GC_TECH_GE type STRING value 'GE' ##NO_TEXT.
-  constants GC_TECH_LE type STRING value 'LE' ##NO_TEXT.
-  constants GC_TECH_GT type STRING value 'GT' ##NO_TEXT.
-  constants GC_TECH_LT type STRING value 'LT' ##NO_TEXT.
-  constants:
+  CONSTANTS gc_digits TYPE string VALUE '0123456789' ##NO_TEXT.
+  CONSTANTS gc_tech_e TYPE string VALUE 'E' ##NO_TEXT.
+  CONSTANTS gc_tech_w TYPE string VALUE 'W' ##NO_TEXT.
+  CONSTANTS gc_tech_i TYPE string VALUE 'I' ##NO_TEXT.
+  CONSTANTS gc_tech_s TYPE string VALUE 'S' ##NO_TEXT.
+  CONSTANTS gc_tech_a TYPE string VALUE 'A' ##NO_TEXT.
+  CONSTANTS gc_tech_x TYPE string VALUE 'X' ##NO_TEXT.
+  CONSTANTS gc_tech_eq TYPE string VALUE 'EQ' ##NO_TEXT.
+  CONSTANTS gc_tech_ne TYPE string VALUE 'NE' ##NO_TEXT.
+  CONSTANTS gc_tech_bt TYPE string VALUE 'BT' ##NO_TEXT.
+  CONSTANTS gc_tech_cp TYPE string VALUE 'CP' ##NO_TEXT.
+  CONSTANTS gc_tech_ge TYPE string VALUE 'GE' ##NO_TEXT.
+  CONSTANTS gc_tech_le TYPE string VALUE 'LE' ##NO_TEXT.
+  CONSTANTS gc_tech_gt TYPE string VALUE 'GT' ##NO_TEXT.
+  CONSTANTS gc_tech_lt TYPE string VALUE 'LT' ##NO_TEXT.
+  CONSTANTS:
     BEGIN OF gc_kw_obsolete,
       move_kw         TYPE string VALUE 'MOVE',
       occurs_kw       TYPE string VALUE 'OCCURS',
@@ -441,7 +574,7 @@ private section.
       lines_kw        TYPE string VALUE 'LINES',
       catch_kw        TYPE string VALUE 'CATCH',
     END OF gc_kw_obsolete .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_phrase_obsolete,
       with_header_line     TYPE string VALUE 'WITH HEADER LINE',
       on_change_of         TYPE string VALUE 'ON CHANGE OF',
@@ -453,23 +586,23 @@ private section.
       catch_system_exc     TYPE string VALUE 'CATCH SYSTEM-EXCEPTIONS',
       call_method          TYPE string VALUE 'CALL METHOD',
     END OF gc_phrase_obsolete .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_old_relop,
       not_equal_1 TYPE string VALUE '><',
       less_equal  TYPE string VALUE '=<',
       greater_eq  TYPE string VALUE '=>',
     END OF gc_old_relop .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_msg_obsolete,
       old_relop            TYPE string VALUE 'OLD RELATIONAL OPERATOR',
       field_symbols_typing TYPE string VALUE 'FIELD-SYMBOLS obsolete typing' ##NO_TEXT,
       describe_table_lines TYPE string VALUE 'DESCRIBE TABLE ... LINES',
     END OF gc_msg_obsolete .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_pat_obsolete,
       field_symbols_any TYPE string VALUE 'FIELD-SYMBOLS*',
     END OF gc_pat_obsolete .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_rule_obsolete,
       move_rule              TYPE string VALUE 'OBSOLETE_MOVE',
       occurs_rule            TYPE string VALUE 'OBSOLETE_OCCURS',
@@ -500,7 +633,7 @@ private section.
       field_symbol_type_rule TYPE string VALUE 'OBSOLETE_FIELD_SYMBOL_TYPING',
       auth_check_rule        TYPE string VALUE 'OBSOLETE_CALL_TRANSACTION_AUTH',
     END OF gc_rule_obsolete .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_rx_obsolete,
 
       " Remove literals
@@ -525,7 +658,7 @@ private section.
       fs_more_names        TYPE string VALUE `(\s*,\s*<[^>]+>)*`,
 
     END OF gc_rx_obsolete .
-  constants:
+  CONSTANTS:
     "--------------------------------------------------
     " Performance
     "--------------------------------------------------
@@ -537,7 +670,7 @@ private section.
       binary_search  TYPE string VALUE 'BINARY SEARCH',
       with_table_key TYPE string VALUE 'WITH TABLE KEY',
     END OF gc_perf_kw .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_rule_perf,
       select_star     TYPE string VALUE 'PERF_SELECT_STAR',
       nested_loop     TYPE string VALUE 'PERF_NESTED_LOOP',
@@ -545,27 +678,27 @@ private section.
       read_no_binary  TYPE string VALUE 'PERF_READ_NO_BINARY',
       fae_empty_check TYPE string VALUE 'PERF_FAE_EMPTY_CHECK',
     END OF gc_rule_perf .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_perf_regex,
       loop_at_table TYPE string VALUE `LOOP\s+AT\s+([A-Z0-9_><\->]+)` ##NO_TEXT,
       select_stmt   TYPE string VALUE `^\s*SELECT(\s|$)` ##NO_TEXT,
       select_all    TYPE string VALUE `^\s*SELECT\s+\*\s+FROM\s+` ##NO_TEXT,
       fae_table     TYPE string VALUE `FOR\s+ALL\s+ENTRIES\s+IN\s+([A-Z0-9_<>\-]+)` ##NO_TEXT,
     END OF gc_perf_regex .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_perf_cfg,
       fae_guard_lookback TYPE i VALUE 5,
       heavy_depth_min    TYPE i VALUE 1,
       zero               TYPE i VALUE 0,
     END OF gc_perf_cfg .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_perf_guard,
       if_kw              TYPE string VALUE 'IF',
       check_kw           TYPE string VALUE 'CHECK',
       assert_kw          TYPE string VALUE 'ASSERT',
       is_not_initial_pat TYPE string VALUE 'IS NOT INITIAL.*',
     END OF gc_perf_guard .
-  constants:
+  CONSTANTS:
     BEGIN OF gc_perf_table,
       lt_temp_errors TYPE string VALUE 'LT_TEMP_ERRORS',
       lt_all_err     TYPE string VALUE 'LT_ALL_ERR',
@@ -573,63 +706,6 @@ private section.
       me_rt_errors   TYPE string VALUE 'ME->RT_ERRORS',
       lt_new         TYPE string VALUE 'LT_NEW',
     END OF gc_perf_table .
-
-  methods NM_DATA_CHECKS
-    importing
-      !IT_TOKENS type GTY_T_TOK_TAB
-      !IT_STMT_INFO type GTY_T_STMT_INFO
-      !IV_CURR_SRC_LINES type I
-    changing
-      !CT_GLOBAL_DECL type GTY_T_GLOBAL_DECL
-      !CT_USE type GTY_T_USE
-      !CT_PENDING type GTY_T_PENDING
-      !CT_ERRORS type ZTT_ERROR .
-  methods NM_ADDITIONAL_NAMING_CHECKS
-    importing
-      !IT_SOURCE type STRING_TABLE
-      !IT_TOKENS type GTY_T_TOK_TAB
-      !IT_STMTS type GTY_T_STMT_TAB
-      !IT_STMT_INFO type GTY_T_STMT_INFO
-      !IT_GLOBAL_DECL type GTY_T_GLOBAL_DECL
-      !IT_USE type GTY_T_USE
-      !IT_PENDING type GTY_T_PENDING
-      !IV_CURR_SRC_LINES type I
-    changing
-      !CT_ERRORS type ZTT_ERROR .
-  methods NM_RESOLVE_TYPE_KIND
-    importing
-      !IV_TYPE_NAME type STRING
-    exporting
-      !EV_KIND type GTY_NM_KIND
-      !EV_LINE_KIND type GTY_NM_KIND
-    changing
-      !CT_TYPE_CACHE type GTY_T_NAME_KIND .
-  methods NM_RESOLVE_SIG_KIND
-    importing
-      !IT_TOKENS type GTY_T_TOK_TAB
-      !IV_FROM type SY-TABIX
-      !IV_TO type SY-TABIX
-    exporting
-      !EV_KIND type C
-      !EV_LAST_IDX type SY-TABIX
-    changing
-      !CT_TYPE_CACHE type GTY_T_NAME_KIND .
-  methods CC_PREPROCESS_SOURCE
-    importing
-      !IT_SOURCE type STRING_TABLE
-    returning
-      value(RT_SRC) type GTY_T_SRC_LINE .
-  methods CC_ADD_USAGE_COUNT
-    importing
-      !IV_NAME type STRING
-    changing
-      !CT_CNT type GTY_T_CNT .
-  methods GET_OBJECT_AUTHOR
-    importing
-      !IV_OBJ_TYPE type TADIR-OBJECT
-      !IV_OBJ_NAME type SOBJ_NAME
-    returning
-      value(RT_AUTHOR) type SYUNAME .
 ENDCLASS.
 
 
@@ -644,18 +720,6 @@ METHOD analyze_clean_code.
   "------------------------------------------------------------
   " A) Local types
   "------------------------------------------------------------
-  TYPES: BEGIN OF lty_decl,
-           name     TYPE string,
-           line     TYPE i,
-           scope_id TYPE string,
-         END OF lty_decl.
-  TYPES lty_t_decl TYPE HASHED TABLE OF lty_decl WITH UNIQUE KEY name scope_id.
-
-  TYPES: BEGIN OF lty_used,
-           key TYPE textpool-key,
-         END OF lty_used.
-  TYPES lty_t_used TYPE HASHED TABLE OF lty_used WITH UNIQUE KEY key.
-
   TYPES: BEGIN OF lty_form_decl,
            name_u TYPE string,
            name   TYPE string,
@@ -669,833 +733,45 @@ METHOD analyze_clean_code.
          END OF lty_name.
   TYPES lty_t_name TYPE HASHED TABLE OF lty_name WITH UNIQUE KEY name_u.
 
-  TYPES: BEGIN OF lty_struct_type_root,
-           name_u TYPE string,
-         END OF lty_struct_type_root.
-  TYPES lty_t_struct_type_root TYPE HASHED TABLE OF lty_struct_type_root WITH UNIQUE KEY name_u.
-
-  TYPES: BEGIN OF lty_decl_prefix,
-           prefix    TYPE string,
-           full_name TYPE string,
-           ambiguous TYPE abap_bool,
-         END OF lty_decl_prefix.
-  TYPES lty_t_decl_prefix TYPE HASHED TABLE OF lty_decl_prefix WITH UNIQUE KEY prefix.
-
   "------------------------------------------------------------
   " B) Local data
   "------------------------------------------------------------
-  DATA lt_tokens            TYPE gty_t_tok_tab.
-  DATA lt_stmts             TYPE gty_t_stmt_tab.
-  DATA lt_src_curr          TYPE gty_t_src_line.
-  DATA lt_decl              TYPE lty_t_decl.
-  DATA lt_cnt               TYPE gty_t_cnt.
-  DATA lt_struct_type_roots TYPE lty_t_struct_type_root.
-  DATA lt_textpool          TYPE STANDARD TABLE OF textpool WITH EMPTY KEY.
-  DATA lt_used              TYPE lty_t_used.
-  DATA lt_usage_source      TYPE string_table.
-  DATA lt_struct_stack      TYPE STANDARD TABLE OF string WITH EMPTY KEY.
-  DATA lt_words             TYPE STANDARD TABLE OF string WITH EMPTY KEY.
-  DATA lt_forms             TYPE lty_t_form_decl.
-  DATA lt_called            TYPE lty_t_name.
-  DATA lt_method_includes   TYPE seop_methods_w_include.
+  DATA lt_tokens       TYPE gty_t_tok_tab.
+  DATA lt_stmts        TYPE gty_t_stmt_tab.
+  DATA lt_usage_source TYPE string_table.
+  DATA lt_words        TYPE STANDARD TABLE OF string WITH EMPTY KEY.
 
-  DATA ls_src               TYPE gty_src_line.
-  DATA lv_text              TYPE string.
-  DATA lv_trim              TYPE string.
-  DATA lv_up                TYPE string.
-  DATA lv_i                 TYPE i.
-  DATA lv_off               TYPE i.
-  DATA lv_blank_run         TYPE i VALUE 0.
-  DATA lv_blank_start       TYPE i VALUE 0.
-  DATA lv_prog              TYPE progname.
-  DATA lv_inc_prog          TYPE progname.
-  DATA lv_classpool_prog    TYPE progname.
-  DATA lv_stmt              TYPE string.
-  DATA lv_stmt_start        TYPE i.
-  DATA lv_word1             TYPE string.
-  DATA lv_word2             TYPE string.
-  DATA lv_name              TYPE string.
-  DATA lv_parent_struct     TYPE string.
-  DATA lv_ignore            TYPE string.
-  DATA lv_curr_scope  TYPE string.
-  DATA lv_match_scope TYPE string.
-  DATA lv_cnt_key     TYPE string.
-
-  DATA lv_use_tok1   TYPE string.
-  DATA lv_use_tok2   TYPE string.
-  DATA lv_use_tok3   TYPE string.
-  DATA lv_use_full   TYPE string.
-  DATA lv_use_parent TYPE string.
-  DATA lv_use_comp   TYPE string.
-
-  DATA lv_name_row         TYPE i.
-  DATA lv_tok_u            TYPE string.
-  DATA lv_prev_u           TYPE string.
-  DATA lv_prev2_u          TYPE string.
-  DATA lv_stack_idx        TYPE i.
-
-  DATA lt_prog_queue_text   TYPE STANDARD TABLE OF progname WITH EMPTY KEY.
-  DATA lt_prog_seen_text    TYPE HASHED TABLE OF progname WITH UNIQUE KEY table_line.
-  DATA lt_src_part_text     TYPE string_table.
-  DATA lt_words_inc_text    TYPE STANDARD TABLE OF string WITH EMPTY KEY.
-  DATA lt_decl_prefix       TYPE lty_t_decl_prefix.
-  DATA lv_use_src_line      TYPE string.
-  DATA lv_textpool_prog     TYPE progname.
-
-  FIELD-SYMBOLS: <lfs_prefix> TYPE lty_decl_prefix.
+  DATA lv_text                TYPE string.
+  DATA lv_has_dynamic_perform TYPE abap_bool.
+  DATA lv_trim                TYPE string.
+  DATA lv_i                   TYPE i.
+  DATA lv_off                 TYPE i.
+  DATA lv_word1               TYPE string.
+  DATA lv_word2               TYPE string.
+  DATA lv_name                TYPE string.
+  DATA lv_up                  TYPE string.
 
   "------------------------------------------------------------
-  " C) Preprocess current source once
+  " C) RULE 1 - Declared but not used
   "------------------------------------------------------------
-  lt_src_curr = cc_preprocess_source( it_source ).
+  DATA(lt_temp_errors) = cc_unused_variables(
+    it_source       = it_source
+    it_usage_source = it_usage_source ).
 
-  "------------------------------------------------------------
-  " D) RULE 1 - Declared but not used
-  "------------------------------------------------------------
-
-  " Build source to scan once
-  CLEAR lt_usage_source.
-
-  IF it_usage_source IS NOT INITIAL.
-    lt_usage_source = it_usage_source.
-  ELSE.
-    lt_usage_source = it_source.
-  ENDIF.
+  APPEND LINES OF lt_temp_errors TO rt_errors.
 
   "------------------------------------------------------------
-  " Scan source once
+  " D) RULE 2 - Blank lines
   "------------------------------------------------------------
-  CLEAR: lt_tokens,
-         lt_stmts.
+  DATA(lt_src_curr) = cc_preprocess_source( it_source ).
 
-  SCAN ABAP-SOURCE lt_usage_source
-    TOKENS     INTO lt_tokens
-    STATEMENTS INTO lt_stmts
-    WITH ANALYSIS.
+  DATA(lv_blank_run)   = 0.
+  DATA(lv_blank_start) = 0.
 
-  "------------------------------------------------------------
-  " Collect declarations from current source only
-  "------------------------------------------------------------
-  CLEAR lt_struct_stack.
-  lv_curr_scope = gc_scope-global.
-  LOOP AT lt_stmts INTO DATA(ls_decl_stmt).
-    CLEAR: lv_name_row,
-           lv_tok_u,
-           lv_prev_u,
-           lv_prev2_u,
-           lv_parent_struct,
-           lv_name.
-
-    DATA(lv_stmt_from) = ls_decl_stmt-from.
-    DATA(lv_stmt_to)   = ls_decl_stmt-to.
-
-    IF lv_stmt_from <= 0 OR lv_stmt_to < lv_stmt_from.
-      CONTINUE.
-    ENDIF.
-
-    READ TABLE lt_tokens INDEX lv_stmt_from INTO DATA(ls_first_tok).
-    IF sy-subrc <> 0
-       OR ls_first_tok-str IS INITIAL
-       OR ls_first_tok-row > lines( it_source ).
-      CONTINUE.
-    ENDIF.
-
-    DATA(lv_stmt_kind)      = to_upper( ls_first_tok-str ).
-    DATA(lv_idx_decl_start) = lv_stmt_from + 1.
-
-    CLEAR lv_word1.
-    READ TABLE lt_tokens INDEX lv_stmt_from + 1 INTO DATA(ls_scope_tok).
-    IF sy-subrc = 0 AND ls_scope_tok-str IS NOT INITIAL.
-      lv_word1 = ls_scope_tok-str.
-      REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word1 WITH gc_token_nm-empty.
-      lv_word1 = to_upper( lv_word1 ).
-    ENDIF.
-
-    CASE lv_stmt_kind.
-      WHEN gc_keyword-method
-        OR gc_keyword-form
-        OR gc_keyword-func
-        OR gc_keyword-module.
-        IF lv_word1 IS INITIAL.
-          lv_curr_scope = lv_stmt_kind.
-        ELSE.
-          lv_curr_scope = |{ lv_stmt_kind };{ lv_word1 }|.
-        ENDIF.
-        CONTINUE.
-
-      WHEN gc_keyword-endmethod
-        OR gc_keyword-endform
-        OR gc_keyword-endfunc
-        OR gc_keyword-endmodule.
-        lv_curr_scope = gc_scope-global.
-        CONTINUE.
-
-      WHEN gc_keyword-initialization
-        OR gc_keyword-start_of_selection
-        OR gc_keyword-end_of_selection
-        OR gc_keyword-top_of_page
-        OR gc_keyword-end_of_page.
-        lv_curr_scope = lv_stmt_kind.
-        CONTINUE.
-
-      WHEN gc_keyword-at.
-        IF lv_word1 = gc_keyword-selection_screen.
-          lv_curr_scope = gc_keyword-at_selection_screen.
-          CONTINUE.
-        ENDIF.
-    ENDCASE.
-
-    IF ls_decl_stmt-prefixlen > 0.
-      DATA(lv_prefix_idx) = lv_stmt_from - ls_decl_stmt-prefixlen.
-      IF lv_prefix_idx < 1.
-        lv_prefix_idx = 1.
-      ENDIF.
-
-      READ TABLE lt_tokens INDEX lv_prefix_idx INTO DATA(lfs_prefix_tok).
-      IF sy-subrc = 0 AND lfs_prefix_tok-str IS NOT INITIAL.
-        DATA(lv_prefix_tok) = to_upper( lfs_prefix_tok-str ).
-
-        CASE lv_prefix_tok.
-          WHEN gc_keyword-data
-            OR gc_keyword-constants
-            OR gc_keyword-types
-            OR gc_keyword-field_symbols
-            OR gc_keyword-statics
-            OR gc_keyword-class_data
-            OR gc_keyword-class_constants.
-            lv_stmt_kind      = lv_prefix_tok.
-            lv_idx_decl_start = lv_stmt_from.
-        ENDCASE.
-      ENDIF.
-    ENDIF.
-
-    CASE lv_stmt_kind.
-      WHEN gc_keyword-data
-        OR gc_keyword-constants
-        OR gc_keyword-types
-        OR gc_keyword-field_symbols
-        OR gc_keyword-statics
-        OR gc_keyword-class_data
-        OR gc_keyword-class_constants.
-      WHEN OTHERS.
-        CONTINUE.
-    ENDCASE.
-
-    DATA(lv_stmt_is_types)    = xsdbool( lv_stmt_kind = gc_keyword-types ).
-    DATA(lv_expect_decl_name) = abap_true.
-    DATA(lv_paren_depth)      = 0.
-
-    DATA(lv_idx_decl) = lv_idx_decl_start.
-
-    WHILE lv_idx_decl <= lv_stmt_to.
-      READ TABLE lt_tokens INDEX lv_idx_decl INTO DATA(ls_decl_tok).
-      IF sy-subrc <> 0.
-        EXIT.
-      ENDIF.
-
-      lv_tok_u = ls_decl_tok-str.
-      lv_tok_u = to_upper( lv_tok_u ).
-
-      CASE lv_tok_u.
-        WHEN gc_keyword-lparen.
-          lv_paren_depth += 1.
-          lv_idx_decl += 1.
-          CONTINUE.
-
-        WHEN gc_keyword-rparen.
-          IF lv_paren_depth > 0.
-            lv_paren_depth -= 1.
-          ENDIF.
-          lv_idx_decl += 1.
-          CONTINUE.
-
-        WHEN gc_keyword-comma.
-          IF lv_paren_depth = 0.
-            lv_expect_decl_name = abap_true.
-          ENDIF.
-          lv_idx_decl += 1.
-          CONTINUE.
-      ENDCASE.
-
-      IF lv_expect_decl_name = abap_true
-         AND lv_tok_u = gc_keyword-include.
-        lv_expect_decl_name = abap_false.
-        lv_idx_decl += 1.
-        CONTINUE.
-      ENDIF.
-
-      IF ls_decl_tok-type <> gc_token_type-identifier.
-        lv_idx_decl += 1.
-        CONTINUE.
-      ENDIF.
-
-      CLEAR: lv_prev_u,
-             lv_prev2_u,
-             lv_parent_struct,
-             lv_name.
-
-      DATA(lv_is_begin_of)    = abap_false.
-      DATA(lv_is_end_of)      = abap_false.
-      DATA(lv_is_root_struct) = abap_false.
-
-      READ TABLE lt_tokens INDEX lv_idx_decl - 1 INTO DATA(ls_prev_tok).
-      IF sy-subrc = 0.
-        lv_prev_u = ls_prev_tok-str.
-        lv_prev_u = to_upper( lv_prev_u ).
-      ENDIF.
-
-      READ TABLE lt_tokens INDEX lv_idx_decl - 2 INTO DATA(ls_prev2_tok).
-      IF sy-subrc = 0.
-        lv_prev2_u = ls_prev2_tok-str.
-        lv_prev2_u = to_upper( lv_prev2_u ).
-      ENDIF.
-
-      CLEAR lv_word1.
-      READ TABLE lt_tokens INDEX lv_idx_decl + 1 INTO DATA(ls_next_tok).
-      IF sy-subrc = 0 AND ls_next_tok-str IS NOT INITIAL.
-        lv_word1 = ls_next_tok-str.
-        lv_word1 = to_upper( lv_word1 ).
-      ENDIF.
-
-      IF ( lv_tok_u = gc_keyword-begin OR lv_tok_u = gc_keyword-end )
-         AND lv_word1 = gc_keyword-of.
-        lv_idx_decl += 1.
-        CONTINUE.
-      ENDIF.
-
-      IF lv_tok_u = gc_keyword-of
-         AND ( lv_prev_u = gc_keyword-begin OR lv_prev_u = gc_keyword-end ).
-        lv_idx_decl += 1.
-        CONTINUE.
-      ENDIF.
-
-      IF lv_prev2_u = gc_keyword-begin
-         AND lv_prev_u  = gc_keyword-of.
-        lv_name        = lv_tok_u.
-        lv_name_row    = ls_decl_tok-row.
-        lv_is_begin_of = abap_true.
-
-      ELSEIF lv_prev2_u = gc_keyword-end
-         AND lv_prev_u  = gc_keyword-of.
-        lv_is_end_of = abap_true.
-
-      ELSE.
-        IF lv_expect_decl_name = abap_false.
-          lv_idx_decl += 1.
-          CONTINUE.
-        ENDIF.
-
-        lv_name     = lv_tok_u.
-        lv_name_row = ls_decl_tok-row.
-      ENDIF.
-
-      IF lv_is_end_of = abap_true.
-        lv_stack_idx = lines( lt_struct_stack ).
-        IF lv_stack_idx > 0.
-          DELETE lt_struct_stack INDEX lv_stack_idx.
-        ENDIF.
-
-        lv_expect_decl_name = abap_false.
-        lv_idx_decl += 1.
-        CONTINUE.
-      ENDIF.
-
-      IF lv_name IS INITIAL.
-        lv_idx_decl += 1.
-        CONTINUE.
-      ENDIF.
-
-      lv_stack_idx = lines( lt_struct_stack ).
-
-      lv_is_root_struct = xsdbool(
-        lv_is_begin_of = abap_true
-        AND lv_stack_idx = 0 ).
-
-      IF lv_stack_idx > 0.
-        READ TABLE lt_struct_stack
-          INDEX lv_stack_idx
-          INTO lv_parent_struct.
-        IF sy-subrc <> 0 OR lv_parent_struct IS INITIAL.
-          lv_idx_decl += 1.
-          CONTINUE.
-        ENDIF.
-
-        lv_name = |{ lv_parent_struct }-{ lv_name }|.
-      ENDIF.
-
-      INSERT VALUE lty_decl(
-        name     = lv_name
-        line     = lv_name_row
-        scope_id = lv_curr_scope
-      ) INTO TABLE lt_decl.
-
-      IF lv_is_begin_of = abap_true.
-        APPEND lv_name TO lt_struct_stack.
-
-        IF lv_stmt_is_types = abap_true
-           AND lv_is_root_struct = abap_true.
-          lv_cnt_key = |{ lv_curr_scope };{ lv_name }|.
-          INSERT VALUE lty_struct_type_root(
-            name_u = lv_cnt_key
-          ) INTO TABLE lt_struct_type_roots.
-        ENDIF.
-      ENDIF.
-
-      lv_expect_decl_name = abap_false.
-      lv_idx_decl += 1.
-    ENDWHILE.
-  ENDLOOP.
-
-  "------------------------------------------------------------
-  " Count usages from full scanned source
-  "------------------------------------------------------------
-  CLEAR: lt_cnt,
-         lt_decl_prefix.
-
-  LOOP AT lt_decl INTO DATA(ls_decl_prefix_src)
-       WHERE name CS gc_keyword-dash.                   "#EC CI_HASHSEQ
-
-    CLEAR lv_off.
-    FIND FIRST OCCURRENCE OF gc_keyword-dash
-      IN ls_decl_prefix_src-name
-      MATCH OFFSET lv_off.
-    IF sy-subrc <> 0.
-      CONTINUE.
-    ENDIF.
-
-    lv_stack_idx = strlen( ls_decl_prefix_src-name ).
-
-    IF lv_off + 2 > lv_stack_idx - 1.
-      CONTINUE.
-    ENDIF.
-
-    lv_i = lv_off + 2.
-    WHILE lv_i < lv_stack_idx.
-      lv_name = ls_decl_prefix_src-name(lv_i).
-
-      READ TABLE lt_decl_prefix
-        ASSIGNING <lfs_prefix>
-        WITH TABLE KEY prefix = lv_name.
-
-      IF sy-subrc <> 0.
-        INSERT VALUE lty_decl_prefix(
-          prefix    = lv_name
-          full_name = ls_decl_prefix_src-name
-          ambiguous = abap_false
-        ) INTO TABLE lt_decl_prefix.
-
-      ELSEIF <lfs_prefix>-full_name <> ls_decl_prefix_src-name.
-        <lfs_prefix>-ambiguous = abap_true.
-        CLEAR <lfs_prefix>-full_name.
-      ENDIF.
-
-      lv_i += 1.
-    ENDWHILE.
-  ENDLOOP.
-
-  lv_curr_scope = gc_scope-global.
-  LOOP AT lt_stmts INTO DATA(ls_use_stmt).
-    DATA(lv_use_idx) = ls_use_stmt-from.
-    READ TABLE lt_tokens INDEX ls_use_stmt-from INTO DATA(ls_stmt_tok1).
-    IF sy-subrc = 0 AND ls_stmt_tok1-str IS NOT INITIAL.
-      lv_word1 = ls_stmt_tok1-str.
-      lv_word1 = to_upper( lv_word1 ).
-
-      CLEAR lv_word2.
-      READ TABLE lt_tokens INDEX ls_use_stmt-from + 1 INTO DATA(ls_stmt_tok2).
-      IF sy-subrc = 0 AND ls_stmt_tok2-str IS NOT INITIAL.
-        lv_word2 = ls_stmt_tok2-str.
-        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word2 WITH gc_token_nm-empty.
-        lv_word2 = to_upper( lv_word2 ).
-      ENDIF.
-
-      CASE lv_word1.
-        WHEN gc_keyword-method
-          OR gc_keyword-form
-          OR gc_keyword-func
-          OR gc_keyword-module.
-          IF lv_word2 IS INITIAL.
-            lv_curr_scope = lv_word1.
-          ELSE.
-            lv_curr_scope = |{ lv_word1 };{ lv_word2 }|.
-          ENDIF.
-
-        WHEN gc_keyword-endmethod
-          OR gc_keyword-endform
-          OR gc_keyword-endfunc
-          OR gc_keyword-endmodule.
-          lv_curr_scope = gc_scope-global.
-
-        WHEN gc_keyword-initialization
-          OR gc_keyword-start_of_selection
-          OR gc_keyword-end_of_selection
-          OR gc_keyword-top_of_page
-          OR gc_keyword-end_of_page.
-          lv_curr_scope = lv_word1.
-
-        WHEN gc_keyword-at.
-          IF lv_word2 = gc_keyword-selection_screen.
-            lv_curr_scope = gc_keyword-at_selection_screen.
-          ENDIF.
-      ENDCASE.
-    ENDIF.
-
-    WHILE lv_use_idx <= ls_use_stmt-to.
-      CLEAR: lv_use_tok1,
-             lv_use_tok2,
-             lv_use_tok3,
-             lv_use_full,
-             lv_use_parent,
-             lv_use_comp,
-             lv_use_src_line.
-
-      READ TABLE lt_tokens INDEX lv_use_idx INTO DATA(ls_use_tok1).
-      IF sy-subrc <> 0.
-        EXIT.
-      ENDIF.
-
-      lv_use_tok1 = ls_use_tok1-str.
-      IF ls_use_tok1-row > 0
-         AND ls_use_tok1-row <= lines( lt_usage_source ).
-
-        READ TABLE lt_usage_source INDEX ls_use_tok1-row INTO lv_use_src_line.
-        IF sy-subrc = 0.
-          IF ls_use_tok1-len2 > 0.
-            lv_use_tok1 &&= lv_use_src_line+ls_use_tok1-off2(ls_use_tok1-len2).
-          ENDIF.
-
-          IF ls_use_tok1-len3 > 0.
-            lv_use_tok1 &&= lv_use_src_line+ls_use_tok1-off3(ls_use_tok1-len3).
-          ENDIF.
-        ENDIF.
-      ENDIF.
-
-      IF lv_use_tok1 IS INITIAL.
-        lv_use_idx += 1.
-        CONTINUE.
-      ENDIF.
-
-      lv_use_tok1 = to_upper( lv_use_tok1 ).
-
-      IF lv_use_tok1(1) = gc_keyword-at_sign.
-        SHIFT lv_use_tok1 BY 1 PLACES LEFT.
-      ENDIF.
-
-      IF lv_use_tok1 IS INITIAL.
-        lv_use_idx += 1.
-        CONTINUE.
-      ENDIF.
-
-      IF lv_use_tok1 = gc_keyword-value
-         AND lv_use_idx + 1 <= ls_use_stmt-to.
-        READ TABLE lt_tokens INDEX lv_use_idx + 1 INTO DATA(ls_value_type_tok).
-
-        IF sy-subrc = 0 AND ls_value_type_tok-str IS NOT INITIAL.
-          lv_use_idx  += 1.
-          lv_use_tok1  = to_upper( ls_value_type_tok-str ).
-          ls_use_tok1-type = gc_token_type-identifier.
-          REPLACE ALL OCCURRENCES OF gc_keyword-dot    IN lv_use_tok1 WITH gc_token_nm-empty.
-          REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_use_tok1 WITH gc_token_nm-empty.
-          CONDENSE lv_use_tok1 NO-GAPS.
-        ENDIF.
-      ENDIF.
-
-      IF ls_use_tok1-type = gc_token_type-identifier
-        AND lv_use_tok1 CS gc_keyword-dash.
-
-        lv_use_full = lv_use_tok1.
-
-        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_full WITH gc_token_nm-empty.
-        CONDENSE lv_use_full NO-GAPS.
-
-        SPLIT lv_use_full AT gc_keyword-dash INTO lv_use_parent lv_use_comp.
-
-        lv_use_full = to_upper( lv_use_full ).
-        lv_use_parent = to_upper( lv_use_parent ).
-        lv_use_comp = to_upper( lv_use_comp ).
-
-        lv_use_idx += 1.
-
-      ELSEIF ls_use_tok1-type = gc_token_type-identifier
-         AND lv_use_idx + 2 <= ls_use_stmt-to.
-
-        READ TABLE lt_tokens INDEX lv_use_idx + 1 INTO DATA(ls_use_tok2).
-        IF sy-subrc = 0.
-          READ TABLE lt_tokens INDEX lv_use_idx + 2 INTO DATA(ls_use_tok3).
-        ENDIF.
-
-        IF sy-subrc = 0.
-          lv_use_tok2 = ls_use_tok2-str.
-          lv_use_tok3 = ls_use_tok3-str.
-
-          lv_use_tok2 = to_upper( lv_use_tok2 ).
-          lv_use_tok3 = to_upper( lv_use_tok3 ).
-
-          IF lv_use_tok2 = gc_keyword-dash
-             AND ls_use_tok3-type = gc_token_type-identifier.
-
-            lv_use_parent = lv_use_tok1.
-            lv_use_comp   = lv_use_tok3.
-            lv_use_full   = |{ lv_use_parent }-{ lv_use_comp }|.
-
-            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_full WITH gc_token_nm-empty.
-            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_parent WITH gc_token_nm-empty.
-            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_comp WITH gc_token_nm-empty.
-
-            CONDENSE lv_use_full   NO-GAPS.
-            CONDENSE lv_use_parent NO-GAPS.
-            CONDENSE lv_use_comp   NO-GAPS.
-
-            lv_use_parent = to_upper( lv_use_parent ).
-            lv_use_full = to_upper( lv_use_full ).
-
-            lv_use_idx += 3.
-          ELSE.
-            lv_use_idx += 1.
-          ENDIF.
-        ELSE.
-          lv_use_idx += 1.
-        ENDIF.
-
-      ELSE.
-        lv_use_idx += 1.
-      ENDIF.
-
-      IF lv_use_full IS NOT INITIAL.
-
-        CLEAR lv_match_scope.
-
-        READ TABLE lt_decl
-          WITH TABLE KEY
-            name     = lv_use_full
-            scope_id = lv_curr_scope
-          TRANSPORTING NO FIELDS.
-        IF sy-subrc = 0.
-          lv_match_scope = lv_curr_scope.
-        ELSEIF lv_curr_scope <> gc_scope-global.
-          READ TABLE lt_decl
-            WITH TABLE KEY
-              name     = lv_use_full
-              scope_id = gc_scope-global
-            TRANSPORTING NO FIELDS.
-          IF sy-subrc = 0.
-            lv_match_scope = gc_scope-global.
-          ENDIF.
-        ENDIF.
-
-        IF lv_match_scope IS INITIAL
-          AND lv_use_full CS gc_keyword-dash.
-
-          READ TABLE lt_decl_prefix
-            ASSIGNING <lfs_prefix>
-            WITH TABLE KEY prefix = lv_use_full.
-
-          IF sy-subrc = 0
-             AND <lfs_prefix>-ambiguous = abap_false
-             AND <lfs_prefix>-full_name IS NOT INITIAL.
-
-            lv_use_full = <lfs_prefix>-full_name.
-
-            READ TABLE lt_decl
-              WITH TABLE KEY
-                name     = lv_use_full
-                scope_id = lv_curr_scope
-              TRANSPORTING NO FIELDS.
-            IF sy-subrc = 0.
-              lv_match_scope = lv_curr_scope.
-            ELSEIF lv_curr_scope <> gc_scope-global.
-              READ TABLE lt_decl
-                WITH TABLE KEY
-                  name     = lv_use_full
-                  scope_id = gc_scope-global
-                TRANSPORTING NO FIELDS.
-              IF sy-subrc = 0.
-                lv_match_scope = gc_scope-global.
-              ENDIF.
-            ENDIF.
-
-          ELSE.
-            lv_up = lv_use_src_line.
-            lv_up = to_upper( lv_up ).
-
-            CLEAR: lv_name,
-                   lv_match_scope.
-
-            LOOP AT lt_decl INTO DATA(ls_decl_try)
-                 WHERE name CP |{ lv_use_full }*|.      "#EC CI_HASHSEQ
-
-              IF ls_decl_try-scope_id <> lv_curr_scope
-                 AND ls_decl_try-scope_id <> gc_scope-global.
-                CONTINUE.
-              ENDIF.
-
-              IF lv_up CS ls_decl_try-name.
-                lv_name        = ls_decl_try-name.
-                lv_match_scope = ls_decl_try-scope_id.
-                EXIT.
-              ENDIF.
-            ENDLOOP.
-
-            IF lv_name IS NOT INITIAL.
-              lv_use_full = lv_name.
-            ELSE.
-              CLEAR lv_use_full.
-            ENDIF.
-
-          ENDIF.
-        ENDIF.
-
-        IF lv_use_full IS NOT INITIAL
-           AND lv_match_scope IS NOT INITIAL.
-          lv_cnt_key = |{ lv_match_scope };{ lv_use_full }|.
-
-          cc_add_usage_count(
-            EXPORTING
-              iv_name = lv_cnt_key
-            CHANGING
-              ct_cnt  = lt_cnt ).
-        ENDIF.
-
-        IF lv_use_parent IS NOT INITIAL.
-          CLEAR lv_match_scope.
-
-          READ TABLE lt_decl
-            WITH TABLE KEY
-              name     = lv_use_parent
-              scope_id = lv_curr_scope
-            TRANSPORTING NO FIELDS.
-          IF sy-subrc = 0.
-            lv_match_scope = lv_curr_scope.
-          ELSEIF lv_curr_scope <> gc_scope-global.
-            READ TABLE lt_decl
-              WITH TABLE KEY
-                name     = lv_use_parent
-                scope_id = gc_scope-global
-              TRANSPORTING NO FIELDS.
-            IF sy-subrc = 0.
-              lv_match_scope = gc_scope-global.
-            ENDIF.
-          ENDIF.
-
-          IF lv_match_scope IS NOT INITIAL.
-            lv_cnt_key = |{ lv_match_scope };{ lv_use_parent }|.
-
-            cc_add_usage_count(
-              EXPORTING
-                iv_name = lv_cnt_key
-              CHANGING
-                ct_cnt  = lt_cnt ).
-          ENDIF.
-        ENDIF.
-
-        CONTINUE.
-      ENDIF.
-
-      IF ls_use_tok1-type = gc_token_type-identifier.
-        CLEAR lv_match_scope.
-
-        READ TABLE lt_decl
-          WITH TABLE KEY
-            name     = lv_use_tok1
-            scope_id = lv_curr_scope
-          TRANSPORTING NO FIELDS.
-        IF sy-subrc = 0.
-          lv_match_scope = lv_curr_scope.
-        ELSEIF lv_curr_scope <> gc_scope-global.
-          READ TABLE lt_decl
-            WITH TABLE KEY
-              name     = lv_use_tok1
-              scope_id = gc_scope-global
-            TRANSPORTING NO FIELDS.
-          IF sy-subrc = 0.
-            lv_match_scope = gc_scope-global.
-          ENDIF.
-        ENDIF.
-
-        IF lv_match_scope IS NOT INITIAL.
-          lv_cnt_key = |{ lv_match_scope };{ lv_use_tok1 }|.
-
-          cc_add_usage_count(
-            EXPORTING
-              iv_name = lv_cnt_key
-            CHANGING
-              ct_cnt  = lt_cnt ).
-        ENDIF.
-      ENDIF.
-    ENDWHILE.
-  ENDLOOP.
-
-  "------------------------------------------------------------
-  " Emit warnings
-  "------------------------------------------------------------
-  LOOP AT lt_decl INTO DATA(ls_decl).
-
-    lv_cnt_key = |{ ls_decl-scope_id };{ ls_decl-name }|.
-
-    READ TABLE lt_cnt
-      WITH TABLE KEY name = lv_cnt_key
-      INTO DATA(ls_cnt).
-
-    DATA(lv_cnt) = 0.
-    IF sy-subrc = 0.
-      lv_cnt = ls_cnt-cnt.
-    ENDIF.
-
-    IF ls_decl-name CS gc_keyword-dash.
-      IF lv_cnt > 0.
-        CONTINUE.
-      ENDIF.
-    ELSE.
-      IF lv_cnt > gc_clean_code-unused_token_limit.
-        CONTINUE.
-      ENDIF.
-    ENDIF.
-
-    IF ls_decl-name CS gc_keyword-dash.
-      SPLIT ls_decl-name AT gc_keyword-dash INTO DATA(lv_parent_name_u) lv_ignore.
-      lv_parent_name_u = to_upper( lv_parent_name_u ).
-
-      lv_cnt_key = |{ ls_decl-scope_id };{ lv_parent_name_u }|.
-
-      READ TABLE lt_struct_type_roots
-        WITH TABLE KEY name_u = lv_cnt_key TRANSPORTING NO FIELDS.
-      IF sy-subrc = 0.
-
-        READ TABLE lt_cnt
-          WITH TABLE KEY name = lv_cnt_key
-          INTO ls_cnt.
-
-        IF sy-subrc = 0
-           AND ls_cnt-cnt > gc_clean_code-unused_token_limit.
-          CONTINUE.
-        ENDIF.
-      ENDIF.
-    ENDIF.
-
-    MESSAGE w023(z_gsp04_message) WITH ls_decl-name INTO lv_text.
-
-    APPEND VALUE zst_error(
-      rule     = gc_rule_cc-unused_local
-      sev      = gc_severity-warning
-      line     = ls_decl-line
-      msg      = lv_text
-      category = gc_category-clean_code
-    ) TO rt_errors.
-
-  ENDLOOP.
-
-  "------------------------------------------------------------
-  " E) RULE 2 - Blank lines
-  "------------------------------------------------------------
-  lt_src_curr = cc_preprocess_source( it_source ).
-
-  CLEAR: lv_blank_run,
-         lv_blank_start.
-
-  LOOP AT lt_src_curr INTO ls_src.
-    IF ls_src-is_blank = abap_true.
+  LOOP AT lt_src_curr INTO DATA(ls_src_blank).
+    IF ls_src_blank-is_blank = abap_true.
       IF lv_blank_run = 0.
-        lv_blank_start = ls_src-row.
+        lv_blank_start = ls_src_blank-row.
       ENDIF.
 
       lv_blank_run += 1.
@@ -1520,256 +796,45 @@ METHOD analyze_clean_code.
   ENDLOOP.
 
   "------------------------------------------------------------
-  " F) RULE 3 - Unused text symbols
+  " E) RULE 3 - Unused text symbols
   "------------------------------------------------------------
   IF iv_check_unused_text = abap_true.
+    CLEAR lt_temp_errors.
 
-    CLEAR: lv_textpool_prog,
-           lt_used,
-           lt_prog_queue_text,
-           lt_prog_seen_text,
-           lt_method_includes,
-           lv_classpool_prog.
+    lt_temp_errors = cc_unused_text_symbols(
+      it_source = it_source
+      is_ctx    = is_ctx ).
 
-    CASE is_ctx-obj_type.
-
-      WHEN gc_obj_type-prog
-        OR gc_obj_type-reps
-        OR gc_obj_type-incl.
-
-        IF is_ctx-main_prog IS NOT INITIAL.
-          lv_textpool_prog = is_ctx-main_prog.
-        ELSEIF is_ctx-obj_name IS NOT INITIAL.
-          lv_textpool_prog = is_ctx-obj_name.
-        ELSEIF is_ctx-include IS NOT INITIAL.
-          lv_textpool_prog = is_ctx-include.
-        ENDIF.
-
-        IF lv_textpool_prog IS NOT INITIAL.
-          lv_textpool_prog = to_upper( lv_textpool_prog ).
-          APPEND lv_textpool_prog TO lt_prog_queue_text.
-        ENDIF.
-
-      WHEN gc_obj_type-fugr.
-
-        IF is_ctx-main_prog IS NOT INITIAL.
-          lv_textpool_prog = is_ctx-main_prog.
-        ELSEIF is_ctx-obj_name IS NOT INITIAL.
-          lv_textpool_prog = |SAPL{ is_ctx-obj_name }|.
-        ENDIF.
-
-        IF lv_textpool_prog IS NOT INITIAL.
-          lv_textpool_prog = to_upper( lv_textpool_prog ).
-          APPEND lv_textpool_prog TO lt_prog_queue_text.
-        ENDIF.
-
-      WHEN gc_obj_type-func
-        OR gc_obj_type-fm.
-
-        IF is_ctx-main_prog IS NOT INITIAL.
-          lv_textpool_prog = is_ctx-main_prog.
-        ENDIF.
-
-        IF lv_textpool_prog IS NOT INITIAL.
-          lv_textpool_prog = to_upper( lv_textpool_prog ).
-          APPEND lv_textpool_prog TO lt_prog_queue_text.
-        ENDIF.
-
-      WHEN gc_obj_type-clas.
-
-        IF is_ctx-main_prog IS NOT INITIAL.
-          CLEAR lt_src_part_text.
-          READ REPORT is_ctx-main_prog INTO lt_src_part_text.
-          IF sy-subrc = 0 AND lt_src_part_text IS NOT INITIAL.
-            lv_classpool_prog = is_ctx-main_prog.
-          ENDIF.
-        ENDIF.
-
-        IF lv_classpool_prog IS INITIAL
-           AND is_ctx-obj_name IS NOT INITIAL.
-          TRY.
-              lv_classpool_prog =
-                cl_oo_classname_service=>get_classpool_name(
-                  clsname = CONV seoclsname( is_ctx-obj_name ) ).
-            CATCH cx_root.
-              CLEAR lv_classpool_prog.
-          ENDTRY.
-        ENDIF.
-
-        lv_textpool_prog = lv_classpool_prog.
-
-        IF lv_textpool_prog IS NOT INITIAL.
-          lv_textpool_prog = to_upper( lv_textpool_prog ).
-          APPEND lv_textpool_prog TO lt_prog_queue_text.
-        ENDIF.
-
-        IF is_ctx-obj_name IS NOT INITIAL.
-          TRY.
-              lt_method_includes =
-                cl_oo_classname_service=>get_all_method_includes(
-                  CONV seoclsname( is_ctx-obj_name ) ).
-            CATCH cx_root.
-              CLEAR lt_method_includes.
-          ENDTRY.
-        ENDIF.
-
-        LOOP AT lt_method_includes ASSIGNING FIELD-SYMBOL(<ls_method_inc_text>).
-          lv_inc_prog = <ls_method_inc_text>-incname.
-          IF lv_inc_prog IS INITIAL.
-            CONTINUE.
-          ENDIF.
-
-          lv_inc_prog = to_upper( lv_inc_prog ).
-
-          READ TABLE lt_prog_queue_text
-            WITH KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
-          IF sy-subrc <> 0.
-            APPEND lv_inc_prog TO lt_prog_queue_text.
-          ENDIF.
-        ENDLOOP.
-
-      WHEN OTHERS.
-        CLEAR lv_textpool_prog.
-
-    ENDCASE.
-
-    IF lv_textpool_prog IS NOT INITIAL.
-
-      READ TEXTPOOL lv_textpool_prog INTO lt_textpool LANGUAGE sy-langu.
-
-      IF sy-subrc = 0 AND lt_textpool IS NOT INITIAL.
-
-        WHILE lt_prog_queue_text IS NOT INITIAL.
-          READ TABLE lt_prog_queue_text INDEX 1 INTO DATA(lv_prog_text).
-          DELETE lt_prog_queue_text INDEX 1.
-
-          IF sy-subrc <> 0 OR lv_prog_text IS INITIAL.
-            CONTINUE.
-          ENDIF.
-
-          READ TABLE lt_prog_seen_text
-            WITH TABLE KEY table_line = lv_prog_text TRANSPORTING NO FIELDS.
-          IF sy-subrc = 0.
-            CONTINUE.
-          ENDIF.
-
-          INSERT lv_prog_text INTO TABLE lt_prog_seen_text.
-
-          CLEAR lt_src_part_text.
-          READ REPORT lv_prog_text INTO lt_src_part_text.
-          IF sy-subrc <> 0 OR lt_src_part_text IS INITIAL.
-            CONTINUE.
-          ENDIF.
-
-          lt_src_curr = cc_preprocess_source( lt_src_part_text ).
-
-          LOOP AT lt_src_curr INTO ls_src.
-            DATA(lv_work_inc_text) = ls_src-no_comment.
-            lv_work_inc_text = to_upper( lv_work_inc_text ).
-
-            IF lv_work_inc_text IS INITIAL.
-              CONTINUE.
-            ENDIF.
-
-            CLEAR: lt_words_inc_text,
-                   lv_word1,
-                   lv_word2.
-
-            SPLIT lv_work_inc_text AT space INTO TABLE lt_words_inc_text.
-            DELETE lt_words_inc_text WHERE table_line IS INITIAL.
-
-            READ TABLE lt_words_inc_text INDEX 1 INTO lv_word1.
-            READ TABLE lt_words_inc_text INDEX 2 INTO lv_word2.
-
-            lv_word1 = to_upper( lv_word1 ).
-            lv_word2 = to_upper( lv_word2 ).
-
-            IF lv_word1 = gc_keyword-include
-               AND lv_word2 IS NOT INITIAL.
-
-              lv_inc_prog = lv_word2.
-              REPLACE ALL OCCURRENCES OF gc_keyword-dot   IN lv_inc_prog WITH gc_token_nm-empty.
-              REPLACE ALL OCCURRENCES OF gc_keyword-quote IN lv_inc_prog WITH gc_token_nm-empty.
-              CONDENSE lv_inc_prog NO-GAPS.
-              lv_inc_prog = to_upper( lv_inc_prog ).
-
-              IF lv_inc_prog IS NOT INITIAL
-                 AND lv_inc_prog <> gc_keyword-methods
-                 AND lv_inc_prog <> gc_keyword-type
-                 AND lv_inc_prog <> gc_keyword-structure.
-
-                READ TABLE lt_prog_seen_text
-                  WITH TABLE KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
-                IF sy-subrc <> 0.
-                  READ TABLE lt_prog_queue_text
-                    WITH KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
-                  IF sy-subrc <> 0.
-                    APPEND lv_inc_prog TO lt_prog_queue_text.
-                  ENDIF.
-                ENDIF.
-              ENDIF.
-            ENDIF.
-
-            CLEAR: lv_i,
-                   lv_off,
-                   lv_name.
-
-            WHILE lv_i < strlen( lv_work_inc_text ).
-              lv_name = lv_work_inc_text+lv_i.
-
-              FIND FIRST OCCURRENCE OF PCRE gc_clean_code-text_symbol
-                IN lv_name IGNORING CASE
-                MATCH OFFSET lv_off
-                MATCH LENGTH lv_stack_idx.
-
-              IF sy-subrc <> 0.
-                EXIT.
-              ENDIF.
-
-              lv_word1 = lv_name+lv_off(lv_stack_idx).
-              lv_word1 = to_upper( lv_word1 ).
-
-              IF strlen( lv_word1 ) >= 8.
-                INSERT VALUE lty_used(
-                  key = lv_word1+5(3)
-                ) INTO TABLE lt_used.
-              ENDIF.
-
-              lv_i += lv_off + lv_stack_idx.
-            ENDWHILE.
-          ENDLOOP.
-        ENDWHILE.
-
-        LOOP AT lt_textpool INTO DATA(ls_text)
-             WHERE id = gc_clean_code-textpool_i
-               AND key IS NOT INITIAL.
-
-          READ TABLE lt_used
-            WITH TABLE KEY key = ls_text-key TRANSPORTING NO FIELDS.
-          IF sy-subrc = 0.
-            CONTINUE.
-          ENDIF.
-
-          MESSAGE w024(z_gsp04_message)
-            WITH |{ ls_text-key }| ls_text-entry
-            INTO lv_text.
-
-          APPEND VALUE zst_error(
-            line     = 0
-            msg      = lv_text
-            sev      = gc_severity-warning
-            category = gc_category-clean_code
-            rule     = gc_rule_cc-unused_text_symbol
-          ) TO rt_errors.
-        ENDLOOP.
-
-      ENDIF.
-    ENDIF.
+    APPEND LINES OF lt_temp_errors TO rt_errors.
   ENDIF.
 
   "------------------------------------------------------------
+  " Prepare scanned source for RULE 4 - Unused subroutine
+  "------------------------------------------------------------
+  CLEAR lt_usage_source.
+
+  IF it_usage_source IS NOT INITIAL.
+    lt_usage_source = it_usage_source.
+  ELSE.
+    lt_usage_source = it_source.
+  ENDIF.
+
+  CLEAR: lt_tokens,
+         lt_stmts.
+
+  SCAN ABAP-SOURCE lt_usage_source
+    TOKENS     INTO lt_tokens
+    STATEMENTS INTO lt_stmts
+    WITH ANALYSIS.
+
   " G) RULE 4 - Unused subroutine
   "------------------------------------------------------------
+  DATA lt_forms TYPE lty_t_form_decl.
+  DATA lt_called TYPE lty_t_name.
+  DATA lv_stmt TYPE string.
+  DATA lv_stmt_start TYPE i.
+  DATA lv_prog TYPE progname.
+
   CLEAR: lt_forms,
          lt_called,
          lv_stmt,
@@ -1778,26 +843,26 @@ METHOD analyze_clean_code.
   " Collect FORM declarations from current source only
   lt_src_curr = cc_preprocess_source( it_source ).
 
-  LOOP AT lt_src_curr INTO ls_src.
-    IF ls_src-no_comment IS INITIAL.
+  LOOP AT lt_src_curr INTO DATA(ls_src_form).
+    IF ls_src_form-no_comment IS INITIAL.
       CONTINUE.
     ENDIF.
 
     IF lv_stmt IS INITIAL.
-      lv_stmt_start = ls_src-row.
+      lv_stmt_start = ls_src_form-row.
     ENDIF.
 
-    CONCATENATE lv_stmt ls_src-no_comment
+    CONCATENATE lv_stmt ls_src_form-no_comment
       INTO lv_stmt
       SEPARATED BY space.
 
-    lv_i = strlen( ls_src-no_comment ).
+    lv_i = strlen( ls_src_form-no_comment ).
     IF lv_i = 0.
       CONTINUE.
     ENDIF.
 
     lv_off = lv_i - 1.
-    IF ls_src-no_comment+lv_off(1) <> gc_keyword-dot.
+    IF ls_src_form-no_comment+lv_off(1) <> gc_keyword-dot.
       CONTINUE.
     ENDIF.
 
@@ -1858,8 +923,9 @@ METHOD analyze_clean_code.
       CONTINUE.
     ENDIF.
 
-    " Ignore dynamic PERFORM: PERFORM (lv_form) ...
+    " Dynamic PERFORM: PERFORM (lv_form) ...
     IF ls_perf_tok2-type <> gc_token_type-identifier.
+      lv_has_dynamic_perform = abap_true.
       CONTINUE.
     ENDIF.
 
@@ -1925,6 +991,11 @@ METHOD analyze_clean_code.
 
   " Emit unused subroutine warnings only
   LOOP AT lt_forms INTO DATA(ls_form).
+
+    IF lv_has_dynamic_perform = abap_true.
+      CONTINUE.
+    ENDIF.
+
     READ TABLE lt_called
       WITH TABLE KEY name_u = ls_form-name_u TRANSPORTING NO FIELDS.
     IF sy-subrc = 0.
@@ -1941,6 +1012,7 @@ METHOD analyze_clean_code.
       rule     = gc_rule_cc-unused_subroutine
     ) TO rt_errors.
   ENDLOOP.
+
 
   me->rt_errors = rt_errors.
 ENDMETHOD.
@@ -2413,6 +1485,13 @@ METHOD analyze_naming.
 
   DATA lt_scope_rule TYPE lty_t_scope_rule.
   DATA ls_state      TYPE lty_nm_scope_state.
+  "------------------------------------------------------------
+  " NEW NEW NEW
+  "------------------------------------------------------------
+  DATA lt_sig_tokens      TYPE gty_t_tok_tab.
+  DATA lt_sig_stmts       TYPE gty_t_stmt_tab.
+  DATA lt_type_cache      TYPE gty_t_name_kind.
+  DATA lt_method_ret_kind TYPE gty_t_nm_method_ret.
 
   "------------------------------------------------------------
   " SCAN
@@ -2424,7 +1503,29 @@ METHOD analyze_naming.
     TOKENS     INTO lt_tokens
     STATEMENTS INTO lt_stmts
     WITH ANALYSIS.
+  "------------------------------------------------------------
+  " Build method return-kind  NEW NEW NEW
+  "------------------------------------------------------------
+  CLEAR: lt_sig_tokens,
+         lt_sig_stmts,
+         lt_type_cache,
+         lt_method_ret_kind.
 
+  IF it_class_sig_source IS NOT INITIAL.
+
+    SCAN ABAP-SOURCE it_class_sig_source
+      TOKENS     INTO lt_sig_tokens
+      STATEMENTS INTO lt_sig_stmts
+      WITH ANALYSIS.
+
+    me->nm_build_method_ret_kind(
+      EXPORTING
+        it_tokens           = lt_sig_tokens
+      CHANGING
+        ct_type_cache       = lt_type_cache
+        ct_method_ret_cache = lt_method_ret_kind ).
+
+  ENDIF.
   "------------------------------------------------------------
   " Build statement info
   "------------------------------------------------------------
@@ -2590,9 +1691,10 @@ METHOD analyze_naming.
   "------------------------------------------------------------
   nm_data_checks(
     EXPORTING
-      it_tokens         = lt_tokens
-      it_stmt_info      = lt_stmt_info
-      iv_curr_src_lines = lines( it_source )
+      it_tokens           = lt_tokens
+      it_stmt_info        = lt_stmt_info
+      iv_curr_src_lines   = lines( it_source )
+      it_method_ret_kind  = lt_method_ret_kind "NEW NEW NEW
     CHANGING
       ct_global_decl = lt_global_decl
       ct_use         = lt_use
@@ -5427,10 +4529,11 @@ METHOD nm_data_checks.
            row    TYPE i,
          END OF lty_seen.
 
-  DATA: lt_seen          TYPE HASHED TABLE OF lty_seen WITH UNIQUE KEY name_u row,
-        lt_type_kind     TYPE gty_t_name_kind,
-        lt_decl_kind_map TYPE gty_t_name_kind,
-        lt_type_cache    TYPE gty_t_name_kind.
+  DATA: lt_seen            TYPE HASHED TABLE OF lty_seen WITH UNIQUE KEY name_u row,
+        lt_type_kind       TYPE gty_t_name_kind,
+        lt_decl_kind_map   TYPE gty_t_name_kind,
+        lt_type_cache      TYPE gty_t_name_kind,
+        lt_method_ret_kind TYPE gty_t_nm_method_ret. "NEW NEW NEW
 
   DATA: ls_prev_id          TYPE stokex,
         ls_prev2            TYPE stokex,
@@ -5755,6 +4858,21 @@ METHOD nm_data_checks.
   " B) Inline DATA(...) in any statement
   "------------------------------------------------------------
   CLEAR lv_stmt_idx.
+  "NEW NEW NEW
+  IF it_method_ret_kind IS NOT INITIAL.
+
+    lt_method_ret_kind = it_method_ret_kind.
+
+  ELSE.
+
+    me->nm_build_method_ret_kind(
+      EXPORTING
+        it_tokens           = it_tokens
+      CHANGING
+        ct_type_cache       = lt_type_cache
+        ct_method_ret_cache = lt_method_ret_kind ).
+
+  ENDIF.
 
   LOOP AT it_tokens INTO ls_t.
     lv_tok_idx = sy-tabix.
@@ -6027,16 +5145,43 @@ METHOD nm_data_checks.
             lv_u = to_upper( ls_next-str ).
           ENDIF.
 
+**          Catch static call  -> =>
+*          IF lv_probe_u CS gc_token_nm-static_call
+*             OR lv_probe_u CS gc_token_nm-instance_call
+*             OR lv_prev_u = gc_token_nm-static_call
+*             OR lv_prev_u = gc_token_nm-instance_call
+*             OR lv_u = gc_token_nm-static_call
+*             OR lv_u = gc_token_nm-instance_call.
+*            lv_decl_kind = gc_kind_nm-object.
+*            EXIT.
+*          ENDIF.
+
+          "Resolve method call returning kind NEW NEW NEW
+          CLEAR lv_resolved_kind.
+
+          lv_resolved_kind = me->nm_resolve_called_method_kind(
+            iv_probe_u         = lv_probe_u
+            iv_prev_u          = lv_prev_u
+            iv_next_u          = lv_u
+            iv_probe_idx       = lv_probe_idx
+            it_tokens          = it_tokens
+            it_method_ret_kind = lt_method_ret_kind ).
+
+          IF lv_resolved_kind IS NOT INITIAL.
+            lv_decl_kind = lv_resolved_kind.
+            EXIT.
+          ENDIF.
+
+          "Method call without known return type:
+          "Do not assume object only because of -> or =>
           IF lv_probe_u CS gc_token_nm-static_call
              OR lv_probe_u CS gc_token_nm-instance_call
              OR lv_prev_u = gc_token_nm-static_call
              OR lv_prev_u = gc_token_nm-instance_call
              OR lv_u = gc_token_nm-static_call
              OR lv_u = gc_token_nm-instance_call.
-            lv_decl_kind = gc_kind_nm-object.
-            EXIT.
+            CONTINUE.
           ENDIF.
-
         ENDIF.
 
         IF lv_probe_u = gc_kw_nm-new
@@ -6945,6 +6090,2088 @@ METHOD nm_resolve_sig_kind.
   ENDWHILE.
 
   ev_last_idx = lv_probe_idx.
+
+ENDMETHOD.
+
+
+METHOD cc_unused_text_symbols.
+  CLEAR rt_errors.
+
+  TYPES: BEGIN OF lty_used,
+           key TYPE textpool-key,
+         END OF lty_used.
+  TYPES lty_t_used TYPE HASHED TABLE OF lty_used WITH UNIQUE KEY key.
+
+  DATA lt_textpool        TYPE STANDARD TABLE OF textpool WITH EMPTY KEY.
+  DATA lt_used            TYPE lty_t_used.
+  DATA lt_src_curr        TYPE gty_t_src_line.
+  DATA lt_src_part_text   TYPE string_table.
+  DATA lt_words_inc_text  TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+  DATA lt_prog_queue_text TYPE STANDARD TABLE OF progname WITH EMPTY KEY.
+  DATA lt_prog_seen_text  TYPE HASHED TABLE OF progname WITH UNIQUE KEY table_line.
+  DATA lt_method_includes TYPE seop_methods_w_include.
+
+  DATA lv_text            TYPE string.
+  DATA lv_textpool_prog   TYPE progname.
+  DATA lv_classpool_prog  TYPE progname.
+  DATA lv_inc_prog        TYPE progname.
+  DATA lv_word1           TYPE string.
+  DATA lv_word2           TYPE string.
+  DATA lv_i               TYPE i.
+  DATA lv_off             TYPE i.
+  DATA lv_name            TYPE string.
+  DATA lv_stack_idx       TYPE i.
+
+  CLEAR: lv_textpool_prog,
+         lt_used,
+         lt_prog_queue_text,
+         lt_prog_seen_text,
+         lt_method_includes,
+         lv_classpool_prog.
+
+  CASE is_ctx-obj_type.
+
+    WHEN gc_obj_type-prog
+      OR gc_obj_type-reps
+      OR gc_obj_type-incl.
+
+      IF is_ctx-main_prog IS NOT INITIAL.
+        lv_textpool_prog = is_ctx-main_prog.
+      ELSEIF is_ctx-obj_name IS NOT INITIAL.
+        lv_textpool_prog = is_ctx-obj_name.
+      ELSEIF is_ctx-include IS NOT INITIAL.
+        lv_textpool_prog = is_ctx-include.
+      ENDIF.
+
+      IF lv_textpool_prog IS NOT INITIAL.
+        lv_textpool_prog = to_upper( lv_textpool_prog ).
+        APPEND lv_textpool_prog TO lt_prog_queue_text.
+      ENDIF.
+
+    WHEN gc_obj_type-fugr.
+
+      IF is_ctx-main_prog IS NOT INITIAL.
+        lv_textpool_prog = is_ctx-main_prog.
+      ELSEIF is_ctx-obj_name IS NOT INITIAL.
+        lv_textpool_prog = |SAPL{ is_ctx-obj_name }|.
+      ENDIF.
+
+      IF lv_textpool_prog IS NOT INITIAL.
+        lv_textpool_prog = to_upper( lv_textpool_prog ).
+        APPEND lv_textpool_prog TO lt_prog_queue_text.
+      ENDIF.
+
+    WHEN gc_obj_type-func
+      OR gc_obj_type-fm.
+
+      IF is_ctx-main_prog IS NOT INITIAL.
+        lv_textpool_prog = is_ctx-main_prog.
+      ENDIF.
+
+      IF lv_textpool_prog IS NOT INITIAL.
+        lv_textpool_prog = to_upper( lv_textpool_prog ).
+        APPEND lv_textpool_prog TO lt_prog_queue_text.
+      ENDIF.
+
+    WHEN gc_obj_type-clas.
+
+      IF is_ctx-main_prog IS NOT INITIAL.
+        CLEAR lt_src_part_text.
+        READ REPORT is_ctx-main_prog INTO lt_src_part_text.
+        IF sy-subrc = 0 AND lt_src_part_text IS NOT INITIAL.
+          lv_classpool_prog = is_ctx-main_prog.
+        ENDIF.
+      ENDIF.
+
+      IF lv_classpool_prog IS INITIAL
+         AND is_ctx-obj_name IS NOT INITIAL.
+        TRY.
+            lv_classpool_prog =
+              cl_oo_classname_service=>get_classpool_name(
+                clsname = CONV seoclsname( is_ctx-obj_name ) ).
+          CATCH cx_root.
+            CLEAR lv_classpool_prog.
+        ENDTRY.
+      ENDIF.
+
+      lv_textpool_prog = lv_classpool_prog.
+
+      IF lv_textpool_prog IS NOT INITIAL.
+        lv_textpool_prog = to_upper( lv_textpool_prog ).
+        APPEND lv_textpool_prog TO lt_prog_queue_text.
+      ENDIF.
+
+      IF is_ctx-obj_name IS NOT INITIAL.
+        TRY.
+            lt_method_includes =
+              cl_oo_classname_service=>get_all_method_includes(
+                CONV seoclsname( is_ctx-obj_name ) ).
+          CATCH cx_root.
+            CLEAR lt_method_includes.
+        ENDTRY.
+      ENDIF.
+
+      LOOP AT lt_method_includes ASSIGNING FIELD-SYMBOL(<ls_method_inc_text>).
+        lv_inc_prog = <ls_method_inc_text>-incname.
+        IF lv_inc_prog IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        lv_inc_prog = to_upper( lv_inc_prog ).
+
+        READ TABLE lt_prog_queue_text
+          WITH KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
+        IF sy-subrc <> 0.
+          APPEND lv_inc_prog TO lt_prog_queue_text.
+        ENDIF.
+      ENDLOOP.
+
+    WHEN OTHERS.
+      CLEAR lv_textpool_prog.
+
+  ENDCASE.
+
+  IF lv_textpool_prog IS NOT INITIAL.
+
+    READ TEXTPOOL lv_textpool_prog INTO lt_textpool LANGUAGE sy-langu.
+
+    IF sy-subrc = 0 AND lt_textpool IS NOT INITIAL.
+
+      WHILE lt_prog_queue_text IS NOT INITIAL.
+        READ TABLE lt_prog_queue_text INDEX 1 INTO DATA(lv_prog_text).
+        DELETE lt_prog_queue_text INDEX 1.
+
+        IF sy-subrc <> 0 OR lv_prog_text IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        READ TABLE lt_prog_seen_text
+          WITH TABLE KEY table_line = lv_prog_text TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          CONTINUE.
+        ENDIF.
+
+        INSERT lv_prog_text INTO TABLE lt_prog_seen_text.
+
+        CLEAR lt_src_part_text.
+        READ REPORT lv_prog_text INTO lt_src_part_text.
+        IF sy-subrc <> 0 OR lt_src_part_text IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        lt_src_curr = cc_preprocess_source( lt_src_part_text ).
+
+        LOOP AT lt_src_curr INTO DATA(ls_src_text).
+          DATA(lv_work_inc_text) = ls_src_text-no_comment.
+          lv_work_inc_text = to_upper( lv_work_inc_text ).
+
+          IF lv_work_inc_text IS INITIAL.
+            CONTINUE.
+          ENDIF.
+
+          CLEAR: lt_words_inc_text,
+                 lv_word1,
+                 lv_word2.
+
+          SPLIT lv_work_inc_text AT space INTO TABLE lt_words_inc_text.
+          DELETE lt_words_inc_text WHERE table_line IS INITIAL.
+
+          READ TABLE lt_words_inc_text INDEX 1 INTO lv_word1.
+          READ TABLE lt_words_inc_text INDEX 2 INTO lv_word2.
+
+          lv_word1 = to_upper( lv_word1 ).
+          lv_word2 = to_upper( lv_word2 ).
+
+          IF lv_word1 = gc_keyword-include
+             AND lv_word2 IS NOT INITIAL.
+
+            lv_inc_prog = lv_word2.
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot   IN lv_inc_prog WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-quote IN lv_inc_prog WITH gc_token_nm-empty.
+            CONDENSE lv_inc_prog NO-GAPS.
+            lv_inc_prog = to_upper( lv_inc_prog ).
+
+            IF lv_inc_prog IS NOT INITIAL
+               AND lv_inc_prog <> gc_keyword-methods
+               AND lv_inc_prog <> gc_keyword-type
+               AND lv_inc_prog <> gc_keyword-structure.
+
+              READ TABLE lt_prog_seen_text
+                WITH TABLE KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
+              IF sy-subrc <> 0.
+                READ TABLE lt_prog_queue_text
+                  WITH KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
+                IF sy-subrc <> 0.
+                  APPEND lv_inc_prog TO lt_prog_queue_text.
+                ENDIF.
+              ENDIF.
+            ENDIF.
+          ENDIF.
+
+          CLEAR: lv_i,
+                 lv_off,
+                 lv_name.
+
+          WHILE lv_i < strlen( lv_work_inc_text ).
+            lv_name = lv_work_inc_text+lv_i.
+
+            FIND FIRST OCCURRENCE OF PCRE gc_clean_code-text_symbol
+              IN lv_name IGNORING CASE
+              MATCH OFFSET lv_off
+              MATCH LENGTH lv_stack_idx.
+
+            IF sy-subrc <> 0.
+              EXIT.
+            ENDIF.
+
+            lv_word1 = lv_name+lv_off(lv_stack_idx).
+            lv_word1 = to_upper( lv_word1 ).
+
+            IF strlen( lv_word1 ) >= 8.
+              INSERT VALUE lty_used(
+                key = lv_word1+5(3)
+              ) INTO TABLE lt_used.
+            ENDIF.
+
+            lv_i += lv_off + lv_stack_idx.
+          ENDWHILE.
+        ENDLOOP.
+      ENDWHILE.
+
+      LOOP AT lt_textpool INTO DATA(ls_text)
+           WHERE id = gc_clean_code-textpool_i
+             AND key IS NOT INITIAL.
+
+        READ TABLE lt_used
+          WITH TABLE KEY key = ls_text-key TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          CONTINUE.
+        ENDIF.
+
+        MESSAGE w024(z_gsp04_message)
+          WITH |{ ls_text-key }| ls_text-entry
+          INTO lv_text.
+
+        APPEND VALUE zst_error(
+          line     = 0
+          msg      = lv_text
+          sev      = gc_severity-warning
+          category = gc_category-clean_code
+          rule     = gc_rule_cc-unused_text_symbol
+        ) TO rt_errors.
+      ENDLOOP.
+
+    ENDIF.
+  ENDIF.
+
+ENDMETHOD.
+
+
+METHOD cc_unused_variables.
+  CLEAR rt_errors.
+
+  "------------------------------------------------------------
+  " Local types
+  "------------------------------------------------------------
+  TYPES: BEGIN OF lty_decl,
+           name     TYPE string,
+           line     TYPE i,
+           scope_id TYPE string,
+           base_cnt TYPE i,
+         END OF lty_decl.
+  TYPES lty_t_decl TYPE HASHED TABLE OF lty_decl WITH UNIQUE KEY name scope_id.
+
+  TYPES: BEGIN OF lty_struct_type_root,
+           name_u TYPE string,
+         END OF lty_struct_type_root.
+  TYPES lty_t_struct_type_root TYPE HASHED TABLE OF lty_struct_type_root WITH UNIQUE KEY name_u.
+
+  TYPES: BEGIN OF lty_decl_prefix,
+           prefix    TYPE string,
+           full_name TYPE string,
+           ambiguous TYPE abap_bool,
+         END OF lty_decl_prefix.
+  TYPES lty_t_decl_prefix TYPE HASHED TABLE OF lty_decl_prefix WITH UNIQUE KEY prefix.
+
+  TYPES: BEGIN OF lty_stmt_ctx,
+           from      TYPE i,
+           to        TYPE i,
+           prefixlen TYPE i,
+           first_u   TYPE string,
+           second_u  TYPE string,
+           scope_id  TYPE string,
+           skip_decl TYPE abap_bool,
+         END OF lty_stmt_ctx.
+  TYPES lty_t_stmt_ctx TYPE STANDARD TABLE OF lty_stmt_ctx WITH EMPTY KEY.
+
+  "------------------------------------------------------------
+  " Local data
+  "------------------------------------------------------------
+  DATA lt_tokens            TYPE gty_t_tok_tab.
+  DATA lt_stmts             TYPE gty_t_stmt_tab.
+  DATA lt_decl              TYPE lty_t_decl.
+  DATA lt_cnt               TYPE gty_t_cnt.
+  DATA lt_struct_type_roots TYPE lty_t_struct_type_root.
+  DATA lt_usage_source      TYPE string_table.
+  DATA lt_struct_stack      TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+  DATA lt_decl_prefix       TYPE lty_t_decl_prefix.
+  DATA lt_stmt_ctx         TYPE lty_t_stmt_ctx.
+
+  DATA lv_text                TYPE string.
+  DATA lv_curr_scope          TYPE string.
+  DATA lv_cnt_key             TYPE string.
+  DATA lv_fm_scope            TYPE string.
+  DATA lv_fm_if_section       TYPE string.
+
+  DATA lv_i             TYPE i.
+  DATA lv_off           TYPE i.
+  DATA lv_word1         TYPE string.
+  DATA lv_word2         TYPE string.
+  DATA lv_name          TYPE string.
+  DATA lv_parent_struct TYPE string.
+  DATA lv_ignore        TYPE string.
+  DATA lv_match_scope   TYPE string.
+  DATA lv_use_tok1      TYPE string.
+  DATA lv_use_tok2      TYPE string.
+  DATA lv_use_tok3      TYPE string.
+  DATA lv_use_full      TYPE string.
+  DATA lv_use_parent    TYPE string.
+  DATA lv_use_comp      TYPE string.
+  DATA lv_name_row      TYPE i.
+  DATA lv_tok_u         TYPE string.
+  DATA lv_prev_u        TYPE string.
+  DATA lv_prev2_u       TYPE string.
+  DATA lv_stack_idx     TYPE i.
+  DATA lv_use_src_line  TYPE string.
+
+  FIELD-SYMBOLS <lfs_prefix> TYPE lty_decl_prefix.
+
+  "------------------------------------------------------------
+  " D) RULE 1 - Declared but not used
+  "------------------------------------------------------------
+
+  " Build source to scan once
+  CLEAR lt_usage_source.
+
+  IF it_usage_source IS NOT INITIAL.
+    lt_usage_source = it_usage_source.
+  ELSE.
+    lt_usage_source = it_source.
+  ENDIF.
+
+  "------------------------------------------------------------
+  " Scan source once
+  "------------------------------------------------------------
+  CLEAR: lt_tokens,
+         lt_stmts.
+
+  SCAN ABAP-SOURCE lt_usage_source
+    TOKENS     INTO lt_tokens
+    STATEMENTS INTO lt_stmts
+    WITH ANALYSIS.
+
+  "------------------------------------------------------------
+  " Build statement context once
+  "------------------------------------------------------------
+  CLEAR lt_stmt_ctx.
+  lv_curr_scope = gc_scope-global.
+
+  LOOP AT lt_stmts INTO DATA(ls_ctx_stmt).
+
+    CLEAR: lv_word1,
+           lv_word2.
+
+    READ TABLE lt_tokens INDEX ls_ctx_stmt-from INTO DATA(ls_ctx_tok1).
+    IF sy-subrc = 0 AND ls_ctx_tok1-str IS NOT INITIAL.
+      lv_word1 = ls_ctx_tok1-str.
+      REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word1 WITH gc_token_nm-empty.
+      lv_word1 = to_upper( lv_word1 ).
+    ENDIF.
+
+    READ TABLE lt_tokens INDEX ls_ctx_stmt-from + 1 INTO DATA(ls_ctx_tok2).
+    IF sy-subrc = 0 AND ls_ctx_tok2-str IS NOT INITIAL.
+      lv_word2 = ls_ctx_tok2-str.
+      REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_word2 WITH gc_token_nm-empty.
+      lv_word2 = to_upper( lv_word2 ).
+    ENDIF.
+
+    DATA(lv_skip_decl) = abap_false.
+
+    CASE lv_word1.
+      WHEN gc_keyword-method
+        OR gc_keyword-form
+        OR gc_keyword-func
+        OR gc_keyword-module.
+
+        IF lv_word2 IS INITIAL.
+          lv_curr_scope = lv_word1.
+        ELSE.
+          lv_curr_scope = |{ lv_word1 };{ lv_word2 }|.
+        ENDIF.
+
+        lv_skip_decl = abap_true.
+
+      WHEN gc_keyword-endmethod
+        OR gc_keyword-endform
+        OR gc_keyword-endfunc
+        OR gc_keyword-endmodule.
+
+        lv_curr_scope = gc_scope-global.
+        lv_skip_decl  = abap_true.
+
+      WHEN gc_keyword-initialization
+        OR gc_keyword-start_of_selection
+        OR gc_keyword-end_of_selection
+        OR gc_keyword-top_of_page
+        OR gc_keyword-end_of_page.
+
+        lv_curr_scope = lv_word1.
+        lv_skip_decl  = abap_true.
+
+      WHEN gc_keyword-at.
+        IF lv_word2 = gc_keyword-selection_screen.
+          lv_curr_scope = gc_keyword-at_selection_screen.
+          lv_skip_decl  = abap_true.
+        ENDIF.
+    ENDCASE.
+
+    APPEND VALUE lty_stmt_ctx(
+      from      = ls_ctx_stmt-from
+      to        = ls_ctx_stmt-to
+      prefixlen = ls_ctx_stmt-prefixlen
+      first_u   = lv_word1
+      second_u  = lv_word2
+      scope_id  = lv_curr_scope
+      skip_decl = lv_skip_decl
+    ) TO lt_stmt_ctx.
+
+  ENDLOOP.
+
+  "------------------------------------------------------------
+  " Collect declarations from current source only
+  "------------------------------------------------------------
+  CLEAR lt_struct_stack.
+
+  LOOP AT lt_stmt_ctx INTO DATA(ls_decl_stmt).
+    CLEAR: lv_name_row,
+           lv_tok_u,
+           lv_prev_u,
+           lv_prev2_u,
+           lv_parent_struct,
+           lv_name.
+
+    DATA(lv_stmt_from) = ls_decl_stmt-from.
+    DATA(lv_stmt_to)   = ls_decl_stmt-to.
+
+    IF lv_stmt_from <= 0 OR lv_stmt_to < lv_stmt_from.
+      CONTINUE.
+    ENDIF.
+
+    READ TABLE lt_tokens INDEX lv_stmt_from INTO DATA(ls_first_tok).
+    IF sy-subrc <> 0
+       OR ls_first_tok-str IS INITIAL
+       OR ls_first_tok-row > lines( it_source ).
+      CONTINUE.
+    ENDIF.
+
+    DATA(lv_stmt_kind)      = ls_decl_stmt-first_u.
+    DATA(lv_idx_decl_start) = lv_stmt_from + 1.
+    lv_curr_scope           = ls_decl_stmt-scope_id.
+
+    IF ls_decl_stmt-skip_decl = abap_true.
+      CONTINUE.
+    ENDIF.
+
+    IF ls_decl_stmt-prefixlen > 0.
+      DATA(lv_prefix_idx) = lv_stmt_from - ls_decl_stmt-prefixlen.
+      IF lv_prefix_idx < 1.
+        lv_prefix_idx = 1.
+      ENDIF.
+
+      READ TABLE lt_tokens INDEX lv_prefix_idx INTO DATA(lfs_prefix_tok).
+      IF sy-subrc = 0 AND lfs_prefix_tok-str IS NOT INITIAL.
+        DATA(lv_prefix_tok) = to_upper( lfs_prefix_tok-str ).
+
+        CASE lv_prefix_tok.
+          WHEN gc_keyword-data
+            OR gc_keyword-constants
+            OR gc_keyword-types
+            OR gc_keyword-field_symbols
+            OR gc_keyword-statics
+            OR gc_keyword-class_data
+            OR gc_keyword-class_constants.
+            lv_stmt_kind      = lv_prefix_tok.
+            lv_idx_decl_start = lv_stmt_from.
+        ENDCASE.
+      ENDIF.
+    ENDIF.
+
+    " Inline DATA declarations inside any statement:
+    DATA(lv_inline_idx)      = lv_stmt_from.
+    DATA lv_inline_tok       TYPE string.
+    DATA lv_inline_src_line  TYPE string.
+    DATA lv_inline_off1      TYPE i.
+    DATA lv_inline_off2      TYPE i.
+    DATA lv_inline_len       TYPE i.
+
+    WHILE lv_inline_idx <= lv_stmt_to.
+
+      CLEAR: lv_inline_tok,
+             lv_inline_src_line,
+             lv_inline_off1,
+             lv_inline_off2,
+             lv_inline_len,
+             lv_name,
+             lv_name_row.
+
+      READ TABLE lt_tokens INDEX lv_inline_idx INTO DATA(ls_inline_tok).
+      IF sy-subrc <> 0.
+        EXIT.
+      ENDIF.
+
+      lv_inline_tok = ls_inline_tok-str.
+
+      IF ls_inline_tok-row > 0
+         AND ls_inline_tok-row <= lines( lt_usage_source ).
+
+        READ TABLE lt_usage_source INDEX ls_inline_tok-row INTO lv_inline_src_line.
+        IF sy-subrc = 0
+           AND ls_inline_tok-len > 0.
+          DATA(lv_inline_line_len) = strlen( lv_inline_src_line ).
+
+          IF ls_inline_tok-col < lv_inline_line_len.
+            lv_inline_len = ls_inline_tok-len.
+            IF ls_inline_tok-col + lv_inline_len > lv_inline_line_len.
+              lv_inline_len = lv_inline_line_len - ls_inline_tok-col.
+            ENDIF.
+            lv_inline_tok = lv_inline_src_line+ls_inline_tok-col(lv_inline_len).
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      lv_inline_tok = to_upper( lv_inline_tok ).
+
+      "Case 1: compact token, for example DATA(LV_X) or @DATA(LV_X)
+      IF lv_inline_tok CP 'DATA(*)'
+         OR lv_inline_tok CP '@DATA(*)'.
+
+        FIND FIRST OCCURRENCE OF gc_keyword-lparen
+          IN lv_inline_tok
+          MATCH OFFSET lv_inline_off1.
+
+        FIND FIRST OCCURRENCE OF gc_keyword-rparen
+          IN lv_inline_tok
+          MATCH OFFSET lv_inline_off2.
+
+        IF sy-subrc = 0
+           AND lv_inline_off2 > lv_inline_off1.
+
+          lv_inline_off1 = lv_inline_off1 + 1.
+          lv_inline_len  = lv_inline_off2 - lv_inline_off1.
+          lv_name        = lv_inline_tok+lv_inline_off1(lv_inline_len).
+
+          REPLACE ALL OCCURRENCES OF gc_keyword-dot    IN lv_name WITH gc_token_nm-empty.
+          REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_name WITH gc_token_nm-empty.
+          REPLACE ALL OCCURRENCES OF gc_keyword-rparen IN lv_name WITH gc_token_nm-empty.
+          REPLACE ALL OCCURRENCES OF gc_keyword-at_sign IN lv_name WITH gc_token_nm-empty.
+          CONDENSE lv_name NO-GAPS.
+          lv_name = to_upper( lv_name ).
+
+          IF lv_name IS NOT INITIAL.
+            lv_name_row = ls_inline_tok-row.
+
+            READ TABLE lt_decl
+              WITH TABLE KEY
+                name     = lv_name
+                scope_id = lv_curr_scope
+              TRANSPORTING NO FIELDS.
+
+            IF sy-subrc <> 0.
+              INSERT VALUE lty_decl(
+                name     = lv_name
+                line     = lv_name_row
+                scope_id = lv_curr_scope
+                base_cnt = gc_clean_code-unused_token_limit
+              ) INTO TABLE lt_decl.
+            ENDIF.
+          ENDIF.
+        ENDIF.
+
+        lv_inline_idx += 1.
+        CONTINUE.
+      ENDIF.
+
+      "Case 2: separated tokens in non-DATA statements:
+      IF lv_stmt_kind <> gc_keyword-data.
+
+        DATA(lv_inline_key) = lv_inline_tok.
+
+        IF lv_inline_key(1) = gc_keyword-at_sign.
+          SHIFT lv_inline_key BY 1 PLACES LEFT.
+        ENDIF.
+
+        IF lv_inline_key = gc_keyword-data
+           AND lv_inline_idx + 3 <= lv_stmt_to.
+
+          READ TABLE lt_tokens INDEX lv_inline_idx + 1 INTO DATA(ls_inline_lpar).
+          READ TABLE lt_tokens INDEX lv_inline_idx + 2 INTO DATA(ls_inline_name).
+          READ TABLE lt_tokens INDEX lv_inline_idx + 3 INTO DATA(ls_inline_rpar).
+
+          IF sy-subrc = 0
+             AND ls_inline_lpar-str = gc_keyword-lparen
+             AND ls_inline_rpar-str = gc_keyword-rparen
+             AND ls_inline_name-type = gc_token_type-identifier.
+
+            lv_name = ls_inline_name-str.
+
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot    IN lv_name WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_name WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-rparen IN lv_name WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-at_sign IN lv_name WITH gc_token_nm-empty.
+            CONDENSE lv_name NO-GAPS.
+            lv_name = to_upper( lv_name ).
+
+            IF lv_name IS NOT INITIAL.
+              lv_name_row = ls_inline_name-row.
+
+              READ TABLE lt_decl
+                WITH TABLE KEY
+                  name     = lv_name
+                  scope_id = lv_curr_scope
+                TRANSPORTING NO FIELDS.
+
+              IF sy-subrc <> 0.
+                INSERT VALUE lty_decl(
+                  name     = lv_name
+                  line     = lv_name_row
+                  scope_id = lv_curr_scope
+                  base_cnt = 0
+                ) INTO TABLE lt_decl.
+              ENDIF.
+            ENDIF.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      lv_inline_idx += 1.
+    ENDWHILE.
+
+    CASE lv_stmt_kind.
+      WHEN gc_keyword-data
+        OR gc_keyword-constants
+        OR gc_keyword-types
+        OR gc_keyword-field_symbols
+        OR gc_keyword-statics
+        OR gc_keyword-class_data
+        OR gc_keyword-class_constants.
+      WHEN OTHERS.
+        CONTINUE.
+    ENDCASE.
+
+    DATA(lv_stmt_is_types)    = xsdbool( lv_stmt_kind = gc_keyword-types ).
+    DATA(lv_expect_decl_name) = abap_true.
+    DATA(lv_paren_depth)      = 0.
+
+    DATA(lv_idx_decl) = lv_idx_decl_start.
+
+    WHILE lv_idx_decl <= lv_stmt_to.
+      READ TABLE lt_tokens INDEX lv_idx_decl INTO DATA(ls_decl_tok).
+      IF sy-subrc <> 0.
+        EXIT.
+      ENDIF.
+
+      lv_tok_u = ls_decl_tok-str.
+      lv_tok_u = to_upper( lv_tok_u ).
+
+      CASE lv_tok_u.
+        WHEN gc_keyword-lparen.
+          lv_paren_depth += 1.
+          lv_idx_decl += 1.
+          CONTINUE.
+
+        WHEN gc_keyword-rparen.
+          IF lv_paren_depth > 0.
+            lv_paren_depth -= 1.
+          ENDIF.
+          lv_idx_decl += 1.
+          CONTINUE.
+
+        WHEN gc_keyword-comma.
+          IF lv_paren_depth = 0.
+            lv_expect_decl_name = abap_true.
+          ENDIF.
+          lv_idx_decl += 1.
+          CONTINUE.
+      ENDCASE.
+
+      IF lv_expect_decl_name = abap_true
+         AND lv_tok_u = gc_keyword-include.
+        lv_expect_decl_name = abap_false.
+        lv_idx_decl += 1.
+        CONTINUE.
+      ENDIF.
+
+      IF ls_decl_tok-type <> gc_token_type-identifier.
+        lv_idx_decl += 1.
+        CONTINUE.
+      ENDIF.
+
+      CLEAR: lv_prev_u,
+             lv_prev2_u,
+             lv_parent_struct,
+             lv_name.
+
+      DATA(lv_is_begin_of)    = abap_false.
+      DATA(lv_is_end_of)      = abap_false.
+      DATA(lv_is_root_struct) = abap_false.
+
+      READ TABLE lt_tokens INDEX lv_idx_decl - 1 INTO DATA(ls_prev_tok).
+      IF sy-subrc = 0.
+        lv_prev_u = ls_prev_tok-str.
+        lv_prev_u = to_upper( lv_prev_u ).
+      ENDIF.
+
+      READ TABLE lt_tokens INDEX lv_idx_decl - 2 INTO DATA(ls_prev2_tok).
+      IF sy-subrc = 0.
+        lv_prev2_u = ls_prev2_tok-str.
+        lv_prev2_u = to_upper( lv_prev2_u ).
+      ENDIF.
+
+      CLEAR lv_word1.
+      READ TABLE lt_tokens INDEX lv_idx_decl + 1 INTO DATA(ls_next_tok).
+      IF sy-subrc = 0 AND ls_next_tok-str IS NOT INITIAL.
+        lv_word1 = ls_next_tok-str.
+        lv_word1 = to_upper( lv_word1 ).
+      ENDIF.
+
+      IF ( lv_tok_u = gc_keyword-begin OR lv_tok_u = gc_keyword-end )
+         AND lv_word1 = gc_keyword-of.
+        lv_idx_decl += 1.
+        CONTINUE.
+      ENDIF.
+
+      IF lv_tok_u = gc_keyword-of
+         AND ( lv_prev_u = gc_keyword-begin OR lv_prev_u = gc_keyword-end ).
+        lv_idx_decl += 1.
+        CONTINUE.
+      ENDIF.
+
+      IF lv_prev2_u = gc_keyword-begin
+         AND lv_prev_u  = gc_keyword-of.
+        lv_name        = lv_tok_u.
+        lv_name_row    = ls_decl_tok-row.
+        lv_is_begin_of = abap_true.
+
+      ELSEIF lv_prev2_u = gc_keyword-end
+         AND lv_prev_u  = gc_keyword-of.
+        lv_is_end_of = abap_true.
+
+      ELSE.
+        IF lv_expect_decl_name = abap_false.
+          lv_idx_decl += 1.
+          CONTINUE.
+        ENDIF.
+
+        lv_name     = lv_tok_u.
+        lv_name_row = ls_decl_tok-row.
+      ENDIF.
+
+      IF lv_is_end_of = abap_true.
+        lv_stack_idx = lines( lt_struct_stack ).
+        IF lv_stack_idx > 0.
+          DELETE lt_struct_stack INDEX lv_stack_idx.
+        ENDIF.
+
+        lv_expect_decl_name = abap_false.
+        lv_idx_decl += 1.
+        CONTINUE.
+      ENDIF.
+
+      IF lv_name IS INITIAL.
+        lv_idx_decl += 1.
+        CONTINUE.
+      ENDIF.
+
+      lv_stack_idx = lines( lt_struct_stack ).
+
+      lv_is_root_struct = xsdbool(
+        lv_is_begin_of = abap_true
+        AND lv_stack_idx = 0 ).
+
+      IF lv_stack_idx > 0.
+        READ TABLE lt_struct_stack
+          INDEX lv_stack_idx
+          INTO lv_parent_struct.
+        IF sy-subrc <> 0 OR lv_parent_struct IS INITIAL.
+          lv_idx_decl += 1.
+          CONTINUE.
+        ENDIF.
+
+        lv_name = |{ lv_parent_struct }-{ lv_name }|.
+      ENDIF.
+
+      INSERT VALUE lty_decl(
+        name     = lv_name
+        line     = lv_name_row
+        scope_id = lv_curr_scope
+        base_cnt = 0
+      ) INTO TABLE lt_decl.
+
+      IF lv_is_begin_of = abap_true.
+        APPEND lv_name TO lt_struct_stack.
+
+        IF lv_stmt_is_types = abap_true
+           AND lv_is_root_struct = abap_true.
+          lv_cnt_key = |{ lv_curr_scope };{ lv_name }|.
+          INSERT VALUE lty_struct_type_root(
+            name_u = lv_cnt_key
+          ) INTO TABLE lt_struct_type_roots.
+        ENDIF.
+      ENDIF.
+
+      lv_expect_decl_name = abap_false.
+      lv_idx_decl += 1.
+    ENDWHILE.
+  ENDLOOP.
+
+  "------------------------------------------------------------
+  " D.1) Extra declarations - FORM params, METHOD params, FM params
+  "------------------------------------------------------------
+  DATA lv_sig_kind    TYPE string.
+  DATA lv_sig_scope   TYPE string.
+  DATA lv_sig_owner   TYPE string.
+  DATA lv_sig_section TYPE string.
+  DATA lv_sig_idx     TYPE i.
+  DATA lv_sig_name    TYPE string.
+  DATA lv_sig_row     TYPE i.
+  DATA lv_sig_next    TYPE string.
+  DATA lv_ref_name    TYPE string.
+  DATA lv_ref_off     TYPE i.
+  DATA lv_ref_end     TYPE i.
+  DATA lv_ref_len     TYPE i.
+
+  lv_fm_scope = ''.
+  DATA(lv_has_dynamic_perform) = ''.
+
+  LOOP AT lt_stmts INTO DATA(ls_sig_stmt).
+
+    IF ls_sig_stmt-from <= 0 OR ls_sig_stmt-to < ls_sig_stmt-from.
+      CONTINUE.
+    ENDIF.
+
+    READ TABLE lt_tokens INDEX ls_sig_stmt-from INTO DATA(ls_sig_tok1).
+    IF sy-subrc <> 0
+       OR ls_sig_tok1-str IS INITIAL
+       OR ls_sig_tok1-row > lines( it_source ).
+      CONTINUE.
+    ENDIF.
+
+    lv_sig_kind = ls_sig_tok1-str.
+    lv_sig_kind = to_upper( lv_sig_kind ).
+
+    IF lv_sig_kind = gc_keyword-func.
+      READ TABLE lt_tokens INDEX ls_sig_stmt-from + 1 INTO DATA(ls_fm_name_tok).
+      IF sy-subrc = 0 AND ls_fm_name_tok-str IS NOT INITIAL.
+        lv_sig_owner = ls_fm_name_tok-str.
+        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_sig_owner WITH gc_token_nm-empty.
+        lv_sig_owner = to_upper( lv_sig_owner ).
+        lv_fm_scope = |{ gc_keyword-func };{ lv_sig_owner }|.
+      ENDIF.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_sig_kind <> gc_keyword-form.
+      CONTINUE.
+    ENDIF.
+
+    READ TABLE lt_tokens INDEX ls_sig_stmt-from + 1 INTO DATA(ls_sig_owner_tok).
+    IF sy-subrc <> 0 OR ls_sig_owner_tok-str IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    lv_sig_owner = ls_sig_owner_tok-str.
+    REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_sig_owner WITH gc_token_nm-empty.
+    REPLACE ALL OCCURRENCES OF '!' IN lv_sig_owner WITH gc_token_nm-empty.
+    lv_sig_owner = to_upper( lv_sig_owner ).
+
+    IF lv_sig_owner IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_sig_kind = gc_keyword-form.
+      lv_sig_scope = |{ gc_keyword-form };{ lv_sig_owner }|.
+    ELSE.
+      lv_sig_scope = |{ gc_keyword-method };{ lv_sig_owner }|.
+    ENDIF.
+
+    CLEAR lv_sig_section.
+    lv_sig_idx = ls_sig_stmt-from + 2.
+
+    WHILE lv_sig_idx <= ls_sig_stmt-to.
+
+      CLEAR: lv_sig_name,
+             lv_sig_next,
+             lv_sig_row,
+             lv_ref_name,
+             lv_ref_off,
+             lv_ref_end,
+             lv_ref_len.
+
+      READ TABLE lt_tokens INDEX lv_sig_idx INTO DATA(ls_sig_tok).
+      IF sy-subrc <> 0.
+        EXIT.
+      ENDIF.
+
+      lv_sig_name = ls_sig_tok-str.
+      REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_sig_name WITH gc_token_nm-empty.
+      REPLACE ALL OCCURRENCES OF '!' IN lv_sig_name WITH gc_token_nm-empty.
+      lv_sig_name = to_upper( lv_sig_name ).
+
+      " Handle compact token from SCAN:
+      IF lv_sig_name CP 'VALUE(*)'
+         OR lv_sig_name CP 'REFERENCE(*)'.
+
+        FIND FIRST OCCURRENCE OF gc_keyword-lparen
+          IN lv_sig_name
+          MATCH OFFSET lv_ref_off.
+
+        IF sy-subrc = 0.
+          FIND FIRST OCCURRENCE OF gc_keyword-rparen
+            IN lv_sig_name
+            MATCH OFFSET lv_ref_end.
+
+          IF sy-subrc = 0
+             AND lv_ref_end > lv_ref_off.
+
+            lv_ref_off = lv_ref_off + 1.
+            lv_ref_len = lv_ref_end - lv_ref_off.
+            lv_ref_name = lv_sig_name+lv_ref_off(lv_ref_len).
+
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot    IN lv_ref_name WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF '!'               IN lv_ref_name WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_ref_name WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-rparen IN lv_ref_name WITH gc_token_nm-empty.
+            CONDENSE lv_ref_name NO-GAPS.
+            lv_ref_name = to_upper( lv_ref_name ).
+
+            IF lv_ref_name IS NOT INITIAL.
+              lv_sig_name = lv_ref_name.
+              lv_sig_row  = ls_sig_tok-row.
+            ENDIF.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      CASE lv_sig_name.
+        WHEN 'USING'
+          OR 'IMPORTING'
+          OR 'EXPORTING'
+          OR 'CHANGING'
+          OR 'RETURNING'
+          OR 'TABLES'.
+          lv_sig_section = lv_sig_name.
+          lv_sig_idx += 1.
+          CONTINUE.
+
+        WHEN 'RAISING'
+          OR 'EXCEPTIONS'.
+          CLEAR lv_sig_section.
+          lv_sig_idx += 1.
+          CONTINUE.
+      ENDCASE.
+
+      IF lv_sig_section IS INITIAL.
+        lv_sig_idx += 1.
+        CONTINUE.
+      ENDIF.
+
+      " VALUE rv_x / REFERENCE iv_x when SCAN separates tokens:
+      IF lv_sig_name = 'VALUE'
+         OR lv_sig_name = 'REFERENCE'.
+
+        READ TABLE lt_tokens INDEX lv_sig_idx + 1 INTO DATA(ls_sig_lpar).
+        READ TABLE lt_tokens INDEX lv_sig_idx + 2 INTO DATA(ls_sig_value_name).
+        READ TABLE lt_tokens INDEX lv_sig_idx + 3 INTO DATA(ls_sig_rpar).
+
+        IF sy-subrc = 0
+           AND ls_sig_lpar-str = gc_keyword-lparen
+           AND ls_sig_value_name-type = gc_token_type-identifier.
+
+          lv_sig_name = ls_sig_value_name-str.
+          REPLACE ALL OCCURRENCES OF gc_keyword-dot    IN lv_sig_name WITH gc_token_nm-empty.
+          REPLACE ALL OCCURRENCES OF '!'               IN lv_sig_name WITH gc_token_nm-empty.
+          REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_sig_name WITH gc_token_nm-empty.
+          REPLACE ALL OCCURRENCES OF gc_keyword-rparen IN lv_sig_name WITH gc_token_nm-empty.
+          CONDENSE lv_sig_name NO-GAPS.
+          lv_sig_name = to_upper( lv_sig_name ).
+          lv_sig_row  = ls_sig_value_name-row.
+
+          IF lv_sig_name IS NOT INITIAL.
+            INSERT VALUE lty_decl(
+              name     = lv_sig_name
+              line     = lv_sig_row
+              scope_id = lv_sig_scope
+              base_cnt = COND i(
+                WHEN lv_sig_kind = gc_keyword-form
+                THEN 0
+                ELSE gc_clean_code-unused_token_limit )
+            ) INTO TABLE lt_decl.
+          ENDIF.
+
+          lv_sig_idx += 4.
+          CONTINUE.
+        ENDIF.
+      ENDIF.
+
+      IF ls_sig_tok-type <> gc_token_type-identifier.
+        lv_sig_idx += 1.
+        CONTINUE.
+      ENDIF.
+
+      CASE lv_sig_name.
+        WHEN 'TYPE'
+          OR 'LIKE'
+          OR 'STRUCTURE'
+          OR 'OPTIONAL'
+          OR 'DEFAULT'
+          OR 'PREFERRED'
+          OR 'PARAMETER'
+          OR 'RAISING'
+          OR 'EXCEPTIONS'
+          OR 'VALUE'
+          OR 'REFERENCE'.
+          lv_sig_idx += 1.
+          CONTINUE.
+      ENDCASE.
+
+      READ TABLE lt_tokens INDEX lv_sig_idx + 1 INTO DATA(ls_sig_next_tok).
+      IF sy-subrc = 0 AND ls_sig_next_tok-str IS NOT INITIAL.
+        lv_sig_next = ls_sig_next_tok-str.
+        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_sig_next WITH gc_token_nm-empty.
+        lv_sig_next = to_upper( lv_sig_next ).
+      ENDIF.
+
+      IF lv_sig_next = 'TYPE'
+         OR lv_sig_next = 'LIKE'
+         OR lv_sig_next = 'STRUCTURE'.
+
+        IF lv_sig_row IS INITIAL.
+          lv_sig_row = ls_sig_tok-row.
+        ENDIF.
+
+        INSERT VALUE lty_decl(
+          name     = lv_sig_name
+          line     = lv_sig_row
+          scope_id = lv_sig_scope
+          base_cnt = COND i(
+            WHEN lv_sig_kind = gc_keyword-form
+             AND lv_ref_name IS NOT INITIAL
+            THEN 1
+            WHEN lv_sig_kind = gc_keyword-form
+            THEN 0
+            ELSE gc_clean_code-unused_token_limit )
+        ) INTO TABLE lt_decl.
+      ENDIF.
+
+      lv_sig_idx += 1.
+    ENDWHILE.
+  ENDLOOP.
+
+  "------------------------------------------------------------
+  " D.2) FM interface params from generated comment block
+  "------------------------------------------------------------
+  IF lv_fm_scope IS NOT INITIAL.
+
+    DATA lt_words TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+    DATA lv_raw_work TYPE string.
+    DATA lv_raw_name TYPE string.
+    DATA lv_raw_off  TYPE i.
+    DATA lv_raw_len  TYPE i.
+
+    CLEAR lv_fm_if_section.
+
+    LOOP AT it_source INTO DATA(lv_raw_line).
+
+      lv_raw_work = lv_raw_line.
+      lv_raw_work = to_upper( lv_raw_work ).
+
+      IF lv_raw_work CS '*"'
+         OR lv_raw_work CS '"*'.
+
+        REPLACE ALL OCCURRENCES OF '*"' IN lv_raw_work WITH space.
+        REPLACE ALL OCCURRENCES OF '"*' IN lv_raw_work WITH space.
+        CONDENSE lv_raw_work.
+
+        IF lv_raw_work IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        CLEAR lt_words.
+        SPLIT lv_raw_work AT space INTO TABLE lt_words.
+        DELETE lt_words WHERE table_line IS INITIAL.
+
+        CLEAR lv_word1.
+        READ TABLE lt_words INDEX 1 INTO lv_word1.
+        lv_word1 = to_upper( lv_word1 ).
+
+        CASE lv_word1.
+          WHEN 'IMPORTING'
+            OR 'EXPORTING'
+            OR 'CHANGING'
+            OR 'TABLES'.
+            lv_fm_if_section = lv_word1.
+            CONTINUE.
+
+          WHEN 'EXCEPTIONS'
+            OR 'RAISING'.
+            CLEAR lv_fm_if_section.
+            CONTINUE.
+        ENDCASE.
+
+        IF lv_fm_if_section IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        CLEAR lv_raw_name.
+
+        FIND FIRST OCCURRENCE OF 'VALUE('
+          IN lv_raw_work
+          MATCH OFFSET lv_raw_off
+          MATCH LENGTH lv_raw_len.
+
+        IF sy-subrc = 0.
+          lv_raw_off = lv_raw_off + lv_raw_len.
+          lv_raw_name = lv_raw_work+lv_raw_off.
+          FIND FIRST OCCURRENCE OF ')'
+            IN lv_raw_name
+            MATCH OFFSET lv_raw_len.
+          IF sy-subrc = 0.
+            lv_raw_name = lv_raw_name(lv_raw_len).
+          ENDIF.
+        ELSE.
+          FIND FIRST OCCURRENCE OF 'REFERENCE('
+            IN lv_raw_work
+            MATCH OFFSET lv_raw_off
+            MATCH LENGTH lv_raw_len.
+
+          IF sy-subrc = 0.
+            lv_raw_off = lv_raw_off + lv_raw_len.
+            lv_raw_name = lv_raw_work+lv_raw_off.
+            FIND FIRST OCCURRENCE OF ')'
+              IN lv_raw_name
+              MATCH OFFSET lv_raw_len.
+            IF sy-subrc = 0.
+              lv_raw_name = lv_raw_name(lv_raw_len).
+            ENDIF.
+          ELSE.
+            CLEAR lt_words.
+            SPLIT lv_raw_work AT space INTO TABLE lt_words.
+            DELETE lt_words WHERE table_line IS INITIAL.
+            READ TABLE lt_words INDEX 1 INTO lv_raw_name.
+          ENDIF.
+        ENDIF.
+
+        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_raw_name WITH gc_token_nm-empty.
+        REPLACE ALL OCCURRENCES OF '!' IN lv_raw_name WITH gc_token_nm-empty.
+        REPLACE ALL OCCURRENCES OF ')' IN lv_raw_name WITH gc_token_nm-empty.
+        REPLACE ALL OCCURRENCES OF '(' IN lv_raw_name WITH gc_token_nm-empty.
+        CONDENSE lv_raw_name NO-GAPS.
+        lv_raw_name = to_upper( lv_raw_name ).
+
+        IF lv_raw_name IS INITIAL
+           OR lv_raw_name = 'VALUE'
+           OR lv_raw_name = 'REFERENCE'
+           OR lv_raw_name = 'TYPE'
+           OR lv_raw_name = 'LIKE'
+           OR lv_raw_name = 'STRUCTURE'.
+          CONTINUE.
+        ENDIF.
+
+        INSERT VALUE lty_decl(
+          name     = lv_raw_name
+          line     = sy-tabix
+          scope_id = lv_fm_scope
+          base_cnt = gc_clean_code-unused_token_limit
+        ) INTO TABLE lt_decl.
+
+      ENDIF.
+    ENDLOOP.
+  ENDIF.
+
+  "------------------------------------------------------------
+  " Count usages from full scanned source
+  "------------------------------------------------------------
+  CLEAR: lt_cnt,
+         lt_decl_prefix.
+
+
+  LOOP AT lt_decl INTO DATA(ls_decl_prefix_src)
+       WHERE name CS gc_keyword-dash.                   "#EC CI_HASHSEQ
+
+    CLEAR lv_off.
+    FIND FIRST OCCURRENCE OF gc_keyword-dash
+      IN ls_decl_prefix_src-name
+      MATCH OFFSET lv_off.
+    IF sy-subrc <> 0.
+      CONTINUE.
+    ENDIF.
+
+    lv_stack_idx = strlen( ls_decl_prefix_src-name ).
+
+    IF lv_off + 2 > lv_stack_idx - 1.
+      CONTINUE.
+    ENDIF.
+
+    lv_i = lv_off + 2.
+    WHILE lv_i < lv_stack_idx.
+      lv_name = ls_decl_prefix_src-name(lv_i).
+
+      READ TABLE lt_decl_prefix
+        ASSIGNING <lfs_prefix>
+        WITH TABLE KEY prefix = lv_name.
+
+      IF sy-subrc <> 0.
+        INSERT VALUE lty_decl_prefix(
+          prefix    = lv_name
+          full_name = ls_decl_prefix_src-name
+          ambiguous = abap_false
+        ) INTO TABLE lt_decl_prefix.
+
+      ELSEIF <lfs_prefix>-full_name <> ls_decl_prefix_src-name.
+        <lfs_prefix>-ambiguous = abap_true.
+        CLEAR <lfs_prefix>-full_name.
+      ENDIF.
+
+      lv_i += 1.
+    ENDWHILE.
+  ENDLOOP.
+
+  LOOP AT lt_stmt_ctx INTO DATA(ls_use_stmt).
+    DATA(lv_use_idx) = ls_use_stmt-from.
+    lv_curr_scope    = ls_use_stmt-scope_id.
+    lv_word1         = ls_use_stmt-first_u.
+    lv_word2         = ls_use_stmt-second_u.
+
+    WHILE lv_use_idx <= ls_use_stmt-to.
+      CLEAR: lv_use_tok1,
+             lv_use_tok2,
+             lv_use_tok3,
+             lv_use_full,
+             lv_use_parent,
+             lv_use_comp,
+             lv_use_src_line.
+
+      DATA(lv_use_tok_idx) = lv_use_idx.
+      DATA(lv_skip_usage)  = abap_false.
+
+      READ TABLE lt_tokens INDEX lv_use_idx INTO DATA(ls_use_tok1).
+      IF sy-subrc <> 0.
+        EXIT.
+      ENDIF.
+
+      lv_use_tok1 = ls_use_tok1-str.
+      IF ls_use_tok1-row > 0
+         AND ls_use_tok1-row <= lines( lt_usage_source ).
+
+        READ TABLE lt_usage_source INDEX ls_use_tok1-row INTO lv_use_src_line.
+        IF sy-subrc = 0
+           AND ls_use_tok1-len > 0.
+
+          DATA(lv_use_line_len) = strlen( lv_use_src_line ).
+          DATA(lv_use_len_full) = ls_use_tok1-len.
+
+          IF ls_use_tok1-col < lv_use_line_len.
+            IF ls_use_tok1-col + lv_use_len_full > lv_use_line_len.
+              lv_use_len_full = lv_use_line_len - ls_use_tok1-col.
+            ENDIF.
+            lv_use_tok1 = lv_use_src_line+ls_use_tok1-col(lv_use_len_full).
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      IF lv_use_tok1 IS INITIAL.
+        lv_use_idx += 1.
+        CONTINUE.
+      ENDIF.
+
+      lv_use_tok1 = to_upper( lv_use_tok1 ).
+
+      IF lv_use_tok1(1) = gc_keyword-at_sign.
+        SHIFT lv_use_tok1 BY 1 PLACES LEFT.
+      ENDIF.
+
+      IF lv_use_tok1 IS INITIAL.
+        lv_use_idx += 1.
+        CONTINUE.
+      ENDIF.
+
+      IF lv_use_tok1 = gc_keyword-value
+         AND lv_use_idx + 1 <= ls_use_stmt-to.
+        READ TABLE lt_tokens INDEX lv_use_idx + 1 INTO DATA(ls_value_type_tok).
+
+        IF sy-subrc = 0 AND ls_value_type_tok-str IS NOT INITIAL.
+          lv_use_idx  += 1.
+          lv_use_tok1  = to_upper( ls_value_type_tok-str ).
+          ls_use_tok1-type = gc_token_type-identifier.
+          REPLACE ALL OCCURRENCES OF gc_keyword-dot    IN lv_use_tok1 WITH gc_token_nm-empty.
+          REPLACE ALL OCCURRENCES OF gc_keyword-lparen IN lv_use_tok1 WITH gc_token_nm-empty.
+          CONDENSE lv_use_tok1 NO-GAPS.
+        ENDIF.
+      ENDIF.
+
+      " Skip write-only positions.
+      IF ls_use_tok1-type = gc_token_type-identifier.
+
+        READ TABLE lt_tokens INDEX lv_use_tok_idx - 1 INTO DATA(ls_usage_prev1).
+        DATA(lv_usage_prev1) = COND string(
+          WHEN sy-subrc = 0 THEN to_upper( ls_usage_prev1-str )
+          ELSE gc_token_nm-empty ).
+
+        READ TABLE lt_tokens INDEX lv_use_tok_idx - 2 INTO DATA(ls_usage_prev2).
+        DATA(lv_usage_prev2) = COND string(
+          WHEN sy-subrc = 0 THEN to_upper( ls_usage_prev2-str )
+          ELSE gc_token_nm-empty ).
+
+        READ TABLE lt_tokens INDEX lv_use_tok_idx + 1 INTO DATA(ls_usage_next1).
+        DATA(lv_usage_next1) = COND string(
+          WHEN sy-subrc = 0 THEN to_upper( ls_usage_next1-str )
+          ELSE gc_token_nm-empty ).
+
+        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_usage_prev1 WITH gc_token_nm-empty.
+        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_usage_prev2 WITH gc_token_nm-empty.
+        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_usage_next1 WITH gc_token_nm-empty.
+
+        IF lv_usage_prev1 IS NOT INITIAL
+           AND lv_usage_prev1(1) = gc_keyword-at_sign.
+          SHIFT lv_usage_prev1 BY 1 PLACES LEFT.
+        ENDIF.
+
+        IF lv_usage_prev2 IS NOT INITIAL
+           AND lv_usage_prev2(1) = gc_keyword-at_sign.
+          SHIFT lv_usage_prev2 BY 1 PLACES LEFT.
+        ENDIF.
+
+        IF lv_usage_next1 IS NOT INITIAL
+           AND lv_usage_next1(1) = gc_keyword-at_sign.
+          SHIFT lv_usage_next1 BY 1 PLACES LEFT.
+        ENDIF.
+
+        "Direct assignment left side:
+        "  lv_x = ...
+        "Do not treat comparison IF lv_x = ... as write.
+        IF lv_use_tok_idx = ls_use_stmt-from
+           AND lv_usage_next1 = '='.
+          lv_skip_usage = abap_true.
+        ENDIF.
+
+        "CLEAR / FREE / REFRESH only write/reset the variable.
+        IF lv_word1 = 'CLEAR'
+           OR lv_word1 = 'FREE'
+           OR lv_word1 = 'REFRESH'.
+          lv_skip_usage = abap_true.
+        ENDIF.
+
+        "Target after INTO:
+        IF lv_usage_prev1 = 'INTO'.
+          lv_skip_usage = abap_true.
+        ENDIF.
+
+        "Target after INTO TABLE:
+        IF lv_usage_prev1 = 'TABLE'
+           AND lv_usage_prev2 = 'INTO'.
+          lv_skip_usage = abap_true.
+        ENDIF.
+
+        "Target after ASSIGNING:
+        IF lv_usage_prev1 = 'ASSIGNING'.
+          lv_skip_usage = abap_true.
+        ENDIF.
+
+        "Target after TO for write statements.
+        IF lv_usage_prev1 = 'TO'
+           AND ( lv_word1 = 'ASSIGN'
+              OR lv_word1 = 'APPEND'
+              OR lv_word1 = 'MOVE'
+              OR lv_word1 = 'ADD'
+              OR lv_word1 = 'SUBTRACT'
+              OR lv_word1 = 'COLLECT' ).
+          lv_skip_usage = abap_true.
+        ENDIF.
+
+        IF lv_usage_prev1 = 'FROM'
+           AND lv_word1 = 'SUBTRACT'.
+          lv_skip_usage = abap_true.
+        ENDIF.
+
+        "First data object modified by table-changing statements.
+        IF lv_use_tok_idx = ls_use_stmt-from + 1
+           AND ( lv_word1 = 'MODIFY'
+              OR lv_word1 = 'DELETE'
+              OR lv_word1 = 'SORT' ).
+          lv_skip_usage = abap_true.
+        ENDIF.
+
+        "Output target after LINES:
+        IF lv_word1 = 'DESCRIBE'
+           AND lv_usage_prev1 = 'LINES'.
+          lv_skip_usage = abap_true.
+        ENDIF.
+
+        "Method/FM output parameter target:
+        IF lv_usage_prev1 = '='.
+          DATA(lv_usage_section)  = gc_token_nm-empty.
+          DATA(lv_usage_back_idx) = lv_use_tok_idx - 1.
+
+          WHILE lv_usage_back_idx >= ls_use_stmt-from.
+
+            READ TABLE lt_tokens INDEX lv_usage_back_idx INTO DATA(ls_usage_back).
+            IF sy-subrc <> 0.
+              EXIT.
+            ENDIF.
+
+            DATA(lv_usage_back) = to_upper( ls_usage_back-str ).
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_usage_back WITH gc_token_nm-empty.
+
+            CASE lv_usage_back.
+              WHEN 'IMPORTING'
+                OR 'EXPORTING'
+                OR 'CHANGING'
+                OR 'TABLES'
+                OR 'RECEIVING'
+                OR 'RETURNING'.
+                lv_usage_section = lv_usage_back.
+                EXIT.
+            ENDCASE.
+
+            lv_usage_back_idx -= 1.
+          ENDWHILE.
+
+          IF lv_usage_section = 'IMPORTING'
+             OR lv_usage_section = 'RECEIVING'
+             OR lv_usage_section = 'RETURNING'.
+            lv_skip_usage = abap_true.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      " Generic read usage inside compound expression tokens.
+      DATA(lv_compound_expr) = xsdbool(
+        ls_use_tok1-type = gc_token_type-identifier
+        AND (
+             lv_use_tok1 CS '+'
+          OR lv_use_tok1 CS '['
+          OR lv_use_tok1 CS gc_token_nm-instance_call
+          OR lv_use_tok1 CS gc_token_nm-static_call
+          OR ( lv_use_tok1 CS gc_keyword-lparen
+               AND lv_use_tok1 NP 'DATA(*)'
+               AND lv_use_tok1 NP '@DATA(*)'
+               AND lv_use_tok1 NP 'VALUE(*)'
+               AND lv_use_tok1 NP 'REFERENCE(*)' ) ) ).
+
+      IF lv_compound_expr = abap_true.
+
+        DATA(lv_skip_first_expr_name) = xsdbool(
+          lv_skip_usage = abap_true
+          AND ( lv_use_tok_idx = ls_use_stmt-from
+             OR lv_word1 = 'CLEAR'
+             OR lv_word1 = 'FREE'
+             OR lv_word1 = 'REFRESH' ) ).
+
+        FIND ALL OCCURRENCES OF PCRE '[A-Z_][A-Z0-9_]*'
+          IN lv_use_tok1
+          RESULTS DATA(lt_expr_hits).
+
+        DATA(lv_expr_name_no) = 0.
+
+        LOOP AT lt_expr_hits INTO DATA(ls_expr_hit).
+
+          lv_expr_name_no += 1.
+
+          IF lv_skip_first_expr_name = abap_true
+             AND lv_expr_name_no = 1.
+            CONTINUE.
+          ENDIF.
+
+          DATA(lv_expr_name) =
+            lv_use_tok1+ls_expr_hit-offset(ls_expr_hit-length).
+
+          REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_expr_name WITH gc_token_nm-empty.
+          CONDENSE lv_expr_name NO-GAPS.
+          lv_expr_name = to_upper( lv_expr_name ).
+
+          IF lv_expr_name IS INITIAL.
+            CONTINUE.
+          ENDIF.
+
+          CLEAR lv_match_scope.
+
+          READ TABLE lt_decl
+            WITH TABLE KEY
+              name     = lv_expr_name
+              scope_id = lv_curr_scope
+            TRANSPORTING NO FIELDS.
+
+          IF sy-subrc = 0.
+            lv_match_scope = lv_curr_scope.
+
+          ELSEIF lv_curr_scope <> gc_scope-global.
+            READ TABLE lt_decl
+              WITH TABLE KEY
+                name     = lv_expr_name
+                scope_id = gc_scope-global
+              TRANSPORTING NO FIELDS.
+
+            IF sy-subrc = 0.
+              lv_match_scope = gc_scope-global.
+            ENDIF.
+          ENDIF.
+
+          IF lv_match_scope IS INITIAL.
+            CONTINUE.
+          ENDIF.
+
+          lv_cnt_key = |{ lv_match_scope };{ lv_expr_name }|.
+
+          cc_add_usage_count(
+            EXPORTING
+              iv_name = lv_cnt_key
+            CHANGING
+              ct_cnt  = lt_cnt ).
+
+        ENDLOOP.
+
+        lv_use_idx += 1.
+        CONTINUE.
+      ENDIF.
+
+      IF ls_use_tok1-type = gc_token_type-identifier
+        AND lv_use_tok1 CS gc_keyword-dash.
+
+        lv_use_full = lv_use_tok1.
+
+        REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_full WITH gc_token_nm-empty.
+        CONDENSE lv_use_full NO-GAPS.
+
+        SPLIT lv_use_full AT gc_keyword-dash INTO lv_use_parent lv_use_comp.
+
+        lv_use_full = to_upper( lv_use_full ).
+        lv_use_parent = to_upper( lv_use_parent ).
+        lv_use_comp = to_upper( lv_use_comp ).
+
+        lv_use_idx += 1.
+
+      ELSEIF ls_use_tok1-type = gc_token_type-identifier
+         AND lv_use_idx + 2 <= ls_use_stmt-to.
+
+        READ TABLE lt_tokens INDEX lv_use_idx + 1 INTO DATA(ls_use_tok2).
+        IF sy-subrc = 0.
+          READ TABLE lt_tokens INDEX lv_use_idx + 2 INTO DATA(ls_use_tok3).
+        ENDIF.
+
+        IF sy-subrc = 0.
+          lv_use_tok2 = ls_use_tok2-str.
+          lv_use_tok3 = ls_use_tok3-str.
+
+          lv_use_tok2 = to_upper( lv_use_tok2 ).
+          lv_use_tok3 = to_upper( lv_use_tok3 ).
+
+          IF lv_use_tok2 = gc_keyword-dash
+             AND ls_use_tok3-type = gc_token_type-identifier.
+
+            lv_use_parent = lv_use_tok1.
+            lv_use_comp   = lv_use_tok3.
+            lv_use_full   = |{ lv_use_parent }-{ lv_use_comp }|.
+
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_full WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_parent WITH gc_token_nm-empty.
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_use_comp WITH gc_token_nm-empty.
+
+            CONDENSE lv_use_full   NO-GAPS.
+            CONDENSE lv_use_parent NO-GAPS.
+            CONDENSE lv_use_comp   NO-GAPS.
+
+            lv_use_parent = to_upper( lv_use_parent ).
+            lv_use_full = to_upper( lv_use_full ).
+
+            lv_use_idx += 3.
+          ELSE.
+            lv_use_idx += 1.
+          ENDIF.
+        ELSE.
+          lv_use_idx += 1.
+        ENDIF.
+
+      ELSE.
+        lv_use_idx += 1.
+      ENDIF.
+
+      IF lv_use_full IS NOT INITIAL.
+
+        CLEAR lv_match_scope.
+
+        READ TABLE lt_decl
+          WITH TABLE KEY
+            name     = lv_use_full
+            scope_id = lv_curr_scope
+          TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          lv_match_scope = lv_curr_scope.
+        ELSEIF lv_curr_scope <> gc_scope-global.
+          READ TABLE lt_decl
+            WITH TABLE KEY
+              name     = lv_use_full
+              scope_id = gc_scope-global
+            TRANSPORTING NO FIELDS.
+          IF sy-subrc = 0.
+            lv_match_scope = gc_scope-global.
+          ENDIF.
+        ENDIF.
+
+        IF lv_match_scope IS INITIAL
+          AND lv_use_full CS gc_keyword-dash.
+
+          READ TABLE lt_decl_prefix
+            ASSIGNING <lfs_prefix>
+            WITH TABLE KEY prefix = lv_use_full.
+
+          IF sy-subrc = 0
+             AND <lfs_prefix>-ambiguous = abap_false
+             AND <lfs_prefix>-full_name IS NOT INITIAL.
+
+            lv_use_full = <lfs_prefix>-full_name.
+
+            READ TABLE lt_decl
+              WITH TABLE KEY
+                name     = lv_use_full
+                scope_id = lv_curr_scope
+              TRANSPORTING NO FIELDS.
+            IF sy-subrc = 0.
+              lv_match_scope = lv_curr_scope.
+            ELSEIF lv_curr_scope <> gc_scope-global.
+              READ TABLE lt_decl
+                WITH TABLE KEY
+                  name     = lv_use_full
+                  scope_id = gc_scope-global
+                TRANSPORTING NO FIELDS.
+              IF sy-subrc = 0.
+                lv_match_scope = gc_scope-global.
+              ENDIF.
+            ENDIF.
+
+          ELSE.
+            DATA(lv_up) = lv_use_src_line.
+            lv_up = to_upper( lv_up ).
+
+            CLEAR: lv_name,
+                   lv_match_scope.
+
+            LOOP AT lt_decl INTO DATA(ls_decl_try)
+                 WHERE name CP |{ lv_use_full }*|.      "#EC CI_HASHSEQ
+
+              IF ls_decl_try-scope_id <> lv_curr_scope
+                 AND ls_decl_try-scope_id <> gc_scope-global.
+                CONTINUE.
+              ENDIF.
+
+              IF lv_up CS ls_decl_try-name.
+                lv_name        = ls_decl_try-name.
+                lv_match_scope = ls_decl_try-scope_id.
+                EXIT.
+              ENDIF.
+            ENDLOOP.
+
+            IF lv_name IS NOT INITIAL.
+              lv_use_full = lv_name.
+            ELSE.
+              CLEAR lv_use_full.
+            ENDIF.
+
+          ENDIF.
+        ENDIF.
+
+        IF lv_use_full IS NOT INITIAL
+           AND lv_match_scope IS NOT INITIAL
+           AND lv_skip_usage = abap_false.
+          lv_cnt_key = |{ lv_match_scope };{ lv_use_full }|.
+
+          cc_add_usage_count(
+            EXPORTING
+              iv_name = lv_cnt_key
+            CHANGING
+              ct_cnt  = lt_cnt ).
+        ENDIF.
+
+        IF lv_use_parent IS NOT INITIAL.
+          CLEAR lv_match_scope.
+
+          READ TABLE lt_decl
+            WITH TABLE KEY
+              name     = lv_use_parent
+              scope_id = lv_curr_scope
+            TRANSPORTING NO FIELDS.
+          IF sy-subrc = 0.
+            lv_match_scope = lv_curr_scope.
+          ELSEIF lv_curr_scope <> gc_scope-global.
+            READ TABLE lt_decl
+              WITH TABLE KEY
+                name     = lv_use_parent
+                scope_id = gc_scope-global
+              TRANSPORTING NO FIELDS.
+            IF sy-subrc = 0.
+              lv_match_scope = gc_scope-global.
+            ENDIF.
+          ENDIF.
+
+          IF lv_match_scope IS NOT INITIAL
+             AND lv_skip_usage = abap_false.
+            lv_cnt_key = |{ lv_match_scope };{ lv_use_parent }|.
+
+            cc_add_usage_count(
+              EXPORTING
+                iv_name = lv_cnt_key
+              CHANGING
+                ct_cnt  = lt_cnt ).
+          ENDIF.
+        ENDIF.
+
+        CONTINUE.
+      ENDIF.
+
+      IF ls_use_tok1-type = gc_token_type-identifier.
+        CLEAR lv_match_scope.
+
+        READ TABLE lt_decl
+          WITH TABLE KEY
+            name     = lv_use_tok1
+            scope_id = lv_curr_scope
+          TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          lv_match_scope = lv_curr_scope.
+        ELSEIF lv_curr_scope <> gc_scope-global.
+          READ TABLE lt_decl
+            WITH TABLE KEY
+              name     = lv_use_tok1
+              scope_id = gc_scope-global
+            TRANSPORTING NO FIELDS.
+          IF sy-subrc = 0.
+            lv_match_scope = gc_scope-global.
+          ENDIF.
+        ENDIF.
+
+        IF lv_match_scope IS NOT INITIAL
+           AND lv_skip_usage = abap_false.
+          lv_cnt_key = |{ lv_match_scope };{ lv_use_tok1 }|.
+
+          cc_add_usage_count(
+            EXPORTING
+              iv_name = lv_cnt_key
+            CHANGING
+              ct_cnt  = lt_cnt ).
+        ENDIF.
+      ENDIF.
+    ENDWHILE.
+  ENDLOOP.
+
+  "------------------------------------------------------------
+  " Emit warnings
+  "------------------------------------------------------------
+  LOOP AT lt_decl INTO DATA(ls_decl).
+
+    lv_cnt_key = |{ ls_decl-scope_id };{ ls_decl-name }|.
+
+    READ TABLE lt_cnt
+      WITH TABLE KEY name = lv_cnt_key
+      INTO DATA(ls_cnt).
+
+    DATA(lv_cnt) = ls_decl-base_cnt.
+    IF sy-subrc = 0.
+      lv_cnt += ls_cnt-cnt.
+    ENDIF.
+
+    IF ls_decl-name CS gc_keyword-dash.
+      IF lv_cnt > 0.
+        CONTINUE.
+      ENDIF.
+    ELSE.
+      IF lv_cnt > gc_clean_code-unused_token_limit.
+        CONTINUE.
+      ENDIF.
+    ENDIF.
+
+    IF ls_decl-name CS gc_keyword-dash.
+      SPLIT ls_decl-name AT gc_keyword-dash INTO DATA(lv_parent_name_u) lv_ignore.
+      lv_parent_name_u = to_upper( lv_parent_name_u ).
+
+      lv_cnt_key = |{ ls_decl-scope_id };{ lv_parent_name_u }|.
+
+      READ TABLE lt_struct_type_roots
+        WITH TABLE KEY name_u = lv_cnt_key TRANSPORTING NO FIELDS.
+      IF sy-subrc = 0.
+
+        READ TABLE lt_cnt
+          WITH TABLE KEY name = lv_cnt_key
+          INTO ls_cnt.
+
+        IF sy-subrc = 0
+           AND ls_cnt-cnt > gc_clean_code-unused_token_limit.
+          CONTINUE.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+
+    MESSAGE w023(z_gsp04_message) WITH ls_decl-name INTO lv_text.
+
+    APPEND VALUE zst_error(
+      rule     = gc_rule_cc-unused_local
+      sev      = gc_severity-warning
+      line     = ls_decl-line
+      msg      = lv_text
+      category = gc_category-clean_code
+    ) TO rt_errors.
+
+  ENDLOOP.
+
+ENDMETHOD.
+
+
+METHOD nm_build_method_ret_kind.
+
+  DATA: lv_idx         TYPE sy-tabix,
+        lv_probe_idx   TYPE sy-tabix,
+        lv_return_idx  TYPE sy-tabix,
+        lv_type_idx    TYPE sy-tabix,
+        lv_method_name TYPE string,
+        lv_return_kind TYPE gty_nm_kind,
+        lv_last_idx    TYPE sy-tabix.
+
+  CLEAR ct_method_ret_cache.
+
+  LOOP AT it_tokens INTO DATA(ls_tok).
+
+    lv_idx = sy-tabix.
+
+    DATA(lv_tok_u) = to_upper( ls_tok-str ).
+
+    " Only read method declarations in class definition:
+    " METHODS get_xxx ... RETURNING VALUE(...) TYPE ...
+    IF lv_tok_u <> gc_keyword-methods
+       AND lv_tok_u <> gc_keyword-methods_col.
+      CONTINUE.
+    ENDIF.
+
+    " Next token should be method name
+    READ TABLE it_tokens INDEX ( lv_idx + 1 ) INTO DATA(ls_method_tok).
+    IF sy-subrc <> 0.
+      CONTINUE.
+    ENDIF.
+
+    IF ls_method_tok-type <> gc_token_type-identifier.
+      CONTINUE.
+    ENDIF.
+
+    lv_method_name = to_upper( ls_method_tok-str ).
+    CONDENSE lv_method_name NO-GAPS.
+
+    CLEAR: lv_probe_idx,
+           lv_return_idx,
+           lv_type_idx,
+           lv_return_kind,
+           lv_last_idx.
+
+    lv_probe_idx = lv_idx + 1.
+
+    " Search RETURNING in the same method declaration statement
+    WHILE lv_probe_idx <= lines( it_tokens ).
+
+      READ TABLE it_tokens INDEX lv_probe_idx INTO DATA(ls_probe).
+      IF sy-subrc <> 0.
+        EXIT.
+      ENDIF.
+
+      DATA(lv_probe_u) = to_upper( ls_probe-str ).
+
+      " Stop at end of declaration
+      IF lv_probe_u = gc_keyword-dot.
+        EXIT.
+      ENDIF.
+
+      IF lv_probe_u = gc_keyword-returning.
+
+        lv_return_idx = lv_probe_idx + 1.
+
+        " Find TYPE or LIKE after RETURNING VALUE(...)
+        WHILE lv_return_idx <= lines( it_tokens ).
+
+          READ TABLE it_tokens INDEX lv_return_idx INTO DATA(ls_return_tok).
+          IF sy-subrc <> 0.
+            EXIT.
+          ENDIF.
+
+          DATA(lv_return_u) = to_upper( ls_return_tok-str ).
+
+          IF lv_return_u = gc_keyword-dot
+             OR lv_return_u = gc_keyword-comma.
+            EXIT.
+          ENDIF.
+
+          IF lv_return_u = gc_keyword-type
+             OR lv_return_u = gc_keyword-like.
+            lv_type_idx = lv_return_idx.
+            EXIT.
+          ENDIF.
+
+          lv_return_idx += 1.
+
+        ENDWHILE.
+
+        IF lv_type_idx IS NOT INITIAL.
+
+          CLEAR: lv_return_kind,
+                 lv_last_idx.
+
+          me->nm_resolve_sig_kind(
+            EXPORTING
+              it_tokens     = it_tokens
+              iv_from       = lv_type_idx
+              iv_to         = lines( it_tokens )
+            IMPORTING
+              ev_kind       = lv_return_kind
+              ev_last_idx   = lv_last_idx
+            CHANGING
+              ct_type_cache = ct_type_cache ).
+
+          IF lv_return_kind IS NOT INITIAL.
+
+            READ TABLE ct_method_ret_cache
+              WITH TABLE KEY method_name = lv_method_name
+              TRANSPORTING NO FIELDS.
+
+            IF sy-subrc <> 0.
+              INSERT VALUE gty_nm_method_ret(
+                method_name = lv_method_name
+                return_kind = lv_return_kind )
+                INTO TABLE ct_method_ret_cache.
+            ENDIF.
+
+          ENDIF.
+
+        ENDIF.
+
+        EXIT.
+
+      ENDIF.
+
+      lv_probe_idx += 1.
+
+    ENDWHILE.
+
+  ENDLOOP.
+
+ENDMETHOD.
+
+
+METHOD nm_resolve_called_method_kind.
+
+  DATA: lt_candidates    TYPE string_table,
+        lv_candidate     TYPE string,
+        lv_expr          TYPE string,
+        lv_after         TYPE string,
+        lv_before        TYPE string,
+        lv_called_method TYPE string.
+
+  CLEAR rv_kind.
+
+  "Candidate 1: previous token
+  "Example: iv_prev_u = ME->GET_SOURCE_CODE(
+  APPEND iv_prev_u TO lt_candidates.
+
+  "Candidate 2: current token
+  "Example: iv_probe_u = ME->GET_SOURCE_CODE(
+  APPEND iv_probe_u TO lt_candidates.
+
+  "Split-token case:
+  "Example: ME -> GET_SOURCE_CODE (
+  IF iv_prev_u = gc_token_nm-instance_call
+     OR iv_prev_u = gc_token_nm-static_call.
+    APPEND iv_probe_u TO lt_candidates.
+  ENDIF.
+
+  "Split-token receiver case:
+  "Example: current token = ME, next token = ->, method name = token + 2
+  IF iv_next_u = gc_token_nm-instance_call
+     OR iv_next_u = gc_token_nm-static_call.
+
+    READ TABLE it_tokens INDEX ( iv_probe_idx + 2 ) INTO DATA(ls_next2).
+    IF sy-subrc = 0.
+      APPEND ls_next2-str TO lt_candidates.
+    ENDIF.
+
+  ENDIF.
+
+  LOOP AT lt_candidates INTO lv_candidate.
+
+    CLEAR: lv_expr,
+           lv_after,
+           lv_before,
+           lv_called_method.
+
+    lv_expr = to_upper( lv_candidate ).
+    CONDENSE lv_expr NO-GAPS.
+
+    IF lv_expr IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    "Compact instance call: ME->GET_SOURCE_CODE(
+    IF lv_expr CS gc_token_nm-instance_call.
+
+      SPLIT lv_expr AT gc_token_nm-instance_call
+        INTO lv_before lv_after.
+
+      lv_called_method = lv_after.
+
+    "Compact static call: ZCL_CLASS=>GET_SOURCE_CODE(
+    ELSEIF lv_expr CS gc_token_nm-static_call.
+
+      SPLIT lv_expr AT gc_token_nm-static_call
+        INTO lv_before lv_after.
+
+      lv_called_method = lv_after.
+
+    ELSE.
+
+      "Already method name, e.g. GET_SOURCE_CODE
+      lv_called_method = lv_expr.
+
+    ENDIF.
+
+    "Remove parameter bracket
+    IF lv_called_method CS gc_keyword-lparen.
+      SPLIT lv_called_method AT gc_keyword-lparen
+        INTO lv_called_method lv_after.
+    ENDIF.
+
+    REPLACE ALL OCCURRENCES OF gc_keyword-lparen
+      IN lv_called_method WITH gc_token_nm-empty.
+
+    REPLACE ALL OCCURRENCES OF gc_keyword-rparen
+      IN lv_called_method WITH gc_token_nm-empty.
+
+    CONDENSE lv_called_method NO-GAPS.
+
+    IF lv_called_method IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    READ TABLE it_method_ret_kind INTO DATA(ls_method_ret_kind)
+      WITH TABLE KEY method_name = lv_called_method.
+
+    IF sy-subrc = 0.
+      rv_kind = ls_method_ret_kind-return_kind.
+      RETURN.
+    ENDIF.
+
+  ENDLOOP.
 
 ENDMETHOD.
 ENDCLASS.
