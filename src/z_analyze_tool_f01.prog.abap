@@ -5,25 +5,25 @@
 *&---------------------------------------------------------------------*
 *& Form modify_selection_screen
 *&---------------------------------------------------------------------*
-FORM modify_selection_screen.
+FORM f_modify_selection_screen.
 
   LOOP AT SCREEN.
-    " Logic cho p_err (Nhóm M1)
-    IF screen-group1 = 'M1'.
-      IF rb_check = 'X'.
-        screen-active = '1'.
+    "Show errors only M1 screen
+    IF screen-group1 = gc_screen_group_check.
+      IF rb_check = abap_true.
+        screen-active = gc_screen_active_on. "0
       ELSE.
-        screen-active = '0'.
+        screen-active = gc_screen_active_off. "1
       ENDIF.
       MODIFY SCREEN.
     ENDIF.
 
-    " Logic cho p_tr (Nhóm M2) - Ẩn khi chọn rb_exp
-    IF screen-group1 = 'M2'.
-      IF rb_exp = 'X'.
-        screen-active = '0'. " Ẩn khi rb_exp được chọn
+    "Hide TR M2 screen
+    IF screen-group1 = gc_screen_group_tr.
+      IF rb_exp = abap_true.
+        screen-active = gc_screen_active_off. "0
       ELSE.
-        screen-active = '1'. " Hiện trong các trường hợp còn lại
+        screen-active = gc_screen_active_on.  "1
       ENDIF.
       MODIFY SCREEN.
     ENDIF.
@@ -34,12 +34,12 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 *& Form validate_selection_screen
 *&---------------------------------------------------------------------*
-FORM validate_selection_screen.
+FORM f_validate_selection_screen.
 
   DATA: lv_cnt_all    TYPE i,
         lv_cnt_export TYPE i.
-  CHECK sy-ucomm = 'ONLI'.
-  PERFORM normalize_inputs.
+  CHECK sy-ucomm = gc_ucomm_execute.
+  PERFORM f_normalize_inputs.
 
   CLEAR: lv_cnt_all, lv_cnt_export.
 
@@ -154,7 +154,7 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 *& Form start_of_selection_main
 *&---------------------------------------------------------------------*
-FORM start_of_selection_main.
+FORM f_start_of_selection_main.
 
   DATA: lo_report      TYPE REF TO zcl_program_report,
         lt_errors_disp TYPE ztt_error,
@@ -171,19 +171,19 @@ FORM start_of_selection_main.
 
     IF p_prog IS NOT INITIAL.
       lo_report->export_program_to_excel(
-        im_prog_name = p_prog ).
+        iv_prog_name = p_prog ).
 
     ELSEIF p_func IS NOT INITIAL.
       lo_report->export_fm_to_excel(
-        im_func_name = p_func ).
+        iv_func_name = p_func ).
 
     ELSEIF p_fugr IS NOT INITIAL.
       lo_report->export_fugr_to_excel(
-        im_fugr_name = p_fugr ).
+        iv_fugr_name = p_fugr ).
 
     ELSEIF p_class IS NOT INITIAL.
       lo_report->export_class_to_excel(
-        im_class_name = p_class ).
+        iv_class_name = p_class ).
     ENDIF.
 
     RETURN.
@@ -192,13 +192,13 @@ FORM start_of_selection_main.
   "--------------------------------------------------
   " Create controller
   "--------------------------------------------------
-  lo_controller = NEW zcl_program_controller( ).
+  go_controller = NEW zcl_program_controller( ).
 
   "--------------------------------------------------
   " Analyze Check
   "--------------------------------------------------
   IF rb_check = abap_true.
-    lt_errors = lo_controller->run_process(
+    gt_errors = go_controller->run_process(
       iv_tr    = p_tr
       iv_fugr  = p_fugr
       iv_prog  = p_prog
@@ -212,7 +212,7 @@ FORM start_of_selection_main.
   " Where-Used List
   "--------------------------------------------------
   IF rb_used = abap_true.
-    lt_founds = lo_controller->run_where_used(
+    gt_founds = go_controller->run_where_used(
       iv_tr               = p_tr
       iv_fugr             = p_fugr
       iv_prog             = p_prog
@@ -238,12 +238,12 @@ FORM start_of_selection_main.
   "--------------------------------------------------
   CLEAR lt_errors_disp.
 
-  IF p_err = abap_true.
-    LOOP AT lt_errors INTO DATA(ls_err) WHERE sev = gc_sev_error.
+  IF cb_err = abap_true.
+    LOOP AT gt_errors INTO DATA(ls_err) WHERE sev = gc_sev_error.
       APPEND ls_err TO lt_errors_disp.
     ENDLOOP.
   ELSE.
-    lt_errors_disp = lt_errors.
+    lt_errors_disp = gt_errors.
   ENDIF.
 
   "--------------------------------------------------
@@ -252,19 +252,19 @@ FORM start_of_selection_main.
   CLEAR: lv_obj_label, lv_obj_name.
 
   IF p_tr IS NOT INITIAL.
-    lv_obj_label = 'Transport Request'.
+    lv_obj_label = TEXT-003.
     lv_obj_name  = p_tr.
   ELSEIF p_fugr IS NOT INITIAL.
-    lv_obj_label = 'Function Group'.
+    lv_obj_label = TEXT-004.
     lv_obj_name  = p_fugr.
   ELSEIF p_prog IS NOT INITIAL.
-    lv_obj_label = 'Program'.
+    lv_obj_label = TEXT-005.
     lv_obj_name  = p_prog.
   ELSEIF p_func IS NOT INITIAL.
-    lv_obj_label = 'Function Module'.
+    lv_obj_label = TEXT-006.
     lv_obj_name  = p_func.
   ELSEIF p_class IS NOT INITIAL.
-    lv_obj_label = 'Class'.
+    lv_obj_label = TEXT-007.
     lv_obj_name  = p_class.
   ENDIF.
   "--------------------------------------------------
@@ -291,9 +291,9 @@ FORM start_of_selection_main.
   "--------------------------------------------------
   " Display Where-Used result
   "--------------------------------------------------
-  IF rb_used = abap_true AND lt_founds IS NOT INITIAL.
+  IF rb_used = abap_true AND gt_founds IS NOT INITIAL.
     go_alv->display_where_used_alv(
-      iv_data   = lt_founds
+      it_data   = gt_founds
       is_header = ls_header ).
   ENDIF.
 
@@ -302,32 +302,32 @@ ENDFORM.
 *&---------------------------------------------------------------------*
 *& Form normalize_inputs
 *&---------------------------------------------------------------------*
-FORM normalize_inputs.
-  PERFORM normalize USING p_prog.
-  PERFORM normalize USING p_tr.
-  PERFORM normalize USING p_fugr.
-  PERFORM normalize USING p_func.
-  PERFORM normalize USING p_class.
+FORM f_normalize_inputs.
+  PERFORM f_normalize USING p_prog.
+  PERFORM f_normalize USING p_tr.
+  PERFORM f_normalize USING p_fugr.
+  PERFORM f_normalize USING p_func.
+  PERFORM f_normalize USING p_class.
 ENDFORM.
 
 *&---------------------------------------------------------------------*
 *& Form normalize
 *&---------------------------------------------------------------------*
-FORM normalize USING p_any TYPE any.
-  IF p_any IS NOT INITIAL.
-    CONDENSE p_any NO-GAPS.
-    TRANSLATE p_any TO UPPER CASE.
+FORM f_normalize USING pv_any TYPE any.
+  IF pv_any IS NOT INITIAL.
+    CONDENSE pv_any NO-GAPS.
+    TRANSLATE pv_any TO UPPER CASE.
   ENDIF.
 ENDFORM.
 
 *&---------------------------------------------------------------------*
 *& Form xlwb_viewer_callback
 *&---------------------------------------------------------------------*
-FORM xlwb_viewer_callback
+FORM f_xlwb_viewer_callback
   USING    pv_event   TYPE char50
   CHANGING cv_fcode   TYPE ui_func
-           cr_toolbar TYPE REF TO cl_gui_toolbar
-           cv_rawdata TYPE xstring.
+           cv_toolbar TYPE REF TO cl_gui_toolbar
+           cv_rawdata TYPE xstring. "Required by ZXLWB_CALLFORM callback interface -> xoa la dump
 
   TYPE-POOLS: cntb.
   INCLUDE <icon>.
@@ -340,44 +340,44 @@ FORM xlwb_viewer_callback
         lo_document_proxy    TYPE REF TO i_oi_document_proxy,
         lo_spreadsheet       TYPE REF TO i_oi_spreadsheet,
         ls_handle            TYPE cntl_handle,
-        lo_application       TYPE ole2_object,
-        lo_activeworkbook    TYPE ole2_object.
+        ls_application       TYPE ole2_object,
+        ls_activeworkbook    TYPE ole2_object.
 
   CASE pv_event.
 
-    WHEN 'CONTROLS_INIT'.
+    WHEN gc_xl_event_init.
 
-      IF cr_toolbar IS BOUND.
-        cr_toolbar->add_button(
-          fcode     = 'ZDOWNLOAD'
-          text      = 'Download'
+      IF cv_toolbar IS BOUND.
+        cv_toolbar->add_button(
+          fcode     = gc_xl_fcode_download
+          text      = gc_xl_text_download
           icon      = icon_export
           butn_type = cntb_btype_button ).
       ENDIF.
 
-    WHEN 'FUNCTION_CODE'.
+    WHEN gc_xl_event_fcode.
 
-      CHECK cv_fcode = 'ZDOWNLOAD'.
+      CHECK cv_fcode = gc_xl_fcode_download.
 
-      IMPORT lv_save_as = lv_default_name FROM MEMORY ID 'ZGSP04_XLSX_NAME'.
+      IMPORT lv_save_as = lv_default_name FROM MEMORY ID gc_xl_memory_name.
 
       IF lv_default_name IS INITIAL.
-        lv_default_name = 'EXPORT.xlsx'.
+        lv_default_name = gc_xl_default_name.
       ENDIF.
 
-      CALL METHOD cl_gui_frontend_services=>file_save_dialog
+      cl_gui_frontend_services=>file_save_dialog(
         EXPORTING
-          window_title      = 'Save Excel File'
-          default_extension = 'xlsx'
-          file_filter       = 'Excel Files (*.xlsx)|*.xlsx|'
+          window_title      = gc_xl_window_title
+          default_extension = gc_xl_default_ext
+          file_filter       = gc_xl_file_filter
           default_file_name = lv_default_name
         CHANGING
           filename          = lv_filename
           path              = lv_filepath
-          fullpath          = lv_fullpath.
+          fullpath          = lv_fullpath ).
 
       IF lv_fullpath IS INITIAL.
-        MESSAGE 'Save operation was canceled.' TYPE 'I'.
+        MESSAGE i029(z_gsp04_message).
         CLEAR cv_fcode.
         RETURN.
       ENDIF.
@@ -393,38 +393,38 @@ FORM xlwb_viewer_callback
         IMPORTING
           handle = ls_handle ).
 
-      CALL METHOD OF ls_handle-obj 'Application' = lo_application.
+      CALL METHOD OF ls_handle-obj gc_xl_method_app = ls_application.
       IF sy-subrc <> 0.
-        MESSAGE 'Cannot access Excel application.' TYPE 'I'.
+        MESSAGE  i045(z_gsp04_message).
         CLEAR cv_fcode.
         RETURN.
       ENDIF.
 
-      GET PROPERTY OF lo_application 'ActiveWorkbook' = lo_activeworkbook.
+      GET PROPERTY OF ls_application gc_xl_prop_workbook = ls_activeworkbook.
       IF sy-subrc <> 0.
-        FREE OBJECT lo_application.
-        CLEAR lo_application.
-        MESSAGE 'Cannot access active workbook.' TYPE 'I'.
+        FREE OBJECT ls_application.
+        CLEAR ls_application.
+        MESSAGE i048(z_gsp04_message).
         CLEAR cv_fcode.
         RETURN.
       ENDIF.
 
-      CALL METHOD OF lo_activeworkbook 'SaveAs'
+      CALL METHOD OF ls_activeworkbook gc_xl_method_saveas
         EXPORTING
           #1 = lv_fullpath
           #2 = 51.
 
       IF sy-subrc = 0.
-        MESSAGE 'Excel file saved successfully.' TYPE 'S'.
+        MESSAGE s065(z_gsp04_message)..
       ELSE.
-        MESSAGE 'Save failed.' TYPE 'I'.
+        MESSAGE s065(z_gsp04_message)..
       ENDIF.
 
-      FREE OBJECT lo_activeworkbook.
-      CLEAR lo_activeworkbook.
+      FREE OBJECT ls_activeworkbook.
+      CLEAR ls_activeworkbook.
 
-      FREE OBJECT lo_application.
-      CLEAR lo_application.
+      FREE OBJECT ls_application.
+      CLEAR ls_application.
       CLEAR cv_fcode.
 
   ENDCASE.

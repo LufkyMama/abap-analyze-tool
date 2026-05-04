@@ -3,4 +3,4 @@
 *&---------------------------------------------------------------------*
 
 AT SELECTION-SCREEN.
-  PERFORM validate_selection_screen.
+  PERFORM f_validate_selection_screen.

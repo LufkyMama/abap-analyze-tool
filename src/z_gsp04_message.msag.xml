@@ -29,13 +29,13 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>004</MSGNR>
-     <TEXT>Please enter only ONE input.</TEXT>
+     <TEXT>Please enter only ONE input &amp;1 &amp;2.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>005</MSGNR>
-     <TEXT>No source code found.</TEXT>
+     <TEXT>No source code found &amp;1.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -179,6 +179,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>029</MSGNR>
+     <TEXT>Save operation was canceled.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -274,6 +275,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>045</MSGNR>
+     <TEXT>Cannot access Excel application.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -291,6 +293,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>048</MSGNR>
+     <TEXT>Cannot access active workbook.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -392,6 +395,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>065</MSGNR>
+     <TEXT>Excel file saved successfully.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -457,6 +461,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>076</MSGNR>
+     <TEXT>Save failed.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -468,6 +473,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>078</MSGNR>
+     <TEXT>Nested LOOP with filter condition detected on &amp;1.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -485,11 +491,25 @@
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>081</MSGNR>
+     <TEXT>No analysis data found for view &amp;1.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>Z_GSP04_MESSAGE</ARBGB>
      <MSGNR>082</MSGNR>
+     <TEXT>Please select one Function Module row first.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>083</MSGNR>
+     <TEXT>Function Group &amp;1 has no Function Modules.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>Z_GSP04_MESSAGE</ARBGB>
+     <MSGNR>084</MSGNR>
+     <TEXT>SORT on internal table &amp;1 inside LOOP detected. Move SORT outside LOOP.</TEXT>
     </T100>
    </T100>
   </asx:values>

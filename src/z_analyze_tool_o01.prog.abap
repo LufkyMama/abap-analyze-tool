@@ -3,4 +3,4 @@
 *&---------------------------------------------------------------------*
 
 AT SELECTION-SCREEN OUTPUT.
-  PERFORM modify_selection_screen.
+  PERFORM f_modify_selection_screen.

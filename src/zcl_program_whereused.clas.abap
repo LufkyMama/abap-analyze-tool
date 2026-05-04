@@ -811,7 +811,7 @@ METHOD get_where_used.
           WHERE a~pgmid    = @gc_pgmid_r3tr
             AND a~object   = @gc_obj_prog
             AND a~devclass IN @lt_scope_comm
-            AND t~subc     <> @gc_trdir_subc_i.
+            AND t~subc     <> @gc_trdir_subc_i. "#EC CI_BUFFJOIN
 
         LOOP AT lt_prog_roots2 INTO DATA(lv_prog_root2).
           INSERT lv_prog_root2 INTO TABLE lt_repids.
@@ -827,7 +827,7 @@ METHOD get_where_used.
             INTO TABLE @lt_classes2
             WHERE pgmid    = @gc_pgmid_r3tr
               AND object   = @gc_obj_clas
-              AND devclass IN @lt_scope_comm.
+              AND devclass IN @lt_scope_comm. "#EC CI_SGLSELECT
 
           LOOP AT lt_classes2 INTO DATA(lv_class2).
             CLEAR lv_class_prog3.
@@ -847,7 +847,7 @@ METHOD get_where_used.
             INTO TABLE @lt_fugrs2
             WHERE pgmid    = @gc_pgmid_r3tr
               AND object   = @gc_obj_fugr
-              AND devclass IN @lt_scope_comm.
+              AND devclass IN @lt_scope_comm. "#EC CI_SGLSELECT
 
           LOOP AT lt_fugrs2 INTO DATA(lv_fugr3).
             CLEAR lv_fugr_prog2.

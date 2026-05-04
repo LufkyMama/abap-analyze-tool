@@ -69,9 +69,9 @@ PRIVATE SECTION.
     gc_pat_class_ci    TYPE programm VALUE '*=CI'.
   "Class Section Labels
   CONSTANTS:
-    gc_label_public_section    TYPE string VALUE '(Public Section)',
-    gc_label_protected_section TYPE string VALUE '(Protected Section)',
-    gc_label_private_section   TYPE string VALUE '(Private Section)'.
+    gc_label_public_section    TYPE string VALUE '(Public Section)' ##NO_TEXT,
+    gc_label_protected_section TYPE string VALUE '(Protected Section)' ##NO_TEXT,
+    gc_label_private_section   TYPE string VALUE '(Private Section)' ##NO_TEXT.
 
   "Function Group Include Patterns
   CONSTANTS:
@@ -130,9 +130,9 @@ PRIVATE SECTION.
   " Class section descriptions
   "------------------------------------------------------------
   CONSTANTS:
-    gc_desc_public_section    TYPE string VALUE 'Public section declarations',
-    gc_desc_protected_section TYPE string VALUE 'Protected section declarations',
-    gc_desc_private_section   TYPE string VALUE 'Private section declarations'.
+    gc_desc_public_section    TYPE string VALUE 'Public section declarations' ##NO_TEXT,
+    gc_desc_protected_section TYPE string VALUE 'Protected section declarations' ##NO_TEXT,
+    gc_desc_private_section   TYPE string VALUE 'Private section declarations' ##NO_TEXT.
 
   "------------------------------------------------------------
   " Function group include technical tokens
@@ -185,6 +185,11 @@ METHOD get_class.
           is_interface      = 2
           model_only        = 3
           OTHERS            = 4.
+       IF sy-subrc <> 0.
+        CLEAR: ls_class,
+               lt_methods.
+        RETURN.
+      ENDIF.
     CATCH cx_root.
       CLEAR lt_methods.
   ENDTRY.
@@ -298,13 +303,13 @@ ENDMETHOD.
     DATA: ls_source TYPE gty_function_group.
 
     DATA(lv_top_name) = CONV progname( |{ gc_fg_prefix_l }{ iv_fg_name }{ gc_fg_top }| ).
-    DATA(lo_top_src)  = me->get_source_code( lv_top_name ).
+    DATA(lt_top_src)  = me->get_source_code( lv_top_name ).
 
-    IF lo_top_src IS NOT INITIAL.
+    IF lt_top_src IS NOT INITIAL.
       CLEAR ls_source.
       ls_source-include     = lv_top_name.
       ls_source-type        = gc_src_type_top.
-      ls_source-source_code = lo_top_src.
+      ls_source-source_code = lt_top_src.
       APPEND ls_source TO rt_sources.
     ENDIF.
 
@@ -326,9 +331,9 @@ ENDMETHOD.
         CONTINUE.
       ENDIF.
 
-      DATA(lo_temp) = me->get_source_code( lv_incl ).
+      DATA(lt_temp) = me->get_source_code( lv_incl ).
 
-      IF lo_temp IS NOT INITIAL.
+      IF lt_temp IS NOT INITIAL.
         CLEAR ls_source.
         ls_source-include = lv_incl.
 
@@ -340,7 +345,7 @@ ENDMETHOD.
           ls_source-type = gc_src_type_incl.
         ENDIF.
 
-        ls_source-source_code = lo_temp.
+        ls_source-source_code = lt_temp.
         APPEND ls_source TO rt_sources.
       ENDIF.
     ENDLOOP.

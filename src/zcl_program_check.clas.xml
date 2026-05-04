@@ -11,14 +11,6 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
-   <TPOOL>
-    <item>
-     <ID>I</ID>
-     <KEY>001</KEY>
-     <ENTRY>Hardcoded literal(s) in MESSAGE:</ENTRY>
-     <LENGTH>64</LENGTH>
-    </item>
-   </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
      <CMPNAME>ANALYZE_CLEAN_CODE</CMPNAME>
@@ -56,6 +48,16 @@
      <DESCRIPT>Preprocess source code</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
+     <CMPNAME>CC_UNUSED_TEXT_SYMBOLS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Check unused text symbols</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>CC_UNUSED_VARIABLES</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Check unused variables</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
      <CMPNAME>GET_OBJECT_AUTHOR</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Specified Object Type</DESCRIPT>
@@ -66,9 +68,19 @@
      <DESCRIPT>Check extended naming rules</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
+     <CMPNAME>NM_BUILD_METHOD_RET_KIND</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Build method return kind cache</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
      <CMPNAME>NM_DATA_CHECKS</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Check DATA and inline prefixes</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>NM_RESOLVE_CALLED_METHOD_KIND</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Resolve called method return kind</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CMPNAME>NM_RESOLVE_SIG_KIND</CMPNAME>

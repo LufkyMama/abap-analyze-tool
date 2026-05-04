@@ -6,14 +6,33 @@
 
 FORM hardcode_patterns_dummy.
 
-  DATA: lv_file   TYPE string,
-        lv_num    TYPE i,
-        lv_text   TYPE string,
-        lv_flag   TYPE abap_bool,
-        lv_kunnr  TYPE string,
-        lv_opt    TYPE string,
-        lv_sep    TYPE c LENGTH 1,
-        lv_belnr  TYPE string.
+  DATA: lv_file  TYPE string,
+        lv_num   TYPE i,
+        lv_text  TYPE string,
+        lv_flag  TYPE abap_bool,
+        lv_kunnr TYPE string,
+        lv_opt   TYPE string,
+        lv_sep   TYPE c LENGTH 1,
+        lv_belnr TYPE string.
+
+  DATA: lv_name TYPE string,
+        ls_error TYPE zst_error,
+        lv_data TYPE ztt_error .
+
+    ls_error-line     = 10.
+    ls_error-sev      = 'E'.
+    ls_error-msg      = 'Test error message'.
+    ls_error-rule     = 'TEST_RULE'.
+    ls_error-category = 'TEST'.
+    ls_error-objtype  = 'PROG'.
+    ls_error-objname  = 'ZTEST_PROGRAM'.
+APPEND ls_error TO lv_data.
+
+  lv_name = 'abc'.
+  WRITE: / lv_name.
+  IF lv_data IS NOT INITIAL.
+  WRITE: / 'Data exists'.
+  ENDIF.
 
   FIELD-SYMBOLS <lv_any> TYPE any.
 
