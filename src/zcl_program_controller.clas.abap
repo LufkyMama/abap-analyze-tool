@@ -73,7 +73,7 @@ CLASS zcl_program_controller DEFINITION
         !iv_prog             TYPE progname OPTIONAL
         !iv_func             TYPE rs38l-name OPTIONAL
         !iv_clas             TYPE seoclsname OPTIONAL
-        !it_comment_scope    TYPE zcl_program_whereused=>ty_r_devclass OPTIONAL
+        !it_comment_scope    TYPE zcl_program_whereused=>gty_r_devclass OPTIONAL
         !iv_advanced_wide    TYPE abap_bool DEFAULT abap_false
         !iv_recursive        TYPE abap_bool DEFAULT abap_false
         !iv_include_comments TYPE abap_bool DEFAULT abap_false
@@ -85,7 +85,7 @@ CLASS zcl_program_controller DEFINITION
         !ev_next_offset      TYPE i
         !ev_index_suspect    TYPE abap_bool
       RETURNING
-        VALUE(rt_founds)     TYPE zcl_program_whereused=>ty_founds .
+        VALUE(rt_founds)     TYPE zcl_program_whereused=>gty_t_founds .
 
     METHODS run_check_class
       IMPORTING
@@ -263,9 +263,10 @@ METHOD run_check_fm.
   "------------------------------------------------------------
   CLEAR: lt_source,
          ls_src.
-
+  SORT lt_fg_sources BY include.
   READ TABLE lt_fg_sources INTO DATA(ls_fg_src)
-  WITH KEY include = lv_include.
+  WITH KEY include = lv_include
+  BINARY SEARCH.
 
   IF sy-subrc = 0 AND ls_fg_src-source_code IS NOT INITIAL.
     lt_source = ls_fg_src-source_code.
@@ -540,11 +541,6 @@ METHOD run_check_fugr.
       <lfs_err>-chk_usr  = lv_last_user.
       <lfs_err>-chk_date = lv_last_date.
     ENDLOOP.
-
-    SORT lt_all_err BY objtype objname include line msg.
-    DELETE ADJACENT DUPLICATES FROM lt_all_err
-      COMPARING objtype objname include line msg.
-
     APPEND LINES OF lt_all_err TO rt_errors.
 
   ENDLOOP.
@@ -680,18 +676,21 @@ METHOD run_check_program.
       <lfs_err>-chk_usr  = lv_last_user.
       <lfs_err>-chk_date = lv_last_date.
       <lfs_err>-include  = ls_src-include.
-      <lfs_err>-objtype = gc_objtype_prog.
+      <lfs_err>-objtype  = gc_objtype_prog.
     ENDLOOP.
-
-    SORT lt_all_err
-      BY objname
-         include
-         line
-         msg.
-    DELETE ADJACENT DUPLICATES FROM lt_all_err COMPARING objname include line msg.
 
     APPEND LINES OF lt_all_err TO rt_errors.
   ENDLOOP.
+
+  SORT rt_errors
+    BY objname
+       include
+       line
+       msg.
+
+  DELETE ADJACENT DUPLICATES FROM rt_errors
+    COMPARING objname include line msg.
+
 ENDMETHOD.
 
 
@@ -1055,8 +1054,8 @@ METHOD run_where_used.
 
   DATA: lt_keys       TYPE gty_t_obj_keys,
         ls_key        TYPE gty_obj_key,
-        lt_all        TYPE zcl_program_whereused=>ty_founds,
-        lt_found      TYPE zcl_program_whereused=>ty_founds,
+        lt_all        TYPE zcl_program_whereused=>gty_t_founds,
+        lt_found      TYPE zcl_program_whereused=>gty_t_founds,
         lt_e071       TYPE STANDARD TABLE OF gty_e071 WITH EMPTY KEY,
         ls_e071       TYPE gty_e071,
         lv_subc       TYPE trdir-subc,
@@ -1080,7 +1079,7 @@ METHOD run_where_used.
   "------------------------------------------------------------
   IF iv_tr IS NOT INITIAL.
     CLEAR lv_trkorr_chk.
-    " TR tồn tại?
+
     SELECT SINGLE trkorr
       FROM e070
       INTO @lv_trkorr_chk
@@ -1096,13 +1095,13 @@ METHOD run_where_used.
       INTO TABLE @lt_e071
       WHERE trkorr = @iv_tr.
 
-    " TR có tồn tại nhưng không có object
+
     IF lt_e071 IS INITIAL.
       MESSAGE s069(z_gsp04_message) WITH iv_tr.
       RETURN.
     ENDIF.
 
-    " 1a) Gom key trước để tránh SELECT trong loop
+
     LOOP AT lt_e071 INTO ls_e071.
       IF ls_e071-pgmid <> gc_pgmid_r3tr.
         CONTINUE.
@@ -1120,7 +1119,6 @@ METHOD run_where_used.
       ENDCASE.
     ENDLOOP.
 
-    " 1b) Load TRDIR một lần
     IF lt_prog_keys IS NOT INITIAL.
       SELECT name, subc
         FROM trdir
@@ -1133,7 +1131,7 @@ METHOD run_where_used.
       ENDIF.
     ENDIF.
 
-    " 1c) Load ENLFDIR một lần
+
     IF lt_fugr_keys IS NOT INITIAL.
       SELECT area, funcname
         FROM enlfdir
@@ -1142,7 +1140,7 @@ METHOD run_where_used.
         WHERE area = @lt_fugr_keys-table_line."#EC CI_SGLSELECT
     ENDIF.
 
-    " 1d) Build key từ E071 cho CLAS / PROG / FUNC
+    " 1d) Build key E071 cho CLAS / PROG / FUNC
     LOOP AT lt_e071 INTO ls_e071.
 
       IF ls_e071-pgmid <> gc_pgmid_r3tr.
@@ -1196,7 +1194,7 @@ METHOD run_where_used.
 
     ENDLOOP.
 
-    " 1e) Build key FUNC từ toàn bộ FUGR đã load sẵn
+    " 1e) Build key FUNC
     LOOP AT lt_enlfdir_map INTO DATA(ls_enlfdir).
       APPEND VALUE gty_obj_key(
         find_obj_cls = gc_objtype_func
@@ -1204,7 +1202,7 @@ METHOD run_where_used.
         obj_name     = ls_enlfdir-funcname ) TO lt_keys.
     ENDLOOP.
 
-    " TR có object nhưng không có object analyzable
+
     IF lt_keys IS INITIAL.
       MESSAGE s070(z_gsp04_message) WITH iv_tr.
       RETURN.
@@ -1212,7 +1210,7 @@ METHOD run_where_used.
 
   ELSEIF iv_fugr IS NOT INITIAL.
 
-    " FUGR tồn tại?
+
     SELECT SINGLE area
       FROM tlibg
       INTO @DATA(lv_area_chk)
@@ -1333,16 +1331,15 @@ METHOD run_where_used.
 
     lt_found = go_whereused->get_where_used(
       EXPORTING
-        im_find_obj_cls     = ls_key-find_obj_cls
-        im_object           = CONV rsobject( ls_key-obj_name )
-        im_tadir_object     = ls_key-repo_object
-        im_comment_scope    = it_comment_scope
-        im_advanced_wide    = iv_advanced_wide
-        im_recursive        = iv_recursive
-        im_include_comments = iv_include_comments
+        iv_find_obj_cls     = ls_key-find_obj_cls
+        iv_object           = CONV rsobject( ls_key-obj_name )
+        iv_tadir_object     = ls_key-repo_object
+        is_comment_scope    = it_comment_scope
+        iv_advanced_wide    = iv_advanced_wide
+        iv_recursive        = iv_recursive
+        iv_include_comments = iv_include_comments
       IMPORTING
-*        ex_last_subrc       = lv_subrc
-        ex_index_suspect    = lv_sus ).
+        ev_index_suspect    = lv_sus ).
 
     IF lv_sus = abap_true.
       ev_index_suspect = abap_true.

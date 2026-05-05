@@ -195,157 +195,157 @@ PRIVATE SECTION.
       types_col            TYPE string VALUE 'TYPES:',
 
       " Block / routine / event keywords
-      at                  TYPE string VALUE 'AT',
-      at_line_selection   TYPE string VALUE 'AT LINE-SELECTION',
-      at_selection_screen TYPE string VALUE 'AT SELECTION-SCREEN',
-      at_sel_screen_on    TYPE string VALUE 'AT SELECTION-SCREEN ON',
-      at_sel_screen_out   TYPE string VALUE 'AT SELECTION-SCREEN OUTPUT',
-      at_user_command     TYPE string VALUE 'AT USER-COMMAND',
-      begin               TYPE string VALUE 'BEGIN',
-      block               TYPE string VALUE 'BLOCK',
-      define              TYPE string VALUE 'DEFINE',
-      end                 TYPE string VALUE 'END',
-      end_of_definition   TYPE string VALUE 'END-OF-DEFENITION',
-      end_of_page         TYPE string VALUE 'END-OF-PAGE',
-      end_of_selection    TYPE string VALUE 'END-OF-SELECTION',
-      endform             TYPE string VALUE 'ENDFORM',
-      endfunc             TYPE string VALUE 'ENDFUNCTION',
-      endmethod           TYPE string VALUE 'ENDMETHOD',
-      endmodule           TYPE string VALUE 'ENDMODULE',
-      form                TYPE string VALUE 'FORM',
-      func                TYPE string VALUE 'FUNCTION',
-      func_pat            TYPE string VALUE 'FUNCTION *.',
-      include             TYPE string VALUE 'INCLUDE',
-      include_pat         TYPE string VALUE 'INCLUDE *',
-      initialization      TYPE string VALUE 'INITIALIZATION',
-      line_selection      TYPE string VALUE 'LINE-SELECTION',
-      method              TYPE string VALUE 'METHOD',
-      module              TYPE string VALUE 'MODULE',
-      perform             TYPE string VALUE 'PERFORM',
-      select              TYPE string VALUE 'SELECT',
-      selection_screen    TYPE string VALUE 'SELECTION-SCREEN',
-      start_of_selection  TYPE string VALUE 'START-OF-SELECTION',
-      top_of_page         TYPE string VALUE 'TOP-OF-PAGE',
-      user_command        TYPE string VALUE 'USER-COMMAND',
-      where               TYPE string VALUE 'WHERE',
+      at                   TYPE string VALUE 'AT',
+      at_line_selection    TYPE string VALUE 'AT LINE-SELECTION',
+      at_selection_screen  TYPE string VALUE 'AT SELECTION-SCREEN',
+      at_sel_screen_on     TYPE string VALUE 'AT SELECTION-SCREEN ON',
+      at_sel_screen_out    TYPE string VALUE 'AT SELECTION-SCREEN OUTPUT',
+      at_user_command      TYPE string VALUE 'AT USER-COMMAND',
+      begin                TYPE string VALUE 'BEGIN',
+      block                TYPE string VALUE 'BLOCK',
+      define               TYPE string VALUE 'DEFINE',
+      end                  TYPE string VALUE 'END',
+      end_of_definition    TYPE string VALUE 'END-OF-DEFENITION',
+      end_of_page          TYPE string VALUE 'END-OF-PAGE',
+      end_of_selection     TYPE string VALUE 'END-OF-SELECTION',
+      endform              TYPE string VALUE 'ENDFORM',
+      endfunc              TYPE string VALUE 'ENDFUNCTION',
+      endmethod            TYPE string VALUE 'ENDMETHOD',
+      endmodule            TYPE string VALUE 'ENDMODULE',
+      form                 TYPE string VALUE 'FORM',
+      func                 TYPE string VALUE 'FUNCTION',
+      func_pat             TYPE string VALUE 'FUNCTION *.',
+      include              TYPE string VALUE 'INCLUDE',
+      include_pat          TYPE string VALUE 'INCLUDE *',
+      initialization       TYPE string VALUE 'INITIALIZATION',
+      line_selection       TYPE string VALUE 'LINE-SELECTION',
+      method               TYPE string VALUE 'METHOD',
+      module               TYPE string VALUE 'MODULE',
+      perform              TYPE string VALUE 'PERFORM',
+      select               TYPE string VALUE 'SELECT',
+      selection_screen     TYPE string VALUE 'SELECTION-SCREEN',
+      start_of_selection   TYPE string VALUE 'START-OF-SELECTION',
+      top_of_page          TYPE string VALUE 'TOP-OF-PAGE',
+      user_command         TYPE string VALUE 'USER-COMMAND',
+      where                TYPE string VALUE 'WHERE',
 
       " General statement keywords
-      call                TYPE string VALUE 'CALL',
-      message             TYPE string VALUE 'MESSAGE',
+      call                 TYPE string VALUE 'CALL',
+      message              TYPE string VALUE 'MESSAGE',
 
       " Signature / typing / option keywords
-      add                 TYPE string VALUE 'ADD',
-      at_data_inline      TYPE string VALUE '@DATA(*)',
-      append              TYPE string VALUE 'APPEND',
-      appending           TYPE string VALUE 'APPENDING',
-      assign              TYPE string VALUE 'ASSIGN',
-      assigning           TYPE string VALUE 'ASSIGNING',
-      cast                TYPE string VALUE 'CAST',
-      changing            TYPE string VALUE 'CHANGING',
-      checkbox            TYPE string VALUE 'CHECKBOX',
-      clear               TYPE string VALUE 'CLEAR',
-      collect             TYPE string VALUE 'COLLECT',
-      conv                TYPE string VALUE 'CONV',
-      corresponding       TYPE string VALUE 'CORRESPONDING',
-      count               TYPE string VALUE 'COUNT',
-      data_inline         TYPE string VALUE 'DATA(*)',
-      data_lparen         TYPE string VALUE 'DATA(',
-      default             TYPE string VALUE 'DEFAULT',
-      delete              TYPE string VALUE 'DELETE',
-      describe            TYPE string VALUE 'DESCRIBE',
-      empty               TYPE string VALUE 'EMPTY',
-      exceptions          TYPE string VALUE 'EXCEPTIONS',
-      exporting           TYPE string VALUE 'EXPORTING',
-      for                 TYPE string VALUE 'FOR',
-      free                TYPE string VALUE 'FREE',
-      from                TYPE string VALUE 'FROM',
-      group               TYPE string VALUE 'GROUP',
-      hashed              TYPE string VALUE 'HASHED',
-      in                  TYPE string VALUE 'IN',
-      importing           TYPE string VALUE 'IMPORTING',
-      initial             TYPE string VALUE 'INITIAL',
-      into                TYPE string VALUE 'INTO',
-      key                 TYPE string VALUE 'KEY',
-      length              TYPE string VALUE 'LENGTH',
-      like                TYPE string VALUE 'LIKE',
-      line                TYPE string VALUE 'LINE',
-      lines               TYPE string VALUE 'LINES',
-      modify              TYPE string VALUE 'MODIFY',
-      move                TYPE string VALUE 'MOVE',
-      new                 TYPE string VALUE 'NEW',
-      of                  TYPE string VALUE 'OF',
-      on                  TYPE string VALUE 'ON',
-      optional            TYPE string VALUE 'OPTIONAL',
-      output              TYPE string VALUE 'OUTPUT',
-      preferred           TYPE string VALUE 'PREFERRED',
-      radiobutton         TYPE string VALUE 'RADIOBUTTON',
-      raising             TYPE string VALUE 'RAISING',
-      receiving           TYPE string VALUE 'RECEIVING',
-      ref                 TYPE string VALUE 'REF',
-      reference           TYPE string VALUE 'REFERENCE',
-      reference_lparen    TYPE string VALUE 'REFERENCE(',
-      ref_inline          TYPE string VALUE 'REFERENCE(*)',
-      refresh             TYPE string VALUE 'REFRESH',
-      returning           TYPE string VALUE 'RETURNING',
-      single              TYPE string VALUE 'SINGLE',
-      sorted              TYPE string VALUE 'SORTED',
-      sort                TYPE string VALUE 'SORT',
-      standard            TYPE string VALUE 'STANDARD',
-      structure           TYPE string VALUE 'STRUCTURE',
-      subtract            TYPE string VALUE 'SUBTRACT',
-      sy_subrc            TYPE string VALUE 'SY-SUBRC',
-      table               TYPE string VALUE 'TABLE',
-      tables              TYPE string VALUE 'TABLES',
-      to                  TYPE string VALUE 'TO',
-      type                TYPE string VALUE 'TYPE',
-      using               TYPE string VALUE 'USING',
-      value               TYPE string VALUE 'VALUE',
-      value_star          TYPE string VALUE 'VALUE(*)',
-      value_lparen        TYPE string VALUE 'VALUE(',
-      with                TYPE string VALUE 'WITH',
+      add                  TYPE string VALUE 'ADD',
+      at_data_inline       TYPE string VALUE '@DATA(*)',
+      append               TYPE string VALUE 'APPEND',
+      appending            TYPE string VALUE 'APPENDING',
+      assign               TYPE string VALUE 'ASSIGN',
+      assigning            TYPE string VALUE 'ASSIGNING',
+      cast                 TYPE string VALUE 'CAST',
+      changing             TYPE string VALUE 'CHANGING',
+      checkbox             TYPE string VALUE 'CHECKBOX',
+      clear                TYPE string VALUE 'CLEAR',
+      collect              TYPE string VALUE 'COLLECT',
+      conv                 TYPE string VALUE 'CONV',
+      corresponding        TYPE string VALUE 'CORRESPONDING',
+      count                TYPE string VALUE 'COUNT',
+      data_inline          TYPE string VALUE 'DATA(*)',
+      data_lparen          TYPE string VALUE 'DATA(',
+      default              TYPE string VALUE 'DEFAULT',
+      delete               TYPE string VALUE 'DELETE',
+      describe             TYPE string VALUE 'DESCRIBE',
+      empty                TYPE string VALUE 'EMPTY',
+      exceptions           TYPE string VALUE 'EXCEPTIONS',
+      exporting            TYPE string VALUE 'EXPORTING',
+      for                  TYPE string VALUE 'FOR',
+      free                 TYPE string VALUE 'FREE',
+      from                 TYPE string VALUE 'FROM',
+      group                TYPE string VALUE 'GROUP',
+      hashed               TYPE string VALUE 'HASHED',
+      in                   TYPE string VALUE 'IN',
+      importing            TYPE string VALUE 'IMPORTING',
+      initial              TYPE string VALUE 'INITIAL',
+      into                 TYPE string VALUE 'INTO',
+      key                  TYPE string VALUE 'KEY',
+      length               TYPE string VALUE 'LENGTH',
+      like                 TYPE string VALUE 'LIKE',
+      line                 TYPE string VALUE 'LINE',
+      lines                TYPE string VALUE 'LINES',
+      modify               TYPE string VALUE 'MODIFY',
+      move                 TYPE string VALUE 'MOVE',
+      new                  TYPE string VALUE 'NEW',
+      of                   TYPE string VALUE 'OF',
+      on                   TYPE string VALUE 'ON',
+      optional             TYPE string VALUE 'OPTIONAL',
+      output               TYPE string VALUE 'OUTPUT',
+      preferred            TYPE string VALUE 'PREFERRED',
+      radiobutton          TYPE string VALUE 'RADIOBUTTON',
+      raising              TYPE string VALUE 'RAISING',
+      receiving            TYPE string VALUE 'RECEIVING',
+      ref                  TYPE string VALUE 'REF',
+      reference            TYPE string VALUE 'REFERENCE',
+      reference_lparen     TYPE string VALUE 'REFERENCE(',
+      ref_inline           TYPE string VALUE 'REFERENCE(*)',
+      refresh              TYPE string VALUE 'REFRESH',
+      returning            TYPE string VALUE 'RETURNING',
+      single               TYPE string VALUE 'SINGLE',
+      sorted               TYPE string VALUE 'SORTED',
+      sort                 TYPE string VALUE 'SORT',
+      standard             TYPE string VALUE 'STANDARD',
+      structure            TYPE string VALUE 'STRUCTURE',
+      subtract             TYPE string VALUE 'SUBTRACT',
+      sy_subrc             TYPE string VALUE 'SY-SUBRC',
+      table                TYPE string VALUE 'TABLE',
+      tables               TYPE string VALUE 'TABLES',
+      to                   TYPE string VALUE 'TO',
+      type                 TYPE string VALUE 'TYPE',
+      using                TYPE string VALUE 'USING',
+      value                TYPE string VALUE 'VALUE',
+      value_star           TYPE string VALUE 'VALUE(*)',
+      value_lparen         TYPE string VALUE 'VALUE(',
+      with                 TYPE string VALUE 'WITH',
 
       " Symbols / text / pattern literals
-      at_sign             TYPE c LENGTH 1 VALUE '@',
-      at_data_lparen      TYPE string     VALUE '@DATA(',
-      colon               TYPE string     VALUE ':',
-      comma               TYPE string     VALUE ',',
-      comment_quote       TYPE string     VALUE '*"',
-      comment_quote_rev   TYPE string     VALUE '"*',
-      count_lparen        TYPE string     VALUE 'COUNT(',
-      dash                TYPE c LENGTH 1 VALUE '-',
-      empty_string        TYPE string     VALUE '',
-      dot                 TYPE string     VALUE '.',
-      empty_bt            TYPE string     VALUE '``',
-      empty_single_bt     TYPE string     VALUE '`',
-      empty_pipe          TYPE string     VALUE '||',
-      empty_single_pipe   TYPE string     VALUE '|',
-      empty_sq            TYPE string     VALUE '''''',
-      empty_single_sq     TYPE string     VALUE '''',
-      equal               TYPE string     VALUE '=',
-      exclamation_mark    TYPE string     VALUE '!',
-      field_symbol_pat    TYPE string     VALUE '<*>',
-      hash                TYPE string     VALUE '#',
-      invalid_assign_pat  TYPE string     VALUE '*===*',
-      instance_call       TYPE string     VALUE '->',
-      lbrace              TYPE c LENGTH 1 VALUE '{',
-      lbracket            TYPE string     VALUE '[',
-      cast_assign         TYPE string     VALUE '?=',
-      exact_cast_assign   TYPE string     VALUE '??=',
-      lit_space           TYPE c LENGTH 1 VALUE ' ',
-      lparen              TYPE string     VALUE '(',
-      pat_bt              TYPE string     VALUE '`*`',
-      pat_pipe            TYPE string     VALUE '|*|',
-      pat_sq              TYPE string     VALUE '''*''',
-      plus                TYPE string     VALUE '+',
-      quote               TYPE string     VALUE '"',
-      rbrace              TYPE c LENGTH 1 VALUE '}',
-      rparen              TYPE string     VALUE ')',
-      semicolon           TYPE c LENGTH 1 VALUE ';',
-      slash               TYPE c LENGTH 1 VALUE '/',
-      spec_star           TYPE string     VALUE '{*}',
-      star                TYPE string     VALUE '*',
-      static_call         TYPE string     VALUE '=>',
-      underscore          TYPE c LENGTH 1 VALUE '_',
+      at_sign              TYPE c LENGTH 1 VALUE '@',
+      at_data_lparen       TYPE string     VALUE '@DATA(',
+      colon                TYPE string     VALUE ':',
+      comma                TYPE string     VALUE ',',
+      comment_quote        TYPE string     VALUE '*"',
+      comment_quote_rev    TYPE string     VALUE '"*',
+      count_lparen         TYPE string     VALUE 'COUNT(',
+      dash                 TYPE c LENGTH 1 VALUE '-',
+      empty_string         TYPE string     VALUE '',
+      dot                  TYPE string     VALUE '.',
+      empty_bt             TYPE string     VALUE '``',
+      empty_single_bt      TYPE string     VALUE '`',
+      empty_pipe           TYPE string     VALUE '||',
+      empty_single_pipe    TYPE string     VALUE '|',
+      empty_sq             TYPE string     VALUE '''''',
+      empty_single_sq      TYPE string     VALUE '''',
+      equal                TYPE string     VALUE '=',
+      exclamation_mark     TYPE string     VALUE '!',
+      field_symbol_pat     TYPE string     VALUE '<*>',
+      hash                 TYPE string     VALUE '#',
+      invalid_assign_pat   TYPE string     VALUE '*===*',
+      instance_call        TYPE string     VALUE '->',
+      lbrace               TYPE c LENGTH 1 VALUE '{',
+      lbracket             TYPE string     VALUE '[',
+      cast_assign          TYPE string     VALUE '?=',
+      exact_cast_assign    TYPE string     VALUE '??=',
+      lit_space            TYPE c LENGTH 1 VALUE ' ',
+      lparen               TYPE string     VALUE '(',
+      pat_bt               TYPE string     VALUE '`*`',
+      pat_pipe             TYPE string     VALUE '|*|',
+      pat_sq               TYPE string     VALUE '''*''',
+      plus                 TYPE string     VALUE '+',
+      quote                TYPE string     VALUE '"',
+      rbrace               TYPE c LENGTH 1 VALUE '}',
+      rparen               TYPE string     VALUE ')',
+      semicolon            TYPE c LENGTH 1 VALUE ';',
+      slash                TYPE c LENGTH 1 VALUE '/',
+      spec_star            TYPE string     VALUE '{*}',
+      star                 TYPE string     VALUE '*',
+      static_call          TYPE string     VALUE '=>',
+      underscore           TYPE c LENGTH 1 VALUE '_',
     END OF gc_keyword .
   CONSTANTS:
     "--------------------------------------------------
@@ -394,9 +394,9 @@ PRIVATE SECTION.
     END OF gc_builtin_type_nm .
   CONSTANTS:
     BEGIN OF gc_rx_nm,
-      like_name      TYPE string VALUE 'LIKE\s+([A-Z0-9_=>\-]+)' ##NO_TEXT,
-      type_name      TYPE string VALUE 'TYPE\s+([A-Z0-9_=>\-]+)' ##NO_TEXT,
-      fm_value       TYPE string VALUE 'VALUE\(([A-Z0-9_!]+)\)' ##NO_TEXT,
+      like_name TYPE string VALUE 'LIKE\s+([A-Z0-9_=>\-]+)' ##NO_TEXT,
+      type_name TYPE string VALUE 'TYPE\s+([A-Z0-9_=>\-]+)' ##NO_TEXT,
+      fm_value  TYPE string VALUE 'VALUE\(([A-Z0-9_!]+)\)' ##NO_TEXT,
     END OF gc_rx_nm .
   CONSTANTS:
     BEGIN OF gc_iface_phrase_nm,
@@ -470,15 +470,12 @@ PRIVATE SECTION.
       from_kw         TYPE string VALUE 'FROM',
       by_kw           TYPE string VALUE 'BY',
       control_kw      TYPE string VALUE 'CONTROL',
-*      describe_kw     TYPE string VALUE 'DESCRIBE',
-*      lines_kw        TYPE string VALUE 'LINES',
       catch_kw        TYPE string VALUE 'CATCH',
     END OF gc_kw_obsolete .
   CONSTANTS:
     BEGIN OF gc_phrase_obsolete,
       with_header_line     TYPE string VALUE 'WITH HEADER LINE',
       on_change_of         TYPE string VALUE 'ON CHANGE OF',
-      like_line_of         TYPE string VALUE 'LIKE LINE OF',
       call_transaction     TYPE string VALUE 'CALL TRANSACTION',
       with_authority_check TYPE string VALUE 'WITH AUTHORITY-CHECK',
       without_auth_check   TYPE string VALUE 'WITHOUT AUTHORITY-CHECK',
@@ -523,11 +520,9 @@ PRIVATE SECTION.
       call_dialog_rule       TYPE string VALUE 'OBSOLETE_CALL_DIALOG',
       catch_system_exc_rule  TYPE string VALUE 'OBSOLETE_CATCH_SYSTEM_EXC',
 
-*      describe_table_rule    TYPE string VALUE 'OBSOLETE_DESCRIBE_TABLE',
       call_method_rule       TYPE string VALUE 'OBSOLETE_CALL_METHOD',
       header_line_rule       TYPE string VALUE 'OBSOLETE_WITH_HEADER_LINE',
       on_change_rule         TYPE string VALUE 'OBSOLETE_ON_CHANGE_OF',
-      like_line_rule         TYPE string VALUE 'OBSOLETE_LIKE_LINE_OF',
       relop_rule             TYPE string VALUE 'OBSOLETE_REL_OPERATOR',
 
       field_symbol_type_rule TYPE string VALUE 'OBSOLETE_FIELD_SYMBOL_TYPING',
@@ -568,6 +563,8 @@ PRIVATE SECTION.
       with_key       TYPE string VALUE 'WITH KEY',
       binary_search  TYPE string VALUE 'BINARY SEARCH',
       with_table_key TYPE string VALUE 'WITH TABLE KEY',
+      sort           TYPE string VALUE 'SORT',
+      select         TYPE string VALUE 'SORT',
     END OF gc_perf_kw .
   CONSTANTS:
     BEGIN OF gc_rule_perf,
@@ -586,6 +583,9 @@ PRIVATE SECTION.
       sort_table           TYPE string VALUE `^\s*SORT\s+([A-Z][A-Z0-9_\->]*)\b` ##NO_TEXT,
       fae_table            TYPE string VALUE `FOR\s+ALL\s+ENTRIES\s+IN\s+([A-Z0-9_<>\-]+)` ##NO_TEXT,
       loop_filter_or_range TYPE string VALUE `\b(WHERE|FROM|TO)\b`,
+      loop_assign_fs       TYPE string VALUE 'LOOP\s+AT\s+\S+.*\s+ASSIGNING\s+(?:FIELD-SYMBOL\s*\(\s*)?(<[A-Z0-9_]+>)(?:\s*\))?' ##NO_TEXT,
+      fs_assign_sp         TYPE string VALUE '-* = *',
+      fs_assign            TYPE string VALUE '-*=*',
     END OF gc_perf_regex .
   CONSTANTS:
     BEGIN OF gc_perf_cfg,
@@ -601,14 +601,10 @@ PRIVATE SECTION.
       is_not_initial_pat TYPE string VALUE 'IS NOT INITIAL.*',
     END OF gc_perf_guard .
   CONSTANTS:
-    BEGIN OF gc_perf_table,
-      lt_temp_errors TYPE string VALUE 'LT_TEMP_ERRORS',
-      lt_all_err     TYPE string VALUE 'LT_ALL_ERR',
-      rt_errors      TYPE string VALUE 'RT_ERRORS',
-      me_rt_errors   TYPE string VALUE 'ME->RT_ERRORS',
-      lt_new         TYPE string VALUE 'LT_NEW',
-    END OF gc_perf_table .
-
+    BEGIN OF gc_perf_ignore_read,
+      rtts_methods    TYPE string VALUE '->METHODS',
+      rtts_parameters TYPE string VALUE '-PARAMETERS',
+    END OF gc_perf_ignore_read.
   "------------------------------------------------------------
   " METHODS
   "------------------------------------------------------------
@@ -667,6 +663,8 @@ PRIVATE SECTION.
     IMPORTING
       !it_source       TYPE string_table
       !it_usage_source TYPE string_table OPTIONAL
+      !it_tokens       TYPE gty_t_tok_tab OPTIONAL
+      !it_stmts        TYPE gty_t_stmt_tab OPTIONAL
     RETURNING
       VALUE(rt_errors) TYPE ztt_error .
   METHODS cc_unused_text_symbols
@@ -733,7 +731,6 @@ METHOD analyze_clean_code.
   DATA lt_words        TYPE STANDARD TABLE OF string WITH EMPTY KEY.
 
   DATA lv_text                TYPE string.
-  DATA lv_has_dynamic_perform TYPE abap_bool.
   DATA lv_trim                TYPE string.
   DATA lv_i                   TYPE i.
   DATA lv_off                 TYPE i.
@@ -745,9 +742,32 @@ METHOD analyze_clean_code.
   "------------------------------------------------------------
   " C) RULE 1 - Declared but not used
   "------------------------------------------------------------
+
+  " Build source to scan once
+  CLEAR lt_usage_source.
+
+  IF it_usage_source IS NOT INITIAL.
+    lt_usage_source = it_usage_source.
+  ELSE.
+    lt_usage_source = it_source.
+  ENDIF.
+
+  "------------------------------------------------------------
+  " Scan source once
+  "------------------------------------------------------------
+  CLEAR: lt_tokens,
+         lt_stmts.
+
+  SCAN ABAP-SOURCE lt_usage_source
+    TOKENS     INTO lt_tokens
+    STATEMENTS INTO lt_stmts
+    WITH ANALYSIS.
+
   DATA(lt_temp_errors) = cc_unused_variables(
     it_source       = it_source
-    it_usage_source = it_usage_source ).
+    it_usage_source = lt_usage_source
+    it_tokens       = lt_tokens
+    it_stmts        = lt_stmts ).
 
   APPEND LINES OF lt_temp_errors TO rt_errors.
 
@@ -800,24 +820,6 @@ METHOD analyze_clean_code.
   ENDIF.
 
   "------------------------------------------------------------
-  " Prepare scanned source for RULE 4 - Unused subroutine
-  "------------------------------------------------------------
-  CLEAR lt_usage_source.
-
-  IF it_usage_source IS NOT INITIAL.
-    lt_usage_source = it_usage_source.
-  ELSE.
-    lt_usage_source = it_source.
-  ENDIF.
-
-  CLEAR: lt_tokens,
-         lt_stmts.
-
-  SCAN ABAP-SOURCE lt_usage_source
-    TOKENS     INTO lt_tokens
-    STATEMENTS INTO lt_stmts
-    WITH ANALYSIS.
-
   " G) RULE 4 - Unused subroutine
   "------------------------------------------------------------
   DATA lt_forms TYPE lty_t_form_decl.
@@ -914,18 +916,6 @@ METHOD analyze_clean_code.
       CONTINUE.
     ENDIF.
 
-    " Dynamic PERFORM: PERFORM (lv_form) ...
-    IF ls_perf_tok2-type <> gc_token_type-identifier.
-      lv_has_dynamic_perform = abap_true.
-      CONTINUE.
-    ENDIF.
-
-    " Ignore PERFORM subr(prog) ...
-    READ TABLE lt_tokens INDEX ls_perf_stmt-from + 2 INTO DATA(ls_perf_tok3).
-    IF sy-subrc = 0 AND ls_perf_tok3-str = gc_keyword-lparen.
-      CONTINUE.
-    ENDIF.
-
     lv_name = ls_perf_tok2-str.
     REPLACE ALL OCCURRENCES OF gc_keyword-dot IN lv_name WITH ''.
     lv_name = to_upper( lv_name ).
@@ -983,10 +973,6 @@ METHOD analyze_clean_code.
   " Emit unused subroutine warnings only
   LOOP AT lt_forms INTO DATA(ls_form).
 
-    IF lv_has_dynamic_perform = abap_true.
-      CONTINUE.
-    ENDIF.
-
     READ TABLE lt_called
       WITH TABLE KEY name_u = ls_form-name_u TRANSPORTING NO FIELDS.
     IF sy-subrc = 0.
@@ -1037,10 +1023,16 @@ METHOD analyze_hardcode.
         lv_inner_lc       TYPE string,
         lv_first_word     TYPE string,
         lv_prev1          TYPE string,
-        lv_prev2          TYPE string.
+        lv_prev2          TYPE string,
+        lv_hit_text       TYPE string.
 
   DATA: ls_prev1 TYPE stokex,
         ls_prev2 TYPE stokex.
+
+  DATA: lv_collect_row          TYPE i,
+        lv_collect_hits         TYPE string,
+        lv_collect_has_template TYPE abap_bool,
+        lv_has_collect          TYPE abap_bool.
 
   SCAN ABAP-SOURCE it_source
        TOKENS     INTO lt_tokens
@@ -1121,7 +1113,7 @@ METHOD analyze_hardcode.
 
       WHILE lv_pos < lv_stmt_len.
 
-          lv_ch = lv_stmt_line+lv_pos(1).
+        lv_ch = lv_stmt_line+lv_pos(1).
 
         " Start of literal: '...', `...`, |...|
         IF lv_ch = gc_keyword-empty_single_sq
@@ -1168,7 +1160,7 @@ METHOD analyze_hardcode.
                   EXIT.
               ENDCASE.
 
-              " Build final display text immediately, no extra LOOP needed
+              " Build final display text immediately
               IF lv_msg_hits IS INITIAL.
                 lv_msg_hits = lv_msg_hit.
               ELSE.
@@ -1221,6 +1213,14 @@ METHOD analyze_hardcode.
       CONTINUE.
     ENDIF.
 
+    "------------------------------------------------------------
+    " Reset streaming collector for each statement.
+    "------------------------------------------------------------
+    CLEAR: lv_collect_row,
+           lv_collect_hits,
+           lv_collect_has_template,
+           lv_has_collect.
+
     DO lv_token_count TIMES.
 
       lv_token_idx = ls_stmt-from + sy-index - 1.
@@ -1250,7 +1250,8 @@ METHOD analyze_hardcode.
              lv_prev1,
              lv_prev2,
              ls_prev1,
-             ls_prev2.
+             ls_prev2,
+             lv_hit_text.
 
       lv_tok = ls_token-str.
 
@@ -1475,26 +1476,102 @@ METHOD analyze_hardcode.
       ENDIF.
 
       "------------------------------------------------------------
-      " Step 12: report warning
+      " Step 12: collect warning hit by source line
       "------------------------------------------------------------
-      CLEAR ls_error.
+      lv_hit_text = lv_tok.
 
-      ls_error-line     = ls_token-row.
+      IF lv_has_collect = abap_false.
+
+        lv_collect_row  = ls_token-row.
+        lv_collect_hits = lv_hit_text.
+
+        IF lv_tok CP gc_keyword-pat_pipe.
+          lv_collect_has_template = abap_true.
+        ELSE.
+          lv_collect_has_template = abap_false.
+        ENDIF.
+
+        lv_has_collect = abap_true.
+
+      ELSEIF lv_collect_row = ls_token-row.
+
+        CONCATENATE lv_collect_hits lv_hit_text
+          INTO lv_collect_hits
+          SEPARATED BY ', '.
+
+        IF lv_tok CP gc_keyword-pat_pipe.
+          lv_collect_has_template = abap_true.
+        ENDIF.
+
+      ELSE.
+
+        "--------------------------------------------------------
+        " Flush previous source line before starting a new one.
+        "--------------------------------------------------------
+        IF lv_collect_hits IS NOT INITIAL.
+
+          CLEAR: ls_error, lv_msg.
+
+          ls_error-line     = lv_collect_row.
+          ls_error-sev      = gc_severity-warning.
+          ls_error-rule     = gc_category-hardcode.
+          ls_error-category = gc_category-hardcode.
+
+          IF lv_collect_has_template = abap_true.
+            MESSAGE w016(z_gsp04_message) WITH lv_collect_hits INTO lv_msg.
+          ELSE.
+            MESSAGE w015(z_gsp04_message) WITH lv_collect_hits INTO lv_msg.
+          ENDIF.
+
+          ls_error-msg = lv_msg.
+
+          APPEND ls_error TO rt_errors.
+
+        ENDIF.
+
+        "--------------------------------------------------------
+        " Start collecting the new source line.
+        "--------------------------------------------------------
+        lv_collect_row  = ls_token-row.
+        lv_collect_hits = lv_hit_text.
+
+        IF lv_tok CP gc_keyword-pat_pipe.
+          lv_collect_has_template = abap_true.
+        ELSE.
+          lv_collect_has_template = abap_false.
+        ENDIF.
+
+        lv_has_collect = abap_true.
+
+      ENDIF.
+
+    ENDDO.
+
+    "------------------------------------------------------------
+    " Flush the last collected source line after all tokens of the
+    " current statement have been checked.
+    "------------------------------------------------------------
+    IF lv_has_collect = abap_true
+       AND lv_collect_hits IS NOT INITIAL.
+
+      CLEAR: ls_error, lv_msg.
+
+      ls_error-line     = lv_collect_row.
       ls_error-sev      = gc_severity-warning.
       ls_error-rule     = gc_category-hardcode.
       ls_error-category = gc_category-hardcode.
 
-      IF lv_tok CP gc_keyword-pat_pipe.
-        MESSAGE w016(z_gsp04_message) WITH lv_tok INTO lv_msg.
+      IF lv_collect_has_template = abap_true.
+        MESSAGE w016(z_gsp04_message) WITH lv_collect_hits INTO lv_msg.
       ELSE.
-        MESSAGE w015(z_gsp04_message) WITH lv_tok INTO lv_msg.
+        MESSAGE w015(z_gsp04_message) WITH lv_collect_hits INTO lv_msg.
       ENDIF.
 
       ls_error-msg = lv_msg.
 
       APPEND ls_error TO rt_errors.
 
-    ENDDO.
+    ENDIF.
 
   ENDLOOP.
 
@@ -2398,20 +2475,6 @@ METHOD analyze_obsolete.
     ENDIF.
 
     "----------------------------------------------------------
-    " LIKE LINE OF
-    "----------------------------------------------------------
-    IF lv_stmt_text_uc CS gc_phrase_obsolete-like_line_of.
-      MESSAGE e040(z_gsp04_message)
-        WITH gc_phrase_obsolete-like_line_of
-        INTO lv_msg.
-
-      lv_hit_row = lv_stmt_row.
-      find_hit_row_text gc_phrase_obsolete-like_line_of lv_hit_row.
-
-      add_obsolete_error lv_hit_row lv_msg gc_rule_obsolete-like_line_rule.
-    ENDIF.
-
-    "----------------------------------------------------------
     " ON CHANGE OF
     "----------------------------------------------------------
     IF lv_stmt_text_uc CS gc_phrase_obsolete-on_change_of.
@@ -2702,38 +2765,53 @@ METHOD analyze_performance.
 
   DATA: ls_error TYPE zst_error.
 
-  DATA: lv_line               TYPE string,
-        lv_line_uc            TYPE string,
-        lv_line_cd            TYPE string,
-        lv_code_only          TYPE string,
-        lv_code_cd            TYPE string,
-        lv_msg                TYPE string,
-        lv_rule               TYPE string,
-        lv_line_idx           TYPE sy-tabix,
-        lv_table_name         TYPE string,
-        lv_is_light           TYPE abap_bool,
-        lv_loop_depth         TYPE i VALUE 0,
-        lv_heavy_depth        TYPE i VALUE 0,
-        ls_loop_ctx           TYPE lty_loop_ctx,
-        lt_loop_stack         TYPE lty_t_loop_ctx,
-        lv_fae_table          TYPE string,
-        lv_guard_found        TYPE abap_bool,
+  DATA: lv_line                TYPE string,
+        lv_line_uc             TYPE string,
+        lv_line_cd             TYPE string,
+        lv_code_only           TYPE string,
+        lv_code_cd             TYPE string,
+        lv_msg                 TYPE string,
+        lv_rule                TYPE string,
+        lv_line_idx            TYPE sy-tabix,
+        lv_table_name          TYPE string,
+        lv_is_light            TYPE abap_bool,
+        lv_loop_depth          TYPE i VALUE 0,
+        lv_heavy_depth         TYPE i VALUE 0,
+        ls_loop_ctx            TYPE lty_loop_ctx,
+        lt_loop_stack          TYPE lty_t_loop_ctx,
+        lv_fae_table           TYPE string,
+        lv_guard_found         TYPE abap_bool,
         lv_has_filter_or_range TYPE abap_bool,
-        lv_back_idx           TYPE i,
-        lv_prev_line          TYPE string,
-        lv_prev_uc            TYPE string,
-        lv_prev_cd            TYPE string,
-        lv_pos_quote          TYPE i,
-        lv_prev_pos_quote     TYPE i,
-        lv_stack_lines        TYPE i,
-        lv_rx_select_star     TYPE string,
-        lv_rx_fae_table       TYPE string,
-        lv_rx_select_stmt     TYPE string,
-        lv_rx_loop_at         TYPE string,
-        lv_rx_sort_stmt       TYPE string,
-        lv_rx_loop_filter     TYPE string,
-        lv_sort_table TYPE string,
-        lv_has_loop_condition TYPE abap_bool.
+        lv_back_idx            TYPE i,
+        lv_prev_line           TYPE string,
+        lv_prev_uc             TYPE string,
+        lv_prev_cd             TYPE string,
+        lv_pos_quote           TYPE i,
+        lv_prev_pos_quote      TYPE i,
+        lv_stack_lines         TYPE i,
+        lv_sort_table          TYPE string,
+
+        "--------------------------------------------------------
+        " READ TABLE collector
+        " Used to support multi-line READ TABLE statements.
+        " Do NOT clear these inside each LOOP AT it_source cycle.
+        "--------------------------------------------------------
+        lv_read_stmt           TYPE string,
+        lv_read_stmt_start     TYPE sy-tabix,
+        lv_in_read_stmt        TYPE abap_bool,
+
+        "--------------------------------------------------------
+        " Metadata-enrichment LOOP ignore logic
+        " Used to ignore loops that only assign values to <fs>-fields.
+        "--------------------------------------------------------
+        lv_loop_fs             TYPE string,
+        lv_is_enrich_loop      TYPE abap_bool,
+        lv_found_endloop       TYPE abap_bool,
+        lv_scan_idx            TYPE i,
+        lv_scan_line           TYPE string,
+        lv_scan_uc             TYPE string,
+        lv_scan_cd             TYPE string,
+        lv_scan_pos_quote      TYPE i.
 
   DEFINE add_perf_error.
     CLEAR ls_error.
@@ -2746,8 +2824,12 @@ METHOD analyze_performance.
   END-OF-DEFINITION.
 
   "------------------------------------------------------------
-  " Local regex patterns
+  " READ TABLE collector must be cleared once before source scan,
   "------------------------------------------------------------
+  CLEAR: lv_read_stmt,
+         lv_read_stmt_start,
+         lv_in_read_stmt.
+
   LOOP AT it_source INTO lv_line.
 
     CLEAR: ls_error,
@@ -2812,7 +2894,7 @@ METHOD analyze_performance.
     CLEAR: lv_fae_table,
            lv_guard_found.
 
-    FIND PCRE lv_rx_fae_table
+    FIND PCRE gc_perf_regex-fae_table
       IN lv_code_cd
       SUBMATCHES lv_fae_table.
 
@@ -2887,11 +2969,6 @@ METHOD analyze_performance.
 
     "------------------------------------------------------------
     " Check 1: SELECT *
-    " This catches:
-    "   SELECT * FROM ...
-    " and also multi-line:
-    "   SELECT *
-    "     FROM ...
     "------------------------------------------------------------
     FIND PCRE gc_perf_regex-select_all
       IN lv_code_cd.
@@ -2922,20 +2999,108 @@ METHOD analyze_performance.
         lv_table_name = gc_obj_type-unknown.
       ENDIF.
 
-      " Light loops = temp/result/error tables
+      "----------------------------------------------------------
+      " Default:
+      "   Treat LOOP as heavy enough to be reviewed.
+      "----------------------------------------------------------
       lv_is_light = abap_false.
 
-      IF lv_table_name = gc_perf_table-lt_temp_errors
-         OR lv_table_name = gc_perf_table-lt_all_err
-         OR lv_table_name = gc_perf_table-rt_errors
-         OR lv_table_name = gc_perf_table-me_rt_errors
-         OR lv_table_name = gc_perf_table-lt_new.
+      "----------------------------------------------------------
+      " Ignore metadata-enrichment LOOP
+      "----------------------------------------------------------
+      CLEAR: lv_loop_fs,
+             lv_is_enrich_loop,
+             lv_found_endloop.
 
-        lv_is_light = abap_true.
+      FIND PCRE gc_perf_regex-loop_assign_fs
+        IN lv_code_cd
+        SUBMATCHES lv_loop_fs.
+
+      IF sy-subrc = 0
+         AND lv_loop_fs IS NOT INITIAL.
+
+        lv_is_enrich_loop = abap_true.
+
+        DO 30 TIMES.
+
+          lv_scan_idx = lv_line_idx + sy-index.
+
+          CLEAR: lv_scan_line,
+                 lv_scan_uc,
+                 lv_scan_cd,
+                 lv_scan_pos_quote.
+
+          READ TABLE it_source INTO lv_scan_line INDEX lv_scan_idx.
+          IF sy-subrc <> 0.
+            EXIT.
+          ENDIF.
+
+          lv_scan_uc = lv_scan_line.
+          TRANSLATE lv_scan_uc TO UPPER CASE.
+
+          FIND FIRST OCCURRENCE OF gc_keyword-quote
+            IN lv_scan_uc
+            MATCH OFFSET lv_scan_pos_quote.
+
+          IF sy-subrc = 0.
+            lv_scan_uc = lv_scan_uc(lv_scan_pos_quote).
+          ENDIF.
+
+          lv_scan_cd = lv_scan_uc.
+          CONDENSE lv_scan_cd.
+
+          IF lv_scan_cd IS INITIAL.
+            CONTINUE.
+          ENDIF.
+
+          IF lv_scan_cd+0(1) = gc_keyword-star.
+            CONTINUE.
+          ENDIF.
+
+          " End of the current enrichment loop
+          IF lv_scan_cd CS gc_perf_kw-endloop.
+            lv_found_endloop = abap_true.
+            EXIT.
+          ENDIF.
+
+          " If loop body contains heavy operations, do not ignore it
+          IF lv_scan_cd CS gc_perf_kw-loop_at
+             OR lv_scan_cd CS gc_perf_kw-read_table
+             OR lv_scan_cd CS gc_perf_kw-sort
+             OR lv_scan_cd CS gc_perf_kw-select
+             OR lv_scan_cd CS gc_keyword-call.
+
+            lv_is_enrich_loop = abap_false.
+            EXIT.
+
+          ENDIF.
+
+          IF lv_scan_cd CP |{ lv_loop_fs }{ gc_perf_regex-fs_assign_sp }|
+             OR lv_scan_cd CP |{ lv_loop_fs }{ gc_perf_regex-fs_assign }|.
+
+            CONTINUE.
+
+          ENDIF.
+
+          lv_is_enrich_loop = abap_false.
+          EXIT.
+
+        ENDDO.
+
+        IF lv_found_endloop = abap_false.
+          lv_is_enrich_loop = abap_false.
+        ENDIF.
+
+        IF lv_is_enrich_loop = abap_true.
+          lv_is_light = abap_true.
+        ENDIF.
 
       ENDIF.
 
+      "----------------------------------------------------------
       " Nested LOOP only if current context already contains heavy loop
+      " and the current loop is not a metadata-enrichment loop.
+      "----------------------------------------------------------
       IF lv_heavy_depth >= gc_perf_cfg-heavy_depth_min
          AND lv_is_light = abap_false.
 
@@ -2945,7 +3110,7 @@ METHOD analyze_performance.
           IN lv_code_cd.
 
         IF sy-subrc = 0.
-          lv_has_loop_condition = abap_true.
+          lv_has_filter_or_range = abap_true.
         ENDIF.
 
         lv_rule = gc_rule_perf-nested_loop.
@@ -3005,6 +3170,7 @@ METHOD analyze_performance.
       ENDIF.
 
     ENDIF.
+
     "------------------------------------------------------------
     " Check 3: SORT inside heavy LOOP
     "------------------------------------------------------------
@@ -3035,21 +3201,58 @@ METHOD analyze_performance.
     ENDIF.
 
     "------------------------------------------------------------
-    " Check 3: READ TABLE ... WITH KEY
-    " Skip if WITH TABLE KEY or BINARY SEARCH already present
+    " Check 4: READ TABLE ... WITH KEY
+    " Supports both single-line and multi-line statements.
     "------------------------------------------------------------
-    IF lv_code_cd CS gc_perf_kw-read_table
-       AND lv_code_cd CS gc_perf_kw-with_key
-       AND lv_code_cd NS gc_perf_kw-binary_search
-       AND lv_code_cd NS gc_perf_kw-with_table_key.
+    IF lv_in_read_stmt = abap_false
+       AND lv_code_cd CS gc_perf_kw-read_table.
 
-      lv_rule = gc_rule_perf-read_no_binary.
+      lv_in_read_stmt    = abap_true.
+      lv_read_stmt       = lv_code_cd.
+      lv_read_stmt_start = lv_line_idx.
 
-      MESSAGE e039(z_gsp04_message)
-        INTO lv_msg.
+    ELSEIF lv_in_read_stmt = abap_true.
 
-      add_perf_error lv_line_idx gc_severity-error lv_msg lv_rule.
+      lv_read_stmt = |{ lv_read_stmt } { lv_code_cd }|.
 
+    ENDIF.
+
+    IF lv_in_read_stmt = abap_true
+       AND lv_code_cd CS gc_keyword-dot.
+
+      IF lv_read_stmt CS gc_perf_kw-read_table
+         AND lv_read_stmt CS gc_perf_kw-with_key
+         AND lv_read_stmt NS gc_perf_kw-binary_search
+         AND lv_read_stmt NS gc_perf_kw-with_table_key.
+
+        IF lv_read_stmt CS gc_perf_ignore_read-rtts_methods
+           OR lv_read_stmt CS gc_perf_ignore_read-rtts_parameters.
+
+          " Do nothing: avoid false positive for small RTTS metadata tables
+
+        ELSE.
+
+          lv_rule = gc_rule_perf-read_no_binary.
+
+          MESSAGE e039(z_gsp04_message)
+            INTO lv_msg.
+
+          add_perf_error lv_read_stmt_start gc_severity-error lv_msg lv_rule.
+
+        ENDIF.
+
+      ENDIF.
+
+      CLEAR: lv_read_stmt,
+             lv_read_stmt_start,
+             lv_in_read_stmt.
+
+      CONTINUE.
+
+    ENDIF.
+
+    IF lv_in_read_stmt = abap_true.
+      CONTINUE.
     ENDIF.
 
     "------------------------------------------------------------
@@ -6605,36 +6808,50 @@ ENDMETHOD.
 
 
 METHOD cc_unused_text_symbols.
+
   CLEAR rt_errors.
 
   TYPES: BEGIN OF lty_used,
            key TYPE textpool-key,
          END OF lty_used.
+
   TYPES lty_t_used TYPE HASHED TABLE OF lty_used WITH UNIQUE KEY key.
 
-  DATA lt_textpool        TYPE STANDARD TABLE OF textpool WITH EMPTY KEY.
-  DATA lt_used            TYPE lty_t_used.
-  DATA lt_src_curr        TYPE gty_t_src_line.
-  DATA lt_src_part_text   TYPE string_table.
-  DATA lt_words_inc_text  TYPE STANDARD TABLE OF string WITH EMPTY KEY.
-  DATA lt_prog_queue_text TYPE STANDARD TABLE OF progname WITH EMPTY KEY.
-  DATA lt_prog_seen_text  TYPE HASHED TABLE OF progname WITH UNIQUE KEY table_line.
-  DATA lt_method_includes TYPE seop_methods_w_include.
+  DATA lt_textpool         TYPE STANDARD TABLE OF textpool WITH EMPTY KEY.
+  DATA lt_used             TYPE lty_t_used.
+  DATA lt_src_curr         TYPE gty_t_src_line.
+  DATA lt_src_part_text    TYPE string_table.
+  DATA lt_words_inc_text   TYPE STANDARD TABLE OF string WITH EMPTY KEY.
+  DATA lt_prog_queue_text  TYPE STANDARD TABLE OF progname WITH EMPTY KEY.
 
-  DATA lv_text            TYPE string.
-  DATA lv_textpool_prog   TYPE progname.
-  DATA lv_classpool_prog  TYPE progname.
-  DATA lv_inc_prog        TYPE progname.
-  DATA lv_word1           TYPE string.
-  DATA lv_word2           TYPE string.
-  DATA lv_i               TYPE i.
-  DATA lv_off             TYPE i.
-  DATA lv_name            TYPE string.
-  DATA lv_stack_idx       TYPE i.
+  "------------------------------------------------------------
+  " Added:
+  " Hash set used only for fast duplicate check.
+  " lt_prog_queue_text still keeps FIFO queue order.
+  "------------------------------------------------------------
+  DATA lt_prog_queued_text TYPE HASHED TABLE OF progname
+                            WITH UNIQUE KEY table_line.
+
+  DATA lt_prog_seen_text   TYPE HASHED TABLE OF progname
+                            WITH UNIQUE KEY table_line.
+
+  DATA lt_method_includes  TYPE seop_methods_w_include.
+
+  DATA lv_text             TYPE string.
+  DATA lv_textpool_prog    TYPE progname.
+  DATA lv_classpool_prog   TYPE progname.
+  DATA lv_inc_prog         TYPE progname.
+  DATA lv_word1            TYPE string.
+  DATA lv_word2            TYPE string.
+  DATA lv_i                TYPE i.
+  DATA lv_off              TYPE i.
+  DATA lv_name             TYPE string.
+  DATA lv_stack_idx        TYPE i.
 
   CLEAR: lv_textpool_prog,
          lt_used,
          lt_prog_queue_text,
+         lt_prog_queued_text,
          lt_prog_seen_text,
          lt_method_includes,
          lv_classpool_prog.
@@ -6656,6 +6873,7 @@ METHOD cc_unused_text_symbols.
       IF lv_textpool_prog IS NOT INITIAL.
         lv_textpool_prog = to_upper( lv_textpool_prog ).
         APPEND lv_textpool_prog TO lt_prog_queue_text.
+        INSERT lv_textpool_prog INTO TABLE lt_prog_queued_text.
       ENDIF.
 
     WHEN gc_obj_type-fugr.
@@ -6669,6 +6887,7 @@ METHOD cc_unused_text_symbols.
       IF lv_textpool_prog IS NOT INITIAL.
         lv_textpool_prog = to_upper( lv_textpool_prog ).
         APPEND lv_textpool_prog TO lt_prog_queue_text.
+        INSERT lv_textpool_prog INTO TABLE lt_prog_queued_text.
       ENDIF.
 
     WHEN gc_obj_type-func
@@ -6681,13 +6900,16 @@ METHOD cc_unused_text_symbols.
       IF lv_textpool_prog IS NOT INITIAL.
         lv_textpool_prog = to_upper( lv_textpool_prog ).
         APPEND lv_textpool_prog TO lt_prog_queue_text.
+        INSERT lv_textpool_prog INTO TABLE lt_prog_queued_text.
       ENDIF.
 
     WHEN gc_obj_type-clas.
 
       IF is_ctx-main_prog IS NOT INITIAL.
         CLEAR lt_src_part_text.
+
         READ REPORT is_ctx-main_prog INTO lt_src_part_text.
+
         IF sy-subrc = 0 AND lt_src_part_text IS NOT INITIAL.
           lv_classpool_prog = is_ctx-main_prog.
         ENDIF.
@@ -6695,13 +6917,16 @@ METHOD cc_unused_text_symbols.
 
       IF lv_classpool_prog IS INITIAL
          AND is_ctx-obj_name IS NOT INITIAL.
+
         TRY.
             lv_classpool_prog =
               cl_oo_classname_service=>get_classpool_name(
                 clsname = CONV seoclsname( is_ctx-obj_name ) ).
+
           CATCH cx_root.
             CLEAR lv_classpool_prog.
         ENDTRY.
+
       ENDIF.
 
       lv_textpool_prog = lv_classpool_prog.
@@ -6709,31 +6934,48 @@ METHOD cc_unused_text_symbols.
       IF lv_textpool_prog IS NOT INITIAL.
         lv_textpool_prog = to_upper( lv_textpool_prog ).
         APPEND lv_textpool_prog TO lt_prog_queue_text.
+        INSERT lv_textpool_prog INTO TABLE lt_prog_queued_text.
       ENDIF.
 
       IF is_ctx-obj_name IS NOT INITIAL.
+
         TRY.
             lt_method_includes =
               cl_oo_classname_service=>get_all_method_includes(
                 CONV seoclsname( is_ctx-obj_name ) ).
+
           CATCH cx_root.
             CLEAR lt_method_includes.
         ENDTRY.
+
       ENDIF.
 
       LOOP AT lt_method_includes ASSIGNING FIELD-SYMBOL(<lfs_method_inc_text>).
+
         lv_inc_prog = <lfs_method_inc_text>-incname.
+
         IF lv_inc_prog IS INITIAL.
           CONTINUE.
         ENDIF.
 
         lv_inc_prog = to_upper( lv_inc_prog ).
 
-        READ TABLE lt_prog_queue_text
-          WITH KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
+        "--------------------------------------------------------
+        " Changed:
+        " Old logic checked lt_prog_queue_text with READ TABLE
+        " WITH KEY, which is linear search on a standard queue.
+        "
+        " New logic checks lt_prog_queued_text hashed set.
+        "--------------------------------------------------------
+        READ TABLE lt_prog_queued_text
+          WITH TABLE KEY table_line = lv_inc_prog
+          TRANSPORTING NO FIELDS.
+
         IF sy-subrc <> 0.
           APPEND lv_inc_prog TO lt_prog_queue_text.
+          INSERT lv_inc_prog INTO TABLE lt_prog_queued_text.
         ENDIF.
+
       ENDLOOP.
 
     WHEN OTHERS.
@@ -6748,6 +6990,7 @@ METHOD cc_unused_text_symbols.
     IF sy-subrc = 0 AND lt_textpool IS NOT INITIAL.
 
       WHILE lt_prog_queue_text IS NOT INITIAL.
+
         READ TABLE lt_prog_queue_text INDEX 1 INTO DATA(lv_prog_text).
         DELETE lt_prog_queue_text INDEX 1.
 
@@ -6756,7 +6999,9 @@ METHOD cc_unused_text_symbols.
         ENDIF.
 
         READ TABLE lt_prog_seen_text
-          WITH TABLE KEY table_line = lv_prog_text TRANSPORTING NO FIELDS.
+          WITH TABLE KEY table_line = lv_prog_text
+          TRANSPORTING NO FIELDS.
+
         IF sy-subrc = 0.
           CONTINUE.
         ENDIF.
@@ -6764,7 +7009,9 @@ METHOD cc_unused_text_symbols.
         INSERT lv_prog_text INTO TABLE lt_prog_seen_text.
 
         CLEAR lt_src_part_text.
+
         READ REPORT lv_prog_text INTO lt_src_part_text.
+
         IF sy-subrc <> 0 OR lt_src_part_text IS INITIAL.
           CONTINUE.
         ENDIF.
@@ -6772,6 +7019,7 @@ METHOD cc_unused_text_symbols.
         lt_src_curr = cc_preprocess_source( lt_src_part_text ).
 
         LOOP AT lt_src_curr INTO DATA(ls_src_text).
+
           DATA(lv_work_inc_text) = ls_src_text-no_comment.
           lv_work_inc_text = to_upper( lv_work_inc_text ).
 
@@ -6796,8 +7044,13 @@ METHOD cc_unused_text_symbols.
              AND lv_word2 IS NOT INITIAL.
 
             lv_inc_prog = lv_word2.
-            REPLACE ALL OCCURRENCES OF gc_keyword-dot   IN lv_inc_prog WITH ''.
-            REPLACE ALL OCCURRENCES OF gc_keyword-quote IN lv_inc_prog WITH ''.
+
+            REPLACE ALL OCCURRENCES OF gc_keyword-dot
+              IN lv_inc_prog WITH ''.
+
+            REPLACE ALL OCCURRENCES OF gc_keyword-quote
+              IN lv_inc_prog WITH ''.
+
             CONDENSE lv_inc_prog NO-GAPS.
             lv_inc_prog = to_upper( lv_inc_prog ).
 
@@ -6807,15 +7060,29 @@ METHOD cc_unused_text_symbols.
                AND lv_inc_prog <> gc_keyword-structure.
 
               READ TABLE lt_prog_seen_text
-                WITH TABLE KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
+                WITH TABLE KEY table_line = lv_inc_prog
+                TRANSPORTING NO FIELDS.
+
               IF sy-subrc <> 0.
-                READ TABLE lt_prog_queue_text
-                  WITH KEY table_line = lv_inc_prog TRANSPORTING NO FIELDS.
+
+                "------------------------------------------------
+                " Changed:
+                " Do not search lt_prog_queue_text by key.
+                " Use hashed queued set instead.
+                "------------------------------------------------
+                READ TABLE lt_prog_queued_text
+                  WITH TABLE KEY table_line = lv_inc_prog
+                  TRANSPORTING NO FIELDS.
+
                 IF sy-subrc <> 0.
                   APPEND lv_inc_prog TO lt_prog_queue_text.
+                  INSERT lv_inc_prog INTO TABLE lt_prog_queued_text.
                 ENDIF.
+
               ENDIF.
+
             ENDIF.
+
           ENDIF.
 
           CLEAR: lv_i,
@@ -6823,6 +7090,7 @@ METHOD cc_unused_text_symbols.
                  lv_name.
 
           WHILE lv_i < strlen( lv_work_inc_text ).
+
             lv_name = lv_work_inc_text+lv_i.
 
             FIND FIRST OCCURRENCE OF PCRE gc_clean_code-text_symbol
@@ -6838,14 +7106,19 @@ METHOD cc_unused_text_symbols.
             lv_word1 = to_upper( lv_word1 ).
 
             IF strlen( lv_word1 ) >= 8.
+
               INSERT VALUE lty_used(
                 key = lv_word1+5(3)
               ) INTO TABLE lt_used.
+
             ENDIF.
 
             lv_i += lv_off + lv_stack_idx.
+
           ENDWHILE.
+
         ENDLOOP.
+
       ENDWHILE.
 
       LOOP AT lt_textpool INTO DATA(ls_text)
@@ -6853,7 +7126,9 @@ METHOD cc_unused_text_symbols.
              AND key IS NOT INITIAL.
 
         READ TABLE lt_used
-          WITH TABLE KEY key = ls_text-key TRANSPORTING NO FIELDS.
+          WITH TABLE KEY key = ls_text-key
+          TRANSPORTING NO FIELDS.
+
         IF sy-subrc = 0.
           CONTINUE.
         ENDIF.
@@ -6869,9 +7144,11 @@ METHOD cc_unused_text_symbols.
           category = gc_category-clean_code
           rule     = gc_rule_cc-unused_text_symbol
         ) TO rt_errors.
+
       ENDLOOP.
 
     ENDIF.
+
   ENDIF.
 
 ENDMETHOD.
@@ -6958,10 +7235,11 @@ METHOD cc_unused_variables.
   FIELD-SYMBOLS <lfs_prefix> TYPE lty_decl_prefix.
 
   "------------------------------------------------------------
-  " D) RULE 1 - Declared but not used
+  " Use scanner result from caller only
   "------------------------------------------------------------
+  lt_tokens = it_tokens.
+  lt_stmts  = it_stmts.
 
-  " Build source to scan once
   CLEAR lt_usage_source.
 
   IF it_usage_source IS NOT INITIAL.
@@ -6970,20 +7248,15 @@ METHOD cc_unused_variables.
     lt_usage_source = it_source.
   ENDIF.
 
-  "------------------------------------------------------------
-  " Scan source once
-  "------------------------------------------------------------
-  CLEAR: lt_tokens,
-         lt_stmts.
-
-  SCAN ABAP-SOURCE lt_usage_source
-    TOKENS     INTO lt_tokens
-    STATEMENTS INTO lt_stmts
-    WITH ANALYSIS.
+  IF lt_tokens IS INITIAL OR lt_stmts IS INITIAL.
+    RETURN.
+  ENDIF.
 
   "------------------------------------------------------------
+  " D) RULE 1 - Declared but not used
+  "------------------------------------------------------------
+
   " Build statement context once
-  "------------------------------------------------------------
   CLEAR lt_stmt_ctx.
   lv_curr_scope = gc_scope-global.
 
@@ -7454,7 +7727,7 @@ METHOD cc_unused_variables.
   ENDLOOP.
 
   "------------------------------------------------------------
-  " D.1) Extra declarations - FORM params, METHOD params, FM params
+  " D.1) Extra declarations - FORM params, FM params
   "------------------------------------------------------------
   DATA lv_sig_kind    TYPE string.
   DATA lv_sig_scope   TYPE string.
@@ -8996,13 +9269,14 @@ METHOD nm_resolve_called_method_kind.
 
               READ TABLE lo_class_descr->methods
                 INTO DATA(ls_method_descr)
-                WITH KEY name = lv_called_method.
+                WITH KEY name = lv_called_method
+                BINARY SEARCH..
 
               IF sy-subrc = 0.
-
                 READ TABLE ls_method_descr-parameters
                 INTO DATA(ls_param_descr)
-                WITH KEY parm_kind = cl_abap_objectdescr=>returning.
+                WITH KEY parm_kind = cl_abap_objectdescr=>returning
+                BINARY SEARCH.
 
                 IF sy-subrc = 0.
 

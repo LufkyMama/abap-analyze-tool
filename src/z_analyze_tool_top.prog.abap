@@ -25,7 +25,7 @@ SELECTION-SCREEN END OF BLOCK bl_b2.
 DATA: go_controller TYPE REF TO zcl_program_controller,
       gt_errors     TYPE ztt_error,
       go_alv        TYPE REF TO zcl_program_alv,
-      gt_founds     TYPE zcl_program_whereused=>ty_founds.
+      gt_founds     TYPE zcl_program_whereused=>gty_t_founds.
 CONSTANTS:
   gc_screen_group_check TYPE screen-group1 VALUE 'M1',
   gc_screen_group_tr    TYPE screen-group1 VALUE 'M2',

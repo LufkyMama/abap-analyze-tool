@@ -23,7 +23,7 @@ CLASS zcl_program_alv DEFINITION
         changed_on      TYPE sydatum,
         author          TYPE syuname,
         hit_source      TYPE char20,
-        "==== field kỹ thuật để điều hướng ====
+        "====technical field for navigation ====
         nav_obj_name    TYPE sobj_name,
         nav_obj_type    TYPE trobjtype,
         nav_pgmid       TYPE pgmid,
@@ -48,7 +48,7 @@ CLASS zcl_program_alv DEFINITION
         !is_header TYPE gty_alv_header OPTIONAL .
     METHODS display_where_used_alv
       IMPORTING
-        !it_data   TYPE zcl_program_whereused=>ty_founds
+        !it_data   TYPE zcl_program_whereused=>gty_t_founds
         !is_header TYPE gty_alv_header OPTIONAL .
   PROTECTED SECTION.
 private section.
@@ -219,7 +219,7 @@ private section.
       !COLUMN .
   methods BUILD_WHERE_USED_DISPLAY
     importing
-      !IT_FOUNDS type ZCL_PROGRAM_WHEREUSED=>TY_FOUNDS
+      !IT_FOUNDS type ZCL_PROGRAM_WHEREUSED=>GTY_T_FOUNDS
     returning
       value(RT_DISP) type GTY_T_WU_HIT .
   methods PARSE_USED_TOKEN
@@ -512,16 +512,16 @@ METHOD display_analysis_alv.
   DATA: lo_columns TYPE REF TO cl_salv_columns_table,
         lo_column  TYPE REF TO cl_salv_column_table.
 
-  DATA:lv_timestamp   TYPE timestampl,
-       lv_vn_date     TYPE sydatum,
-       lv_vn_time     TYPE syuzeit,
-       lv_warn_count  TYPE i,
-       lv_err_count   TYPE i,
-       lv_total_count TYPE i.
+  DATA: lv_timestamp   TYPE timestampl,
+        lv_vn_date     TYPE sydatum,
+        lv_vn_time     TYPE syuzeit,
+        lv_warn_count  TYPE i,
+        lv_err_count   TYPE i,
+        lv_total_count TYPE i.
 
-  "---------------------------------------------------------
+  "-------------------
   " Build ALV Header
-  "---------------------------------------------------------
+  "-------------------
   GET TIME STAMP FIELD lv_timestamp.
 
   CONVERT TIME STAMP lv_timestamp
@@ -658,6 +658,7 @@ METHOD display_analysis_alv.
         iv_warn_count  = lv_warn_count
         iv_err_count   = lv_err_count
         iv_total_count = lv_total_count ).
+
       go_events = go_alv->get_event( ).
       SET HANDLER me->on_hotspot_click FOR go_events.
       SET HANDLER me->on_user_command  FOR go_events.
@@ -1637,9 +1638,9 @@ METHOD filter_analysis_by_category.
 
   CLEAR lt_filtered.
 
-  "--------------------------------------------------
+  "----------
   " ALL view
-  "--------------------------------------------------
+  "----------
   IF iv_category IS INITIAL
      OR iv_category = gc_view-all.
 
@@ -1653,9 +1654,9 @@ METHOD filter_analysis_by_category.
 
   ELSE.
 
-    "--------------------------------------------------
+    "---------------
     " Category view
-    "--------------------------------------------------
+    "----------------
     LOOP AT gt_analysis_all INTO DATA(ls_err)
       WHERE category = iv_category.
       APPEND ls_err TO lt_filtered.
@@ -1672,9 +1673,9 @@ METHOD filter_analysis_by_category.
 
   ENDIF.
 
-  "--------------------------------------------------
+  "------------------------------
   " Rebuild current ALV data only
-  "--------------------------------------------------
+  "------------------------------
   CLEAR gt_data.
   gt_data = lt_filtered.
 
@@ -1686,9 +1687,9 @@ METHOD filter_analysis_by_category.
       ev_err_count   = lv_err_count
       ev_total_count = lv_total_count ).
 
-  "--------------------------------------------------
+  "-----------------------
   " Update header/summary
-  "--------------------------------------------------
+  "-----------------------
   me->set_analysis_header(
     iv_warn_count  = lv_warn_count
     iv_err_count   = lv_err_count
@@ -1715,8 +1716,14 @@ METHOD get_class_include_text.
 
   lt_class_data = lo_fetch->get_class( iv_class_name ).
 
+   IF lt_class_data IS INITIAL.
+    RETURN.
+  ENDIF.
+  SORT lt_class_data BY include.
+
   READ TABLE lt_class_data INTO DATA(ls_item)
-    WITH KEY include = iv_include.
+    WITH KEY include = iv_include
+    BINARY SEARCH..
 
   IF sy-subrc = 0 AND ls_item-method_name IS NOT INITIAL.
     rv_text = ls_item-method_name.
@@ -1867,117 +1874,117 @@ METHOD build_analysis_display_data.
 ENDMETHOD.
 
 
-METHOD set_analysis_header.
+  METHOD set_analysis_header.
 
-  DATA(lo_grid_header) = NEW cl_salv_form_layout_grid( ).
+    DATA(lo_grid_header) = NEW cl_salv_form_layout_grid( ).
 
-  "---------------------------------------------------------
-  " Info box bên trái
-  "---------------------------------------------------------
-  DATA(lo_grp_info) = NEW cl_salv_form_groupbox(
-    header = CONV string( TEXT-c26 ) ).
+    "-----------
+    " Info box
+    "-----------
+    DATA(lo_grp_info) = NEW cl_salv_form_groupbox(
+      header = CONV string( TEXT-c26 ) ).
 
-  lo_grid_header->set_element(
-    row       = 1
-    column    = 1
-    r_element = lo_grp_info ).
+    lo_grid_header->set_element(
+      row       = 1
+      column    = 1
+      r_element = lo_grp_info ).
 
-  DATA(lo_info_grid) = lo_grp_info->create_grid( ).
+    DATA(lo_info_grid) = lo_grp_info->create_grid( ).
 
-  lo_info_grid->create_label(
-    row    = 1
-    column = 1
-    text   = TEXT-c20 ).
+    lo_info_grid->create_label(
+      row    = 1
+      column = 1
+      text   = TEXT-c20 ).
 
-  lo_info_grid->create_text(
-    row    = 1
-    column = 2
-    text   = gs_analysis_header-object_name ).
+    lo_info_grid->create_text(
+      row    = 1
+      column = 2
+      text   = gs_analysis_header-object_name ).
 
-  lo_info_grid->create_label(
-    row    = 2
-    column = 1
-    text   = TEXT-c19 ).
+    lo_info_grid->create_label(
+      row    = 2
+      column = 1
+      text   = TEXT-c19 ).
 
-  lo_info_grid->create_text(
-    row    = 2
-    column = 2
-    text   = CONV string( gs_analysis_header-checked_by ) ).
+    lo_info_grid->create_text(
+      row    = 2
+      column = 2
+      text   = CONV string( gs_analysis_header-checked_by ) ).
 
-  lo_info_grid->create_label(
-    row    = 3
-    column = 1
-    text   = TEXT-c21 ).
+    lo_info_grid->create_label(
+      row    = 3
+      column = 1
+      text   = TEXT-c21 ).
 
-  lo_info_grid->create_text(
-    row    = 3
-    column = 2
-    text   = gs_analysis_header-checked_on ).
+    lo_info_grid->create_text(
+      row    = 3
+      column = 2
+      text   = gs_analysis_header-checked_on ).
 
-  lo_info_grid->create_label(
-    row    = 4
-    column = 1
-    text   = TEXT-c22 ).
+    lo_info_grid->create_label(
+      row    = 4
+      column = 1
+      text   = TEXT-c22 ).
 
-  lo_info_grid->create_text(
-    row    = 4
-    column = 2
-    text   = |{ gs_analysis_header-checked_at TIME = USER }| ).
+    lo_info_grid->create_text(
+      row    = 4
+      column = 2
+      text   = |{ gs_analysis_header-checked_at TIME = USER }| ).
 
-  "---------------------------------------------------------
-  " Summary box bên phải
-  "---------------------------------------------------------
-  DATA(lo_grp_summary) = NEW cl_salv_form_groupbox(
-    header = CONV string( TEXT-c27 ) ).
+    "-------------
+    " Summary box
+    "-------------
+    DATA(lo_grp_summary) = NEW cl_salv_form_groupbox(
+      header = CONV string( TEXT-c27 ) ).
 
-  lo_grid_header->set_element(
-    row       = 1
-    column    = 3
-    r_element = lo_grp_summary ).
+    lo_grid_header->set_element(
+      row       = 1
+      column    = 3
+      r_element = lo_grp_summary ).
 
-  DATA(lo_sum_grid) = lo_grp_summary->create_grid( ).
+    DATA(lo_sum_grid) = lo_grp_summary->create_grid( ).
 
-  lo_sum_grid->create_label(
-    row    = 1
-    column = 1
-    text   = TEXT-c28 ).
+    lo_sum_grid->create_label(
+      row    = 1
+      column = 1
+      text   = TEXT-c28 ).
 
-  lo_sum_grid->create_text(
-    row    = 1
-    column = 2
-    text   = gv_current_view ).
+    lo_sum_grid->create_text(
+      row    = 1
+      column = 2
+      text   = gv_current_view ).
 
-  lo_sum_grid->create_label(
-    row    = 2
-    column = 1
-    text   = TEXT-c29 ).
+    lo_sum_grid->create_label(
+      row    = 2
+      column = 1
+      text   = TEXT-c29 ).
 
-  lo_sum_grid->create_text(
-    row    = 2
-    column = 2
-    text   = CONV string( iv_err_count ) ).
+    lo_sum_grid->create_text(
+      row    = 2
+      column = 2
+      text   = CONV string( iv_err_count ) ).
 
-  lo_sum_grid->create_label(
-    row    = 3
-    column = 1
-    text   = TEXT-c30 ).
+    lo_sum_grid->create_label(
+      row    = 3
+      column = 1
+      text   = TEXT-c30 ).
 
-  lo_sum_grid->create_text(
-    row    = 3
-    column = 2
-    text   = CONV string( iv_warn_count ) ).
+    lo_sum_grid->create_text(
+      row    = 3
+      column = 2
+      text   = CONV string( iv_warn_count ) ).
 
-  lo_sum_grid->create_label(
-    row    = 4
-    column = 1
-    text   = TEXT-c31 ).
+    lo_sum_grid->create_label(
+      row    = 4
+      column = 1
+      text   = TEXT-c31 ).
 
-  lo_sum_grid->create_text(
-    row    = 4
-    column = 2
-    text   = CONV string( iv_total_count ) ).
+    lo_sum_grid->create_text(
+      row    = 4
+      column = 2
+      text   = CONV string( iv_total_count ) ).
 
-  go_alv->set_top_of_list( lo_grid_header ).
+    go_alv->set_top_of_list( lo_grid_header ).
 
-ENDMETHOD.
+  ENDMETHOD.
 ENDCLASS.
