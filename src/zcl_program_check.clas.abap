@@ -581,7 +581,7 @@ PRIVATE SECTION.
       select_stmt          TYPE string VALUE `^\s*SELECT\b` ##NO_TEXT,
       select_all           TYPE string VALUE `^\s*SELECT\s+\*` ##NO_TEXT,
       sort_table           TYPE string VALUE `^\s*SORT\s+([A-Z][A-Z0-9_\->]*)\b` ##NO_TEXT,
-      fae_table            TYPE string VALUE `FOR\s+ALL\s+ENTRIES\s+IN\s+([A-Z0-9_<>\-]+)` ##NO_TEXT,
+      fae_table            TYPE string VALUE `FOR\s+ALL\s+ENTRIES\s+IN\s+@?([A-Z0-9_<>\-]+)` ##NO_TEXT,
       loop_filter_or_range TYPE string VALUE `\b(WHERE|FROM|TO)\b`,
       loop_assign_fs       TYPE string VALUE 'LOOP\s+AT\s+\S+.*\s+ASSIGNING\s+(?:FIELD-SYMBOL\s*\(\s*)?(<[A-Z0-9_]+>)(?:\s*\))?' ##NO_TEXT,
       fs_assign_sp         TYPE string VALUE '-* = *',

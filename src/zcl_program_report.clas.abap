@@ -4824,9 +4824,7 @@ ENDMETHOD.
         CONTINUE.
       ENDIF.
 
-      "------------------------------------------
       " A. PARAMETERS
-      "------------------------------------------
       IF lv_stmt_uc CP gc_scr_param1 OR lv_stmt_uc CP gc_scr_param2.
 
         lv_body = lv_stmt.
@@ -4916,9 +4914,7 @@ ENDMETHOD.
 
           APPEND ls_input TO cs_screen_layout-input_rows.
 
-          "------------------------------------------
           " Visual: Row / Column / Length
-          "------------------------------------------
           CLEAR ls_visual.
           ls_visual-field_name = lv_name.
 
@@ -5024,9 +5020,7 @@ ENDMETHOD.
         CONTINUE.
       ENDIF.
 
-      "------------------------------------------
       " B. SELECT-OPTIONS
-      "------------------------------------------
       IF lv_stmt_uc CP gc_scr_sel_opt1 OR lv_stmt_uc CP gc_scr_sel_opt2.
 
         lv_body = lv_stmt.
@@ -5204,9 +5198,7 @@ ENDMETHOD.
         CONTINUE.
       ENDIF.
 
-      "------------------------------------------
       " D. PUSHBUTTON
-      "------------------------------------------
       IF lv_stmt_uc CP gc_scr_pushbtn.
 
         CLEAR: ls_btn, lv_button, lv_desc.
@@ -5234,9 +5226,7 @@ ENDMETHOD.
         CONTINUE.
       ENDIF.
 
-      "------------------------------------------
       " C. MESSAGE / VALIDATION
-      "------------------------------------------
       IF lv_in_validation_block = abap_true AND lv_stmt_uc CS gc_scr_msg.
 
         CLEAR: ls_msg, lv_msgtype, lv_msgtxt.
