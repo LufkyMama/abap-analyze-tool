@@ -2757,62 +2757,172 @@ METHOD analyze_performance.
 
   CLEAR rt_errors.
 
+  "============================================================
+  " Local types
+  "============================================================
+  TYPES: BEGIN OF lty_stmt,
+           stmt_idx   TYPE i,
+           line       TYPE i,
+           first_word TYPE string,
+           text       TYPE string,
+           tokens     TYPE STANDARD TABLE OF string WITH EMPTY KEY,
+         END OF lty_stmt,
+         lty_t_stmt TYPE STANDARD TABLE OF lty_stmt WITH EMPTY KEY.
+
+  TYPES: BEGIN OF lty_name_kind,
+           name TYPE string,
+           kind TYPE string,
+         END OF lty_name_kind,
+         lty_t_name_kind TYPE HASHED TABLE OF lty_name_kind
+           WITH UNIQUE KEY name.
+
+  TYPES: BEGIN OF lty_guard,
+           table_name TYPE string,
+           scope      TYPE string,
+           level      TYPE i,
+         END OF lty_guard,
+         lty_t_guard TYPE STANDARD TABLE OF lty_guard WITH EMPTY KEY.
+
   TYPES: BEGIN OF lty_loop_ctx,
            table_name TYPE string,
-           is_light   TYPE abap_bool,
+           line       TYPE i,
          END OF lty_loop_ctx,
          lty_t_loop_ctx TYPE STANDARD TABLE OF lty_loop_ctx WITH EMPTY KEY.
 
-  DATA: ls_error TYPE zst_error.
+  "============================================================
+  " Local constants
+  "============================================================
+  CONSTANTS:
+    lc_scope_global TYPE string VALUE 'GLOBAL',
+    lc_scope_block  TYPE string VALUE 'BLOCK',
 
-  DATA: lv_line                TYPE string,
-        lv_line_uc             TYPE string,
-        lv_line_cd             TYPE string,
-        lv_code_only           TYPE string,
-        lv_code_cd             TYPE string,
-        lv_msg                 TYPE string,
-        lv_rule                TYPE string,
-        lv_line_idx            TYPE sy-tabix,
-        lv_table_name          TYPE string,
-        lv_is_light            TYPE abap_bool,
-        lv_loop_depth          TYPE i VALUE 0,
-        lv_heavy_depth         TYPE i VALUE 0,
-        ls_loop_ctx            TYPE lty_loop_ctx,
-        lt_loop_stack          TYPE lty_t_loop_ctx,
-        lv_fae_table           TYPE string,
-        lv_guard_found         TYPE abap_bool,
-        lv_has_filter_or_range TYPE abap_bool,
-        lv_back_idx            TYPE i,
-        lv_prev_line           TYPE string,
-        lv_prev_uc             TYPE string,
-        lv_prev_cd             TYPE string,
-        lv_pos_quote           TYPE i,
-        lv_prev_pos_quote      TYPE i,
-        lv_stack_lines         TYPE i,
-        lv_sort_table          TYPE string,
+    lc_kind_standard TYPE string VALUE 'STANDARD',
+    lc_kind_sorted   TYPE string VALUE 'SORTED',
+    lc_kind_hashed   TYPE string VALUE 'HASHED',
+    lc_kind_unknown  TYPE string VALUE 'UNKNOWN',
 
-        "--------------------------------------------------------
-        " READ TABLE collector
-        " Used to support multi-line READ TABLE statements.
-        " Do NOT clear these inside each LOOP AT it_source cycle.
-        "--------------------------------------------------------
-        lv_read_stmt           TYPE string,
-        lv_read_stmt_start     TYPE sy-tabix,
-        lv_in_read_stmt        TYPE abap_bool,
+    lc_kw_data        TYPE string VALUE 'DATA',
+    lc_kw_class_data  TYPE string VALUE 'CLASS-DATA',
+    lc_kw_statics     TYPE string VALUE 'STATICS',
+    lc_kw_types       TYPE string VALUE 'TYPES',
+    lc_kw_fs          TYPE string VALUE 'FIELD-SYMBOLS',
 
-        "--------------------------------------------------------
-        " Metadata-enrichment LOOP ignore logic
-        " Used to ignore loops that only assign values to <fs>-fields.
-        "--------------------------------------------------------
-        lv_loop_fs             TYPE string,
-        lv_is_enrich_loop      TYPE abap_bool,
-        lv_found_endloop       TYPE abap_bool,
-        lv_scan_idx            TYPE i,
-        lv_scan_line           TYPE string,
-        lv_scan_uc             TYPE string,
-        lv_scan_cd             TYPE string,
-        lv_scan_pos_quote      TYPE i.
+    lc_kw_type        TYPE string VALUE 'TYPE',
+    lc_kw_like        TYPE string VALUE 'LIKE',
+    lc_kw_standard    TYPE string VALUE 'STANDARD',
+    lc_kw_sorted      TYPE string VALUE 'SORTED',
+    lc_kw_hashed      TYPE string VALUE 'HASHED',
+    lc_kw_table       TYPE string VALUE 'TABLE',
+    lc_kw_of          TYPE string VALUE 'OF',
 
+    lc_kw_if          TYPE string VALUE 'IF',
+    lc_kw_else        TYPE string VALUE 'ELSE',
+    lc_kw_elseif      TYPE string VALUE 'ELSEIF',
+    lc_kw_endif       TYPE string VALUE 'ENDIF',
+
+    lc_kw_loop        TYPE string VALUE 'LOOP',
+    lc_kw_endloop     TYPE string VALUE 'ENDLOOP',
+    lc_kw_do          TYPE string VALUE 'DO',
+    lc_kw_enddo       TYPE string VALUE 'ENDDO',
+    lc_kw_while       TYPE string VALUE 'WHILE',
+    lc_kw_endwhile    TYPE string VALUE 'ENDWHILE',
+    lc_kw_case        TYPE string VALUE 'CASE',
+    lc_kw_endcase     TYPE string VALUE 'ENDCASE',
+
+    lc_kw_check       TYPE string VALUE 'CHECK',
+    lc_kw_assert      TYPE string VALUE 'ASSERT',
+    lc_kw_is          TYPE string VALUE 'IS',
+    lc_kw_not         TYPE string VALUE 'NOT',
+    lc_kw_initial     TYPE string VALUE 'INITIAL',
+
+    lc_kw_return      TYPE string VALUE 'RETURN',
+    lc_kw_exit        TYPE string VALUE 'EXIT',
+    lc_kw_continue    TYPE string VALUE 'CONTINUE',
+    lc_kw_raise       TYPE string VALUE 'RAISE',
+
+    lc_kw_clear       TYPE string VALUE 'CLEAR',
+    lc_kw_refresh     TYPE string VALUE 'REFRESH',
+    lc_kw_free        TYPE string VALUE 'FREE',
+    lc_kw_delete      TYPE string VALUE 'DELETE',
+
+    lc_kw_select      TYPE string VALUE 'SELECT',
+    lc_kw_sort        TYPE string VALUE 'SORT',
+    lc_kw_read        TYPE string VALUE 'READ',
+
+    lc_kw_for         TYPE string VALUE 'FOR',
+    lc_kw_all         TYPE string VALUE 'ALL',
+    lc_kw_entries     TYPE string VALUE 'ENTRIES',
+    lc_kw_in          TYPE string VALUE 'IN',
+    lc_kw_into        TYPE string VALUE 'INTO',
+
+    lc_kw_with        TYPE string VALUE 'WITH',
+    lc_kw_key         TYPE string VALUE 'KEY',
+    lc_kw_binary      TYPE string VALUE 'BINARY',
+    lc_kw_search      TYPE string VALUE 'SEARCH',
+    lc_kw_using       TYPE string VALUE 'USING',
+    lc_kw_where       TYPE string VALUE 'WHERE',
+    lc_kw_from        TYPE string VALUE 'FROM',
+    lc_kw_to          TYPE string VALUE 'TO',
+
+    lc_sym_colon      TYPE string VALUE ':',
+    lc_sym_comma      TYPE string VALUE ',',
+    lc_sym_equal      TYPE string VALUE '=',
+    lc_sym_star       TYPE string VALUE '*',
+    lc_sym_lbracket   TYPE string VALUE '[',
+    lc_sym_rbracket   TYPE string VALUE ']'.
+
+  "============================================================
+  " Local data
+  "============================================================
+  DATA:
+    lt_scan_tokens TYPE STANDARD TABLE OF stokex,
+    lt_scan_stmt   TYPE STANDARD TABLE OF sstmnt,
+    lt_stmt        TYPE lty_t_stmt,
+    lt_type_meta   TYPE lty_t_name_kind,
+    lt_itab_meta   TYPE lty_t_name_kind,
+    lt_guard       TYPE lty_t_guard,
+    lt_loop_stack  TYPE lty_t_loop_ctx,
+
+    ls_stmt        TYPE lty_stmt,
+    ls_error       TYPE zst_error,
+
+    lv_msg         TYPE string,
+    lv_rule        TYPE string,
+
+    lv_tok         TYPE string,
+    lv_prev        TYPE string,
+    lv_next        TYPE string,
+    lv_next2       TYPE string,
+    lv_next3       TYPE string,
+    lv_name        TYPE string,
+    lv_kind        TYPE string,
+    lv_idx         TYPE i,
+    lv_idx2        TYPE i,
+    lv_lines       TYPE i,
+
+    lv_block_level TYPE i VALUE 0,
+
+    lv_guard_tab   TYPE string,
+    lv_changed_tab TYPE string,
+    lv_fae_table   TYPE string,
+    lv_read_table  TYPE string,
+    lv_loop_table  TYPE string,
+    lv_sort_table  TYPE string,
+
+    lv_has_guard   TYPE abap_bool,
+    lv_has_reduce  TYPE abap_bool,
+    lv_exit_found  TYPE abap_bool,
+    lv_else_found  TYPE abap_bool,
+    lv_nested_if   TYPE i.
+
+  FIELD-SYMBOLS:
+    <ls_scan_stmt> TYPE sstmnt,
+    <ls_scan_tok>  TYPE stokex,
+    <lv_token>     TYPE string.
+
+  "============================================================
+  " Local macro: add performance error
+  "============================================================
   DEFINE add_perf_error.
     CLEAR ls_error.
     ls_error-line     = &1.
@@ -2823,137 +2933,669 @@ METHOD analyze_performance.
     APPEND ls_error TO rt_errors.
   END-OF-DEFINITION.
 
-  "------------------------------------------------------------
-  " READ TABLE collector must be cleared once before source scan,
-  "------------------------------------------------------------
-  CLEAR: lv_read_stmt,
-         lv_read_stmt_start,
-         lv_in_read_stmt.
+  "============================================================
+  " Step 1: Scan ABAP source into tokens and statements
+  "============================================================
+  SCAN ABAP-SOURCE it_source
+    TOKENS     INTO lt_scan_tokens
+    STATEMENTS INTO lt_scan_stmt
+    WITH ANALYSIS.
 
-  LOOP AT it_source INTO lv_line.
+  LOOP AT lt_scan_stmt ASSIGNING <ls_scan_stmt>.
 
-    CLEAR: ls_error,
-           lv_line_uc,
-           lv_line_cd,
-           lv_code_only,
-           lv_code_cd,
-           lv_msg,
-           lv_rule,
-           lv_table_name,
-           lv_is_light,
-           lv_pos_quote.
+    CLEAR ls_stmt.
+    ls_stmt-stmt_idx = sy-tabix.
 
-    lv_line_idx = sy-tabix.
+    LOOP AT lt_scan_tokens ASSIGNING <ls_scan_tok>
+      FROM <ls_scan_stmt>-from
+      TO   <ls_scan_stmt>-to.
 
-    "------------------------------------------------------------
-    " Prepare uppercase and condensed line
-    "------------------------------------------------------------
-    lv_line_uc = lv_line.
-    TRANSLATE lv_line_uc TO UPPER CASE.
+      lv_tok = <ls_scan_tok>-str.
+      TRANSLATE lv_tok TO UPPER CASE.
 
-    lv_line_cd = lv_line_uc.
-    CONDENSE lv_line_cd.
+      " Normalize escaped host variable: @lt_tab -> LT_TAB
+      IF lv_tok CP '@*'.
+        SHIFT lv_tok LEFT DELETING LEADING '@'.
+      ENDIF.
 
-    "------------------------------------------------------------
-    " Skip empty lines / full-line comments
-    "------------------------------------------------------------
-    IF lv_line_cd IS INITIAL.
-      CONTINUE.
-    ENDIF.
+      " Normalize table body notation if token is LT_TAB[]
+      REPLACE ALL OCCURRENCES OF '[]' IN lv_tok WITH ''.
 
-    IF lv_line_cd+0(1) = gc_keyword-star.
-      CONTINUE.
-    ENDIF.
+      APPEND lv_tok TO ls_stmt-tokens.
 
-    "------------------------------------------------------------
-    " Remove inline comment part
-    "------------------------------------------------------------
-    lv_code_only = lv_line_uc.
+      IF ls_stmt-line IS INITIAL
+         OR <ls_scan_tok>-row < ls_stmt-line.
+        ls_stmt-line = <ls_scan_tok>-row.
+      ENDIF.
 
-    FIND FIRST OCCURRENCE OF gc_keyword-quote
-      IN lv_code_only
-      MATCH OFFSET lv_pos_quote.
+      IF ls_stmt-text IS INITIAL.
+        ls_stmt-text = lv_tok.
+      ELSE.
+        ls_stmt-text = |{ ls_stmt-text } { lv_tok }|.
+      ENDIF.
 
-    IF sy-subrc = 0.
-      lv_code_only = lv_code_only(lv_pos_quote).
-    ENDIF.
+    ENDLOOP.
 
-    lv_code_cd = lv_code_only.
-    CONDENSE lv_code_cd.
+    READ TABLE ls_stmt-tokens INDEX 1 INTO ls_stmt-first_word.
+    APPEND ls_stmt TO lt_stmt.
 
-    IF lv_code_cd IS INITIAL.
-      CONTINUE.
-    ENDIF.
+  ENDLOOP.
 
-    "------------------------------------------------------------
-    " Check 0: FOR ALL ENTRIES without IS NOT INITIAL guard
-    " Supports both:
-    "   FOR ALL ENTRIES IN lt_tab
-    "   FOR ALL ENTRIES IN @lt_tab
-    "------------------------------------------------------------
-    CLEAR: lv_fae_table,
-           lv_guard_found.
+  "============================================================
+  " Step 2: Collect local table/type metadata
+  " Purpose:
+  "   - STANDARD TABLE -> READ TABLE may need BINARY SEARCH
+  "   - SORTED/HASHED TABLE -> do not suggest BINARY SEARCH
+  "============================================================
+  LOOP AT lt_stmt INTO ls_stmt.
 
-    FIND PCRE gc_perf_regex-fae_table
-      IN lv_code_cd
-      SUBMATCHES lv_fae_table.
+    CHECK ls_stmt-first_word = lc_kw_types
+       OR ls_stmt-first_word = lc_kw_data
+       OR ls_stmt-first_word = lc_kw_class_data
+       OR ls_stmt-first_word = lc_kw_statics
+       OR ls_stmt-first_word = lc_kw_fs.
 
-    IF sy-subrc = 0 AND lv_fae_table IS NOT INITIAL.
+    lv_lines = lines( ls_stmt-tokens ).
 
-      lv_guard_found = abap_false.
+    DO lv_lines TIMES.
 
-      DO gc_perf_cfg-fae_guard_lookback TIMES.
+      lv_idx = sy-index.
 
-        lv_back_idx = lv_line_idx - sy-index.
+      CLEAR: lv_tok, lv_prev, lv_next, lv_next2, lv_kind, lv_name.
 
-        IF lv_back_idx <= gc_perf_cfg-zero.
-          EXIT.
+      READ TABLE ls_stmt-tokens INDEX lv_idx INTO lv_tok.
+      IF sy-subrc <> 0.
+        CONTINUE.
+      ENDIF.
+
+      CHECK lv_tok = lc_kw_type OR lv_tok = lc_kw_like.
+
+      READ TABLE ls_stmt-tokens INDEX lv_idx - 1 INTO lv_prev.
+      READ TABLE ls_stmt-tokens INDEX lv_idx + 1 INTO lv_next.
+      READ TABLE ls_stmt-tokens INDEX lv_idx + 2 INTO lv_next2.
+
+      lv_name = lv_prev.
+
+      IF lv_name IS INITIAL
+         OR lv_name = lc_sym_colon
+         OR lv_name = lc_sym_comma.
+        CONTINUE.
+      ENDIF.
+
+      REPLACE ALL OCCURRENCES OF '@'  IN lv_name WITH ''.
+      REPLACE ALL OCCURRENCES OF '[]' IN lv_name WITH ''.
+
+      CLEAR lv_kind.
+
+      " Direct table declaration
+      IF lv_next = lc_kw_standard
+         AND lv_next2 = lc_kw_table.
+
+        lv_kind = lc_kind_standard.
+
+      ELSEIF lv_next = lc_kw_sorted
+         AND lv_next2 = lc_kw_table.
+
+        lv_kind = lc_kind_sorted.
+
+      ELSEIF lv_next = lc_kw_hashed
+         AND lv_next2 = lc_kw_table.
+
+        lv_kind = lc_kind_hashed.
+
+      ELSEIF lv_next = lc_kw_table
+         AND lv_next2 = lc_kw_of.
+
+        " TYPE TABLE OF ... means STANDARD TABLE by default
+        lv_kind = lc_kind_standard.
+
+      ELSE.
+
+        " Declaration by local table type:
+        "   TYPES ty_t_x TYPE STANDARD TABLE OF ...
+        "   DATA lt_x TYPE ty_t_x.
+        READ TABLE lt_type_meta INTO DATA(ls_type_meta)
+          WITH TABLE KEY name = lv_next.
+
+        IF sy-subrc = 0.
+          lv_kind = ls_type_meta-kind.
         ENDIF.
 
-        CLEAR: lv_prev_line,
-               lv_prev_uc,
-               lv_prev_cd,
-               lv_prev_pos_quote.
+      ENDIF.
 
-        READ TABLE it_source INTO lv_prev_line INDEX lv_back_idx.
+      IF lv_kind IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      IF ls_stmt-first_word = lc_kw_types.
+
+        DELETE TABLE lt_type_meta WITH TABLE KEY name = lv_name.
+        INSERT VALUE #( name = lv_name
+                        kind = lv_kind ) INTO TABLE lt_type_meta.
+
+      ELSE.
+
+        DELETE TABLE lt_itab_meta WITH TABLE KEY name = lv_name.
+        INSERT VALUE #( name = lv_name
+                        kind = lv_kind ) INTO TABLE lt_itab_meta.
+
+      ENDIF.
+
+    ENDDO.
+
+  ENDLOOP.
+
+  "============================================================
+  " Step 3: Analyze performance rules by statement context
+  "============================================================
+  LOOP AT lt_stmt INTO ls_stmt.
+
+    lv_idx = sy-tabix.
+
+    "----------------------------------------------------------
+    " 3.1 End of block handling
+    "----------------------------------------------------------
+    IF ls_stmt-first_word = lc_kw_endif
+       OR ls_stmt-first_word = lc_kw_endcase
+       OR ls_stmt-first_word = lc_kw_enddo
+       OR ls_stmt-first_word = lc_kw_endwhile
+       OR ls_stmt-first_word = lc_kw_endloop.
+
+      DELETE lt_guard
+        WHERE scope = lc_scope_block
+          AND level >= lv_block_level.
+
+      IF ls_stmt-first_word = lc_kw_endloop.
+
+        lv_lines = lines( lt_loop_stack ).
+
+        IF lv_lines > 0.
+          DELETE lt_loop_stack INDEX lv_lines.
+        ENDIF.
+
+      ENDIF.
+
+      IF lv_block_level > 0.
+        lv_block_level = lv_block_level - 1.
+      ENDIF.
+
+      CONTINUE.
+
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.2 ELSE / ELSEIF handling
+    " Guard from IF branch must not leak into ELSE branch.
+    "----------------------------------------------------------
+    IF ls_stmt-first_word = lc_kw_else
+       OR ls_stmt-first_word = lc_kw_elseif.
+
+      DELETE lt_guard
+        WHERE scope = lc_scope_block
+          AND level = lv_block_level.
+
+      " ELSEIF lt_tab IS NOT INITIAL.
+      IF ls_stmt-first_word = lc_kw_elseif.
+
+        CLEAR lv_guard_tab.
+
+        lv_lines = lines( ls_stmt-tokens ).
+
+        DO lv_lines TIMES.
+
+          READ TABLE ls_stmt-tokens INDEX sy-index INTO lv_tok.
+          IF sy-subrc <> 0.
+            CONTINUE.
+          ENDIF.
+
+          IF lv_tok = lc_kw_is.
+
+            READ TABLE ls_stmt-tokens INDEX sy-index - 1 INTO lv_prev.
+            READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
+            READ TABLE ls_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
+
+            IF lv_next = lc_kw_not
+               AND lv_next2 = lc_kw_initial.
+
+              lv_guard_tab = lv_prev.
+              EXIT.
+
+            ENDIF.
+
+          ENDIF.
+
+        ENDDO.
+
+        IF lv_guard_tab IS NOT INITIAL.
+
+          REPLACE ALL OCCURRENCES OF '@'  IN lv_guard_tab WITH ''.
+          REPLACE ALL OCCURRENCES OF '[]' IN lv_guard_tab WITH ''.
+
+          APPEND VALUE #( table_name = lv_guard_tab
+                          scope      = lc_scope_block
+                          level      = lv_block_level ) TO lt_guard.
+
+        ENDIF.
+
+      ENDIF.
+
+      CONTINUE.
+
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.3 Start block handling
+    "----------------------------------------------------------
+    IF ls_stmt-first_word = lc_kw_if
+       OR ls_stmt-first_word = lc_kw_case
+       OR ls_stmt-first_word = lc_kw_do
+       OR ls_stmt-first_word = lc_kw_while.
+
+      lv_block_level = lv_block_level + 1.
+
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.4 IF/CHECK/ASSERT guard detection for FOR ALL ENTRIES
+    " Supports:
+    "   CHECK lt_tab IS NOT INITIAL.
+    "   IF lt_tab IS NOT INITIAL. ... SELECT FAE ... ENDIF.
+    "   IF lt_tab IS INITIAL. RETURN/EXIT/CONTINUE/RAISE ... ENDIF.
+    "----------------------------------------------------------
+    IF ls_stmt-first_word = lc_kw_check
+       OR ls_stmt-first_word = lc_kw_assert
+       OR ls_stmt-first_word = lc_kw_if.
+
+      CLEAR lv_guard_tab.
+
+      lv_lines = lines( ls_stmt-tokens ).
+
+      DO lv_lines TIMES.
+
+        READ TABLE ls_stmt-tokens INDEX sy-index INTO lv_tok.
         IF sy-subrc <> 0.
           CONTINUE.
         ENDIF.
 
-        lv_prev_uc = lv_prev_line.
-        TRANSLATE lv_prev_uc TO UPPER CASE.
+        IF lv_tok = lc_kw_is.
 
-        FIND FIRST OCCURRENCE OF gc_keyword-quote
-          IN lv_prev_uc
-          MATCH OFFSET lv_prev_pos_quote.
+          READ TABLE ls_stmt-tokens INDEX sy-index - 1 INTO lv_prev.
+          READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
+          READ TABLE ls_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
 
-        IF sy-subrc = 0.
-          lv_prev_uc = lv_prev_uc(lv_prev_pos_quote).
-        ENDIF.
+          " lt_tab IS NOT INITIAL
+          IF lv_next = lc_kw_not
+             AND lv_next2 = lc_kw_initial.
 
-        lv_prev_cd = lv_prev_uc.
-        CONDENSE lv_prev_cd.
+            lv_guard_tab = lv_prev.
+            EXIT.
 
-        IF lv_prev_cd IS INITIAL.
-          CONTINUE.
-        ENDIF.
-
-        IF lv_prev_cd+0(1) = gc_keyword-star.
-          CONTINUE.
-        ENDIF.
-
-        IF lv_prev_cd CP |{ gc_perf_guard-if_kw } { lv_fae_table } { gc_perf_guard-is_not_initial_pat }|
-           OR lv_prev_cd CP |{ gc_perf_guard-check_kw } { lv_fae_table } { gc_perf_guard-is_not_initial_pat }|
-           OR lv_prev_cd CP |{ gc_perf_guard-assert_kw } { lv_fae_table } { gc_perf_guard-is_not_initial_pat }|.
-
-          lv_guard_found = abap_true.
-          EXIT.
+          ENDIF.
 
         ENDIF.
 
       ENDDO.
 
-      IF lv_guard_found = abap_false.
+      IF lv_guard_tab IS NOT INITIAL.
+
+        REPLACE ALL OCCURRENCES OF '@'  IN lv_guard_tab WITH ''.
+        REPLACE ALL OCCURRENCES OF '[]' IN lv_guard_tab WITH ''.
+
+        IF ls_stmt-first_word = lc_kw_if.
+
+          " Guard is valid only inside IF branch
+          APPEND VALUE #( table_name = lv_guard_tab
+                          scope      = lc_scope_block
+                          level      = lv_block_level ) TO lt_guard.
+
+        ELSE.
+
+          " CHECK at top-level protects the following code.
+          " CHECK inside a block protects the following statements in that block.
+          APPEND VALUE #( table_name = lv_guard_tab
+                          scope      = COND string(
+                                         WHEN lv_block_level > 0
+                                         THEN lc_scope_block
+                                         ELSE lc_scope_global )
+                          level      = lv_block_level ) TO lt_guard.
+
+        ENDIF.
+
+      ENDIF.
+
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.5 IF lt_tab IS INITIAL. RETURN/EXIT/CONTINUE/RAISE. ENDIF.
+    " This means code after the IF is guarded, even if SELECT is not
+    " directly wrapped by IF lt_tab IS NOT INITIAL.
+    "----------------------------------------------------------
+    IF ls_stmt-first_word = lc_kw_if.
+
+      CLEAR: lv_guard_tab,
+             lv_exit_found,
+             lv_else_found,
+             lv_nested_if.
+
+      lv_lines = lines( ls_stmt-tokens ).
+
+      DO lv_lines TIMES.
+
+        READ TABLE ls_stmt-tokens INDEX sy-index INTO lv_tok.
+        IF sy-subrc <> 0.
+          CONTINUE.
+        ENDIF.
+
+        IF lv_tok = lc_kw_is.
+
+          READ TABLE ls_stmt-tokens INDEX sy-index - 1 INTO lv_prev.
+          READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
+
+          " lt_tab IS INITIAL
+          IF lv_next = lc_kw_initial.
+            lv_guard_tab = lv_prev.
+            EXIT.
+          ENDIF.
+
+        ENDIF.
+
+      ENDDO.
+
+      IF lv_guard_tab IS NOT INITIAL.
+
+        REPLACE ALL OCCURRENCES OF '@'  IN lv_guard_tab WITH ''.
+        REPLACE ALL OCCURRENCES OF '[]' IN lv_guard_tab WITH ''.
+
+        " Look ahead until matching ENDIF
+        lv_idx2 = lv_idx.
+
+        WHILE lv_idx2 < lines( lt_stmt ).
+
+          lv_idx2 = lv_idx2 + 1.
+
+          READ TABLE lt_stmt INTO DATA(ls_ahead) INDEX lv_idx2.
+          IF sy-subrc <> 0.
+            EXIT.
+          ENDIF.
+
+          IF ls_ahead-first_word = lc_kw_if.
+            lv_nested_if = lv_nested_if + 1.
+            CONTINUE.
+          ENDIF.
+
+          IF ls_ahead-first_word = lc_kw_endif.
+
+            IF lv_nested_if > 0.
+              lv_nested_if = lv_nested_if - 1.
+              CONTINUE.
+            ELSE.
+              EXIT.
+            ENDIF.
+
+          ENDIF.
+
+          CHECK lv_nested_if = 0.
+
+          IF ls_ahead-first_word = lc_kw_else
+             OR ls_ahead-first_word = lc_kw_elseif.
+            lv_else_found = abap_true.
+            EXIT.
+          ENDIF.
+
+          IF ls_ahead-first_word = lc_kw_return
+             OR ls_ahead-first_word = lc_kw_exit
+             OR ls_ahead-first_word = lc_kw_continue
+             OR ls_ahead-first_word = lc_kw_raise.
+
+            lv_exit_found = abap_true.
+
+          ENDIF.
+
+        ENDWHILE.
+
+        IF lv_exit_found = abap_true
+           AND lv_else_found = abap_false.
+
+          APPEND VALUE #( table_name = lv_guard_tab
+                          scope      = COND string(
+                                         WHEN lv_block_level > 0
+                                         THEN lc_scope_block
+                                         ELSE lc_scope_global )
+                          level      = lv_block_level ) TO lt_guard.
+
+        ENDIF.
+
+      ENDIF.
+
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.6 Invalidate FAE guards if table content may be reset
+    "----------------------------------------------------------
+    CLEAR lv_changed_tab.
+
+    IF ls_stmt-first_word = lc_kw_clear
+       OR ls_stmt-first_word = lc_kw_refresh
+       OR ls_stmt-first_word = lc_kw_free.
+
+      LOOP AT ls_stmt-tokens INTO lv_changed_tab FROM 2.
+
+        IF lv_changed_tab IS INITIAL
+           OR lv_changed_tab = lc_sym_colon
+           OR lv_changed_tab = lc_sym_comma.
+          CONTINUE.
+        ENDIF.
+
+        REPLACE ALL OCCURRENCES OF '@'  IN lv_changed_tab WITH ''.
+        REPLACE ALL OCCURRENCES OF '[]' IN lv_changed_tab WITH ''.
+
+        DELETE lt_guard WHERE table_name = lv_changed_tab.
+
+      ENDLOOP.
+
+    ELSEIF ls_stmt-first_word = lc_kw_delete.
+
+      READ TABLE ls_stmt-tokens INDEX 2 INTO lv_changed_tab.
+
+      IF lv_changed_tab = lc_kw_table.
+        READ TABLE ls_stmt-tokens INDEX 3 INTO lv_changed_tab.
+      ENDIF.
+
+      IF lv_changed_tab IS NOT INITIAL.
+
+        REPLACE ALL OCCURRENCES OF '@'  IN lv_changed_tab WITH ''.
+        REPLACE ALL OCCURRENCES OF '[]' IN lv_changed_tab WITH ''.
+
+        DELETE lt_guard WHERE table_name = lv_changed_tab.
+
+      ENDIF.
+
+    ELSE.
+
+      " Assignment: lt_tab = ...
+      READ TABLE ls_stmt-tokens INDEX 2 INTO lv_tok.
+
+      IF lv_tok = lc_sym_equal.
+
+        READ TABLE ls_stmt-tokens INDEX 1 INTO lv_changed_tab.
+
+        REPLACE ALL OCCURRENCES OF '@'  IN lv_changed_tab WITH ''.
+        REPLACE ALL OCCURRENCES OF '[]' IN lv_changed_tab WITH ''.
+
+        DELETE lt_guard WHERE table_name = lv_changed_tab.
+
+      ENDIF.
+
+      " SELECT ... INTO TABLE lt_tab resets/fills table, result may be empty
+      IF ls_stmt-first_word = lc_kw_select.
+
+        lv_lines = lines( ls_stmt-tokens ).
+
+        DO lv_lines TIMES.
+
+          READ TABLE ls_stmt-tokens INDEX sy-index INTO lv_tok.
+          IF sy-subrc <> 0.
+            CONTINUE.
+          ENDIF.
+
+          IF lv_tok = lc_kw_into.
+
+            READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
+            READ TABLE ls_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
+
+            IF lv_next = lc_kw_table
+               AND lv_next2 IS NOT INITIAL.
+
+              lv_changed_tab = lv_next2.
+
+              REPLACE ALL OCCURRENCES OF '@'  IN lv_changed_tab WITH ''.
+              REPLACE ALL OCCURRENCES OF '[]' IN lv_changed_tab WITH ''.
+
+              DELETE lt_guard WHERE table_name = lv_changed_tab.
+
+              EXIT.
+
+            ENDIF.
+
+          ENDIF.
+
+        ENDDO.
+
+      ENDIF.
+
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.7 LOOP AT handling + nested loop detection
+    " A nested loop means:
+    "   current LOOP AT starts while another LOOP AT has not ended yet.
+    "----------------------------------------------------------
+    IF ls_stmt-first_word = lc_kw_loop
+       AND ls_stmt-text CS 'LOOP AT'.
+
+      CLEAR: lv_loop_table,
+             lv_has_reduce.
+
+      READ TABLE ls_stmt-tokens INDEX 3 INTO lv_loop_table.
+
+      IF lv_loop_table IS INITIAL.
+        lv_loop_table = gc_obj_type-unknown.
+      ENDIF.
+
+      REPLACE ALL OCCURRENCES OF '@'  IN lv_loop_table WITH ''.
+      REPLACE ALL OCCURRENCES OF '[]' IN lv_loop_table WITH ''.
+
+      IF ls_stmt-text CS lc_kw_where
+         OR ls_stmt-text CS lc_kw_from
+         OR ls_stmt-text CS lc_kw_to
+         OR ls_stmt-text CS 'USING KEY'.
+
+        lv_has_reduce = abap_true.
+
+      ENDIF.
+
+      IF lines( lt_loop_stack ) > 0.
+
+        lv_rule = gc_rule_perf-nested_loop.
+
+        IF lv_has_reduce = abap_true.
+
+          MESSAGE w078(z_gsp04_message)
+            WITH lv_loop_table
+            INTO lv_msg.
+
+          add_perf_error ls_stmt-line gc_severity-warning lv_msg lv_rule.
+
+        ELSE.
+
+          MESSAGE e037(z_gsp04_message)
+            WITH lv_loop_table
+            INTO lv_msg.
+
+          add_perf_error ls_stmt-line gc_severity-error lv_msg lv_rule.
+
+        ENDIF.
+
+      ENDIF.
+
+      APPEND VALUE #( table_name = lv_loop_table
+                      line       = ls_stmt-line ) TO lt_loop_stack.
+
+      lv_block_level = lv_block_level + 1.
+
+      CONTINUE.
+
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.8 SELECT * detection
+    " Exclude COUNT(*), because it is not fetching all columns.
+    "----------------------------------------------------------
+    IF ls_stmt-first_word = lc_kw_select
+       AND ls_stmt-text CS lc_sym_star
+       AND ls_stmt-text NS 'COUNT ( * )'
+       AND ls_stmt-text NS 'COUNT(*)'.
+
+      lv_rule = gc_rule_perf-select_star.
+
+      MESSAGE e036(z_gsp04_message)
+        INTO lv_msg.
+
+      add_perf_error ls_stmt-line gc_severity-error lv_msg lv_rule.
+
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.9 FOR ALL ENTRIES guard check
+    " Does not require IF to directly wrap SELECT.
+    " It only requires that the FAE table was already proven non-empty
+    " and not reset before this SELECT.
+    "----------------------------------------------------------
+    CLEAR lv_fae_table.
+
+    lv_lines = lines( ls_stmt-tokens ).
+
+    DO lv_lines TIMES.
+
+      READ TABLE ls_stmt-tokens INDEX sy-index INTO lv_tok.
+      IF sy-subrc <> 0.
+        CONTINUE.
+      ENDIF.
+
+      IF lv_tok = lc_kw_for.
+
+        READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
+        READ TABLE ls_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
+        READ TABLE ls_stmt-tokens INDEX sy-index + 3 INTO lv_next3.
+
+        IF lv_next  = lc_kw_all
+           AND lv_next2 = lc_kw_entries
+           AND lv_next3 = lc_kw_in.
+
+          READ TABLE ls_stmt-tokens INDEX sy-index + 4 INTO lv_fae_table.
+          EXIT.
+
+        ENDIF.
+
+      ENDIF.
+
+    ENDDO.
+
+    IF lv_fae_table IS NOT INITIAL.
+
+      REPLACE ALL OCCURRENCES OF '@'  IN lv_fae_table WITH ''.
+      REPLACE ALL OCCURRENCES OF '[]' IN lv_fae_table WITH ''.
+
+      lv_has_guard = abap_false.
+
+      READ TABLE lt_guard TRANSPORTING NO FIELDS
+        WITH KEY table_name = lv_fae_table.
+
+      IF sy-subrc = 0.
+        lv_has_guard = abap_true.
+      ENDIF.
+
+      IF lv_has_guard = abap_false.
 
         lv_rule = gc_rule_perf-fae_empty_check.
 
@@ -2961,328 +3603,111 @@ METHOD analyze_performance.
           WITH lv_fae_table
           INTO lv_msg.
 
-        add_perf_error lv_line_idx gc_severity-error lv_msg lv_rule.
+        add_perf_error ls_stmt-line gc_severity-error lv_msg lv_rule.
 
       ENDIF.
 
     ENDIF.
 
-    "------------------------------------------------------------
-    " Check 1: SELECT *
-    "------------------------------------------------------------
-    FIND PCRE gc_perf_regex-select_all
-      IN lv_code_cd.
+    "----------------------------------------------------------
+    " 3.10 SELECT inside LOOP
+    "----------------------------------------------------------
+    IF lines( lt_loop_stack ) > 0
+       AND ls_stmt-first_word = lc_kw_select.
 
-    IF sy-subrc = 0.
+      lv_rule = gc_rule_perf-select_in_loop.
 
-      lv_rule = gc_rule_perf-select_star.
-
-      MESSAGE e036(z_gsp04_message)
+      MESSAGE e038(z_gsp04_message)
         INTO lv_msg.
 
-      add_perf_error lv_line_idx gc_severity-error lv_msg lv_rule.
+      add_perf_error ls_stmt-line gc_severity-error lv_msg lv_rule.
 
     ENDIF.
 
-    "------------------------------------------------------------
-    " Detect LOOP AT table name
-    "------------------------------------------------------------
-    IF lv_code_cd CS gc_perf_kw-loop_at.
-
-      CLEAR lv_table_name.
-
-      FIND PCRE gc_perf_regex-loop_at_table
-        IN lv_code_cd
-        SUBMATCHES lv_table_name.
-
-      IF lv_table_name IS INITIAL.
-        lv_table_name = gc_obj_type-unknown.
-      ENDIF.
-
-      "----------------------------------------------------------
-      " Default:
-      "   Treat LOOP as heavy enough to be reviewed.
-      "----------------------------------------------------------
-      lv_is_light = abap_false.
-
-      "----------------------------------------------------------
-      " Ignore metadata-enrichment LOOP
-      "----------------------------------------------------------
-      CLEAR: lv_loop_fs,
-             lv_is_enrich_loop,
-             lv_found_endloop.
-
-      FIND PCRE gc_perf_regex-loop_assign_fs
-        IN lv_code_cd
-        SUBMATCHES lv_loop_fs.
-
-      IF sy-subrc = 0
-         AND lv_loop_fs IS NOT INITIAL.
-
-        lv_is_enrich_loop = abap_true.
-
-        DO 30 TIMES.
-
-          lv_scan_idx = lv_line_idx + sy-index.
-
-          CLEAR: lv_scan_line,
-                 lv_scan_uc,
-                 lv_scan_cd,
-                 lv_scan_pos_quote.
-
-          READ TABLE it_source INTO lv_scan_line INDEX lv_scan_idx.
-          IF sy-subrc <> 0.
-            EXIT.
-          ENDIF.
-
-          lv_scan_uc = lv_scan_line.
-          TRANSLATE lv_scan_uc TO UPPER CASE.
-
-          FIND FIRST OCCURRENCE OF gc_keyword-quote
-            IN lv_scan_uc
-            MATCH OFFSET lv_scan_pos_quote.
-
-          IF sy-subrc = 0.
-            lv_scan_uc = lv_scan_uc(lv_scan_pos_quote).
-          ENDIF.
-
-          lv_scan_cd = lv_scan_uc.
-          CONDENSE lv_scan_cd.
-
-          IF lv_scan_cd IS INITIAL.
-            CONTINUE.
-          ENDIF.
-
-          IF lv_scan_cd+0(1) = gc_keyword-star.
-            CONTINUE.
-          ENDIF.
-
-          " End of the current enrichment loop
-          IF lv_scan_cd CS gc_perf_kw-endloop.
-            lv_found_endloop = abap_true.
-            EXIT.
-          ENDIF.
-
-          " If loop body contains heavy operations, do not ignore it
-          IF lv_scan_cd CS gc_perf_kw-loop_at
-             OR lv_scan_cd CS gc_perf_kw-read_table
-             OR lv_scan_cd CS gc_perf_kw-sort
-             OR lv_scan_cd CS gc_perf_kw-select
-             OR lv_scan_cd CS gc_keyword-call.
-
-            lv_is_enrich_loop = abap_false.
-            EXIT.
-
-          ENDIF.
-
-          IF lv_scan_cd CP |{ lv_loop_fs }{ gc_perf_regex-fs_assign_sp }|
-             OR lv_scan_cd CP |{ lv_loop_fs }{ gc_perf_regex-fs_assign }|.
-
-            CONTINUE.
-
-          ENDIF.
-
-          lv_is_enrich_loop = abap_false.
-          EXIT.
-
-        ENDDO.
-
-        IF lv_found_endloop = abap_false.
-          lv_is_enrich_loop = abap_false.
-        ENDIF.
-
-        IF lv_is_enrich_loop = abap_true.
-          lv_is_light = abap_true.
-        ENDIF.
-
-      ENDIF.
-
-      "----------------------------------------------------------
-      " Nested LOOP only if current context already contains heavy loop
-      " and the current loop is not a metadata-enrichment loop.
-      "----------------------------------------------------------
-      IF lv_heavy_depth >= gc_perf_cfg-heavy_depth_min
-         AND lv_is_light = abap_false.
-
-        CLEAR lv_has_filter_or_range.
-
-        FIND PCRE gc_perf_regex-loop_filter_or_range
-          IN lv_code_cd.
-
-        IF sy-subrc = 0.
-          lv_has_filter_or_range = abap_true.
-        ENDIF.
-
-        lv_rule = gc_rule_perf-nested_loop.
-
-        IF lv_has_filter_or_range = abap_true.
-
-          MESSAGE w078(z_gsp04_message)
-            WITH lv_table_name
-            INTO lv_msg.
-
-          add_perf_error lv_line_idx gc_severity-warning lv_msg lv_rule.
-
-        ELSE.
-
-          MESSAGE e037(z_gsp04_message)
-            WITH lv_table_name
-            INTO lv_msg.
-
-          add_perf_error lv_line_idx gc_severity-error lv_msg lv_rule.
-
-        ENDIF.
-
-      ENDIF.
-
-      CLEAR ls_loop_ctx.
-      ls_loop_ctx-table_name = lv_table_name.
-      ls_loop_ctx-is_light   = lv_is_light.
-      APPEND ls_loop_ctx TO lt_loop_stack.
-
-      lv_loop_depth = lv_loop_depth + 1.
-
-      IF lv_is_light = abap_false.
-        lv_heavy_depth = lv_heavy_depth + 1.
-      ENDIF.
-
-      CONTINUE.
-
-    ENDIF.
-
-    "------------------------------------------------------------
-    " Check 2: SELECT inside heavy LOOP
-    "------------------------------------------------------------
-    IF lv_heavy_depth >= gc_perf_cfg-heavy_depth_min.
-
-      FIND PCRE gc_perf_regex-select_stmt
-        IN lv_code_cd.
-
-      IF sy-subrc = 0.
-
-        lv_rule = gc_rule_perf-select_in_loop.
-
-        MESSAGE e038(z_gsp04_message)
-          INTO lv_msg.
-
-        add_perf_error lv_line_idx gc_severity-error lv_msg lv_rule.
-
-      ENDIF.
-
-    ENDIF.
-
-    "------------------------------------------------------------
-    " Check 3: SORT inside heavy LOOP
-    "------------------------------------------------------------
-    IF lv_heavy_depth >= gc_perf_cfg-heavy_depth_min.
+    "----------------------------------------------------------
+    " 3.11 SORT inside LOOP
+    "----------------------------------------------------------
+    IF lines( lt_loop_stack ) > 0
+       AND ls_stmt-first_word = lc_kw_sort.
 
       CLEAR lv_sort_table.
+      READ TABLE ls_stmt-tokens INDEX 2 INTO lv_sort_table.
 
-      FIND PCRE gc_perf_regex-sort_table
-        IN lv_code_cd
-        SUBMATCHES lv_sort_table.
-
-      IF sy-subrc = 0.
-
-        IF lv_sort_table IS INITIAL.
-          lv_sort_table = gc_obj_type-unknown.
-        ENDIF.
-
-        lv_rule = gc_rule_perf-sort_in_loop.
-
-        MESSAGE e084(z_gsp04_message)
-          WITH lv_sort_table
-          INTO lv_msg.
-
-        add_perf_error lv_line_idx gc_severity-error lv_msg lv_rule.
-
+      IF lv_sort_table IS INITIAL.
+        lv_sort_table = gc_obj_type-unknown.
       ENDIF.
 
-    ENDIF.
+      REPLACE ALL OCCURRENCES OF '@'  IN lv_sort_table WITH ''.
+      REPLACE ALL OCCURRENCES OF '[]' IN lv_sort_table WITH ''.
 
-    "------------------------------------------------------------
-    " Check 4: READ TABLE ... WITH KEY
-    " Supports both single-line and multi-line statements.
-    "------------------------------------------------------------
-    IF lv_in_read_stmt = abap_false
-       AND lv_code_cd CS gc_perf_kw-read_table.
+      lv_rule = gc_rule_perf-sort_in_loop.
 
-      lv_in_read_stmt    = abap_true.
-      lv_read_stmt       = lv_code_cd.
-      lv_read_stmt_start = lv_line_idx.
+      MESSAGE e084(z_gsp04_message)
+        WITH lv_sort_table
+        INTO lv_msg.
 
-    ELSEIF lv_in_read_stmt = abap_true.
-
-      lv_read_stmt = |{ lv_read_stmt } { lv_code_cd }|.
+      add_perf_error ls_stmt-line gc_severity-error lv_msg lv_rule.
 
     ENDIF.
 
-    IF lv_in_read_stmt = abap_true
-       AND lv_code_cd CS gc_keyword-dot.
+    "----------------------------------------------------------
+    " 3.12 READ TABLE ... WITH KEY without BINARY SEARCH
+    " Important:
+    "   Only report for STANDARD TABLE.
+    "   Do not report for SORTED/HASHED TABLE.
+    "----------------------------------------------------------
+    IF ls_stmt-first_word = lc_kw_read
+       AND ls_stmt-text CS 'READ TABLE'
+       AND ls_stmt-text CS 'WITH KEY'
+       AND ls_stmt-text NS 'BINARY SEARCH'
+       AND ls_stmt-text NS 'WITH TABLE KEY'
+       AND ls_stmt-text NS 'USING KEY'.
 
-      IF lv_read_stmt CS gc_perf_kw-read_table
-         AND lv_read_stmt CS gc_perf_kw-with_key
-         AND lv_read_stmt NS gc_perf_kw-binary_search
-         AND lv_read_stmt NS gc_perf_kw-with_table_key.
+      CLEAR: lv_read_table,
+             lv_kind.
 
-        IF lv_read_stmt CS gc_perf_ignore_read-rtts_methods
-           OR lv_read_stmt CS gc_perf_ignore_read-rtts_parameters.
+      " READ TABLE <itab> ...
+      READ TABLE ls_stmt-tokens INDEX 3 INTO lv_read_table.
 
-          " Do nothing: avoid false positive for small RTTS metadata tables
+      IF lv_read_table IS NOT INITIAL.
 
+        REPLACE ALL OCCURRENCES OF '@'  IN lv_read_table WITH ''.
+        REPLACE ALL OCCURRENCES OF '[]' IN lv_read_table WITH ''.
+
+        READ TABLE lt_itab_meta INTO DATA(ls_itab_meta)
+          WITH TABLE KEY name = lv_read_table.
+
+        IF sy-subrc = 0.
+          lv_kind = ls_itab_meta-kind.
         ELSE.
-
-          lv_rule = gc_rule_perf-read_no_binary.
-
-          MESSAGE e039(z_gsp04_message)
-            INTO lv_msg.
-
-          add_perf_error lv_read_stmt_start gc_severity-error lv_msg lv_rule.
-
+          lv_kind = lc_kind_unknown.
         ENDIF.
 
-      ENDIF.
+        CASE lv_kind.
 
-      CLEAR: lv_read_stmt,
-             lv_read_stmt_start,
-             lv_in_read_stmt.
+          WHEN lc_kind_standard.
 
-      CONTINUE.
+            lv_rule = gc_rule_perf-read_no_binary.
 
-    ENDIF.
+            MESSAGE e039(z_gsp04_message)
+              INTO lv_msg.
 
-    IF lv_in_read_stmt = abap_true.
-      CONTINUE.
-    ENDIF.
+            add_perf_error ls_stmt-line gc_severity-error lv_msg lv_rule.
 
-    "------------------------------------------------------------
-    " Reduce loop stack
-    "------------------------------------------------------------
-    IF lv_code_cd CS gc_perf_kw-endloop.
+          WHEN lc_kind_sorted OR lc_kind_hashed.
 
-      IF lv_loop_depth > gc_perf_cfg-zero.
-        lv_loop_depth = lv_loop_depth - 1.
-      ENDIF.
+            " Do not report.
+            " SORTED and HASHED tables already have optimized key access.
 
-      lv_stack_lines = lines( lt_loop_stack ).
+          WHEN OTHERS.
 
-      IF lv_stack_lines > gc_perf_cfg-zero.
+            " Unknown table kind:
+            " Do not report as error to avoid false positive.
+            CONTINUE.
 
-        READ TABLE lt_loop_stack INTO ls_loop_ctx INDEX lv_stack_lines.
-
-        IF sy-subrc = 0
-           AND ls_loop_ctx-is_light = abap_false
-           AND lv_heavy_depth > gc_perf_cfg-zero.
-
-          lv_heavy_depth = lv_heavy_depth - 1.
-
-        ENDIF.
-
-        DELETE lt_loop_stack INDEX lv_stack_lines.
+        ENDCASE.
 
       ENDIF.
-
-      CONTINUE.
 
     ENDIF.
 

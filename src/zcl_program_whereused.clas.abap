@@ -954,6 +954,17 @@ METHOD get_where_used.
     "----------------------------------------------------------------------
     " G) dedupe + return
     "----------------------------------------------------------------------
+*    SORT lt_founds BY used_cls used_obj program object_row.
+*    DELETE ADJACENT DUPLICATES FROM lt_founds
+*      COMPARING used_cls used_obj program object_row.
+*
+*    rt_founds = lt_founds.
+
+" Keep real self-calls only when they have a source location.
+" A true recursive/self reference must still have PROGRAM and OBJECT_ROW.
+" Rows without PROGRAM are non-navigable cross-reference/index rows.
+    DELETE lt_founds WHERE program IS INITIAL.
+
     SORT lt_founds BY used_cls used_obj program object_row.
     DELETE ADJACENT DUPLICATES FROM lt_founds
       COMPARING used_cls used_obj program object_row.
