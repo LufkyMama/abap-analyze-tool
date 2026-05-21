@@ -49,85 +49,105 @@ CLASS zcl_program_check DEFINITION
   PROTECTED SECTION.
 PRIVATE SECTION.
 
+  TYPES:
   "------------------------------------------------------------
   " Shared technical TYPES
   "------------------------------------------------------------
-  TYPES: gty_t_tok_tab         TYPE STANDARD TABLE OF stokex WITH DEFAULT KEY .
-  TYPES: gty_t_stmt_tab        TYPE STANDARD TABLE OF sstmnt WITH DEFAULT KEY .
-
-  TYPES: BEGIN OF gty_src_line,
-           row        TYPE i,
-           no_comment TYPE string,
-           upper      TYPE string,
-           is_blank   TYPE abap_bool,
-           is_star    TYPE abap_bool,
-           is_quote   TYPE abap_bool,
-         END OF gty_src_line .
-
-  TYPES: gty_t_src_line TYPE STANDARD TABLE OF gty_src_line WITH EMPTY KEY .
-
-  TYPES: BEGIN OF gty_cnt,
-           name TYPE string,
-           cnt  TYPE i,
-         END OF gty_cnt .
-
-  TYPES: gty_t_cnt TYPE HASHED TABLE OF gty_cnt WITH UNIQUE KEY name .
-
-  "------------------------------------------------------------
-  " Shared Naming TYPES
-  "------------------------------------------------------------
-  TYPES: BEGIN OF gty_global_decl,
-           name_u TYPE string,
-           name   TYPE string,
-           row    TYPE i,
-         END OF gty_global_decl .
-
-  TYPES: gty_t_global_decl TYPE HASHED TABLE OF gty_global_decl WITH UNIQUE KEY name_u .
-  TYPES: gty_t_routine_set TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line .
-
-  TYPES: BEGIN OF gty_use,
-           name_u   TYPE string,
-           routines TYPE gty_t_routine_set,
-         END OF gty_use .
-
-  TYPES: gty_t_use TYPE HASHED TABLE OF gty_use WITH UNIQUE KEY name_u .
-
-  TYPES: BEGIN OF gty_pending,
-           name_u          TYPE string,
-           name            TYPE string,
-           row             TYPE i,
-           msg             TYPE string,
-           is_local_prefix TYPE abap_bool,
-         END OF gty_pending .
-
-  TYPES: gty_t_pending TYPE STANDARD TABLE OF gty_pending WITH EMPTY KEY .
-
-  TYPES: BEGIN OF gty_stmt_info,
-           from            TYPE i,
-           to              TYPE i,
-           first_u         TYPE string,
-           is_local_scope  TYPE abap_bool,
-           is_data_stmt    TYPE abap_bool,
-           current_routine TYPE string,
-         END OF gty_stmt_info .
-
-  TYPES: gty_t_stmt_info TYPE STANDARD TABLE OF gty_stmt_info WITH EMPTY KEY .
-  TYPES: gty_nm_kind TYPE c LENGTH 1 .
-
-  TYPES: BEGIN OF gty_name_kind,
-           name_u    TYPE string,
-           kind      TYPE gty_nm_kind,
-           line_kind TYPE gty_nm_kind,
-         END OF gty_name_kind .
-
-  TYPES: gty_t_name_kind TYPE HASHED TABLE OF gty_name_kind WITH UNIQUE KEY name_u .
-
-  TYPES: BEGIN OF gty_nm_method_ret,
-           method_name TYPE string,
-           return_kind TYPE gty_nm_kind,
-         END OF gty_nm_method_ret .
-
-  TYPES: gty_t_nm_method_ret TYPE HASHED TABLE OF gty_nm_method_ret WITH UNIQUE KEY method_name .
+    gty_t_tok_tab         TYPE STANDARD TABLE OF stokex WITH DEFAULT KEY .
+  TYPES:
+    gty_t_stmt_tab        TYPE STANDARD TABLE OF sstmnt WITH DEFAULT KEY .
+  TYPES:
+    BEGIN OF gty_src_line,
+      row        TYPE i,
+      no_comment TYPE string,
+      upper      TYPE string,
+      is_blank   TYPE abap_bool,
+      is_star    TYPE abap_bool,
+      is_quote   TYPE abap_bool,
+    END OF gty_src_line .
+  TYPES:
+    gty_t_src_line TYPE STANDARD TABLE OF gty_src_line WITH EMPTY KEY .
+  TYPES:
+    BEGIN OF gty_cnt,
+      name TYPE string,
+      cnt  TYPE i,
+    END OF gty_cnt .
+  TYPES:
+    gty_t_cnt TYPE HASHED TABLE OF gty_cnt WITH UNIQUE KEY name .
+  TYPES:
+    "------------------------------------------------------------
+    " Shared Naming TYPES
+    "------------------------------------------------------------
+    BEGIN OF gty_global_decl,
+      name_u TYPE string,
+      name   TYPE string,
+      row    TYPE i,
+    END OF gty_global_decl .
+  TYPES:
+    gty_t_global_decl TYPE HASHED TABLE OF gty_global_decl WITH UNIQUE KEY name_u .
+  TYPES:
+    gty_t_routine_set TYPE HASHED TABLE OF string WITH UNIQUE KEY table_line .
+  TYPES:
+    BEGIN OF gty_use,
+      name_u   TYPE string,
+      routines TYPE gty_t_routine_set,
+    END OF gty_use .
+  TYPES:
+    gty_t_use TYPE HASHED TABLE OF gty_use WITH UNIQUE KEY name_u .
+  TYPES:
+    BEGIN OF gty_pending,
+      name_u          TYPE string,
+      name            TYPE string,
+      row             TYPE i,
+      msg             TYPE string,
+      is_local_prefix TYPE abap_bool,
+    END OF gty_pending .
+  TYPES:
+    gty_t_pending TYPE STANDARD TABLE OF gty_pending WITH EMPTY KEY .
+  TYPES:
+    BEGIN OF gty_stmt_info,
+      from            TYPE i,
+      to              TYPE i,
+      first_u         TYPE string,
+      is_local_scope  TYPE abap_bool,
+      is_data_stmt    TYPE abap_bool,
+      current_routine TYPE string,
+    END OF gty_stmt_info .
+  TYPES:
+    gty_t_stmt_info TYPE STANDARD TABLE OF gty_stmt_info WITH EMPTY KEY .
+  TYPES:
+    gty_nm_kind TYPE c LENGTH 1 .
+  TYPES:
+    BEGIN OF gty_name_kind,
+      name_u    TYPE string,
+      kind      TYPE gty_nm_kind,
+      line_kind TYPE gty_nm_kind,
+    END OF gty_name_kind .
+  TYPES:
+    gty_t_name_kind TYPE HASHED TABLE OF gty_name_kind WITH UNIQUE KEY name_u .
+  TYPES:
+    BEGIN OF gty_nm_method_ret,
+      method_name TYPE string,
+      return_kind TYPE gty_nm_kind,
+    END OF gty_nm_method_ret .
+  TYPES:
+    gty_t_nm_method_ret TYPE HASHED TABLE OF gty_nm_method_ret WITH UNIQUE KEY method_name .
+  TYPES:
+    "------------------------------------------------------------
+    " Performance parser
+    "------------------------------------------------------------
+    BEGIN OF gty_perf_stmt,
+      stmt_idx   TYPE i,
+      line       TYPE i,
+      line_to    TYPE i,
+      first_word TYPE string,
+      stmt_type  TYPE string,
+      text       TYPE string,
+      tokens     TYPE string_table,
+    END OF gty_perf_stmt .
+  TYPES:
+    gty_t_perf_stmt TYPE STANDARD TABLE OF gty_perf_stmt
+    WITH EMPTY KEY .
 
   CONSTANTS:
     "------------------------------------------------------------
@@ -604,7 +624,139 @@ PRIVATE SECTION.
     BEGIN OF gc_perf_ignore_read,
       rtts_methods    TYPE string VALUE '->METHODS',
       rtts_parameters TYPE string VALUE '-PARAMETERS',
-    END OF gc_perf_ignore_read.
+    END OF gc_perf_ignore_read .
+  CONSTANTS:
+    BEGIN OF gc_perf_stmt_type,
+      unknown       TYPE string VALUE 'UNKNOWN',
+      select_stmt   TYPE string VALUE 'SELECT',
+      loop_at       TYPE string VALUE 'LOOP_AT',
+      endloop       TYPE string VALUE 'ENDLOOP',
+      read_table    TYPE string VALUE 'READ_TABLE',
+      sort_stmt     TYPE string VALUE 'SORT',
+      if_stmt       TYPE string VALUE 'IF',
+      elseif_stmt   TYPE string VALUE 'ELSEIF',
+      else_stmt     TYPE string VALUE 'ELSE',
+      endif_stmt    TYPE string VALUE 'ENDIF',
+      check_stmt    TYPE string VALUE 'CHECK',
+      assert_stmt   TYPE string VALUE 'ASSERT',
+      data_decl     TYPE string VALUE 'DATA_DECL',
+      types_decl    TYPE string VALUE 'TYPES_DECL',
+      clear_stmt    TYPE string VALUE 'CLEAR',
+      refresh_stmt  TYPE string VALUE 'REFRESH',
+      free_stmt     TYPE string VALUE 'FREE',
+      delete_stmt   TYPE string VALUE 'DELETE',
+      return_stmt   TYPE string VALUE 'RETURN',
+      exit_stmt     TYPE string VALUE 'EXIT',
+      continue_stmt TYPE string VALUE 'CONTINUE',
+      raise_stmt    TYPE string VALUE 'RAISE',
+    END OF gc_perf_stmt_type .
+
+  METHODS perf_normalize_token
+    IMPORTING
+      !iv_token       TYPE c
+    RETURNING
+      VALUE(rv_token) TYPE string .
+  METHODS perf_classify_stmt
+    IMPORTING
+      !is_stmt       TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_type) TYPE string .
+  METHODS perf_parse_source
+    IMPORTING
+      !it_source     TYPE string_table
+    RETURNING
+      VALUE(rt_stmt) TYPE gty_t_perf_stmt .
+  "------------------------------------------------------------
+  " Performance metadata
+  "------------------------------------------------------------
+  TYPES: BEGIN OF gty_perf_name_kind,
+           name TYPE string,
+           kind TYPE string,
+         END OF gty_perf_name_kind.
+
+  TYPES gty_t_perf_name_kind TYPE HASHED TABLE OF gty_perf_name_kind
+    WITH UNIQUE KEY name.
+
+  METHODS perf_build_itab_metadata
+    IMPORTING
+      !it_stmt            TYPE gty_t_perf_stmt
+    RETURNING
+      VALUE(rt_itab_meta) TYPE gty_t_perf_name_kind.
+  "------------------------------------------------------------
+  " Performance rule helpers
+  "------------------------------------------------------------
+  METHODS perf_stmt_has_token
+    IMPORTING
+      !is_stmt      TYPE gty_perf_stmt
+      !iv_token     TYPE string
+    RETURNING
+      VALUE(rv_has) TYPE abap_bool.
+
+  METHODS perf_extract_guard_not_initial
+    IMPORTING
+      !is_stmt        TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_table) TYPE string.
+
+  METHODS perf_extract_guard_initial
+    IMPORTING
+      !is_stmt        TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_table) TYPE string.
+
+  METHODS perf_extract_fae_table
+    IMPORTING
+      !is_stmt        TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_table) TYPE string.
+
+  METHODS perf_select_fetches_all
+    IMPORTING
+      !is_stmt      TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_yes) TYPE abap_bool.
+
+  METHODS perf_extract_loop_table
+    IMPORTING
+      !is_stmt        TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_table) TYPE string.
+
+  METHODS perf_loop_has_reduction
+    IMPORTING
+      !is_stmt      TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_yes) TYPE abap_bool.
+
+  METHODS perf_extract_sort_table
+    IMPORTING
+      !is_stmt        TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_table) TYPE string.
+
+  METHODS perf_extract_read_table
+    IMPORTING
+      !is_stmt        TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_table) TYPE string.
+  METHODS perf_extract_sort_keys
+    IMPORTING
+      !is_stmt       TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_keys) TYPE string.
+
+  METHODS perf_extract_read_key_fields
+    IMPORTING
+      !is_stmt       TYPE gty_perf_stmt
+    RETURNING
+      VALUE(rv_keys) TYPE string.
+
+  METHODS perf_sort_key_matches_read_key
+    IMPORTING
+      !iv_sort_keys TYPE string
+      !iv_read_keys TYPE string
+    RETURNING
+      VALUE(rv_yes) TYPE abap_bool.
   "------------------------------------------------------------
   " METHODS
   "------------------------------------------------------------
@@ -679,7 +831,6 @@ PRIVATE SECTION.
       !iv_obj_name     TYPE sobj_name
     RETURNING
       VALUE(rv_author) TYPE syuname .
-
   METHODS nm_build_method_ret_kind
     IMPORTING
       !it_tokens           TYPE gty_t_tok_tab
@@ -2760,22 +2911,6 @@ METHOD analyze_performance.
   "============================================================
   " Local types
   "============================================================
-  TYPES: BEGIN OF lty_stmt,
-           stmt_idx   TYPE i,
-           line       TYPE i,
-           first_word TYPE string,
-           text       TYPE string,
-           tokens     TYPE STANDARD TABLE OF string WITH EMPTY KEY,
-         END OF lty_stmt,
-         lty_t_stmt TYPE STANDARD TABLE OF lty_stmt WITH EMPTY KEY.
-
-  TYPES: BEGIN OF lty_name_kind,
-           name TYPE string,
-           kind TYPE string,
-         END OF lty_name_kind,
-         lty_t_name_kind TYPE HASHED TABLE OF lty_name_kind
-           WITH UNIQUE KEY name.
-
   TYPES: BEGIN OF lty_guard,
            table_name TYPE string,
            scope      TYPE string,
@@ -2789,6 +2924,14 @@ METHOD analyze_performance.
          END OF lty_loop_ctx,
          lty_t_loop_ctx TYPE STANDARD TABLE OF lty_loop_ctx WITH EMPTY KEY.
 
+  TYPES: BEGIN OF lty_sort_state,
+           table_name TYPE string,
+           key_text   TYPE string,
+           line       TYPE i,
+         END OF lty_sort_state,
+         lty_t_sort_state TYPE HASHED TABLE OF lty_sort_state
+           WITH UNIQUE KEY table_name.
+
   "============================================================
   " Local constants
   "============================================================
@@ -2801,26 +2944,11 @@ METHOD analyze_performance.
     lc_kind_hashed   TYPE string VALUE 'HASHED',
     lc_kind_unknown  TYPE string VALUE 'UNKNOWN',
 
-    lc_kw_data        TYPE string VALUE 'DATA',
-    lc_kw_class_data  TYPE string VALUE 'CLASS-DATA',
-    lc_kw_statics     TYPE string VALUE 'STATICS',
-    lc_kw_types       TYPE string VALUE 'TYPES',
-    lc_kw_fs          TYPE string VALUE 'FIELD-SYMBOLS',
-
-    lc_kw_type        TYPE string VALUE 'TYPE',
-    lc_kw_like        TYPE string VALUE 'LIKE',
-    lc_kw_standard    TYPE string VALUE 'STANDARD',
-    lc_kw_sorted      TYPE string VALUE 'SORTED',
-    lc_kw_hashed      TYPE string VALUE 'HASHED',
-    lc_kw_table       TYPE string VALUE 'TABLE',
-    lc_kw_of          TYPE string VALUE 'OF',
-
     lc_kw_if          TYPE string VALUE 'IF',
     lc_kw_else        TYPE string VALUE 'ELSE',
     lc_kw_elseif      TYPE string VALUE 'ELSEIF',
     lc_kw_endif       TYPE string VALUE 'ENDIF',
 
-    lc_kw_loop        TYPE string VALUE 'LOOP',
     lc_kw_endloop     TYPE string VALUE 'ENDLOOP',
     lc_kw_do          TYPE string VALUE 'DO',
     lc_kw_enddo       TYPE string VALUE 'ENDDO',
@@ -2831,10 +2959,6 @@ METHOD analyze_performance.
 
     lc_kw_check       TYPE string VALUE 'CHECK',
     lc_kw_assert      TYPE string VALUE 'ASSERT',
-    lc_kw_is          TYPE string VALUE 'IS',
-    lc_kw_not         TYPE string VALUE 'NOT',
-    lc_kw_initial     TYPE string VALUE 'INITIAL',
-
     lc_kw_return      TYPE string VALUE 'RETURN',
     lc_kw_exit        TYPE string VALUE 'EXIT',
     lc_kw_continue    TYPE string VALUE 'CONTINUE',
@@ -2845,56 +2969,32 @@ METHOD analyze_performance.
     lc_kw_free        TYPE string VALUE 'FREE',
     lc_kw_delete      TYPE string VALUE 'DELETE',
 
-    lc_kw_select      TYPE string VALUE 'SELECT',
-    lc_kw_sort        TYPE string VALUE 'SORT',
-    lc_kw_read        TYPE string VALUE 'READ',
-
-    lc_kw_for         TYPE string VALUE 'FOR',
-    lc_kw_all         TYPE string VALUE 'ALL',
-    lc_kw_entries     TYPE string VALUE 'ENTRIES',
-    lc_kw_in          TYPE string VALUE 'IN',
     lc_kw_into        TYPE string VALUE 'INTO',
-
-    lc_kw_with        TYPE string VALUE 'WITH',
-    lc_kw_key         TYPE string VALUE 'KEY',
-    lc_kw_binary      TYPE string VALUE 'BINARY',
-    lc_kw_search      TYPE string VALUE 'SEARCH',
-    lc_kw_using       TYPE string VALUE 'USING',
-    lc_kw_where       TYPE string VALUE 'WHERE',
-    lc_kw_from        TYPE string VALUE 'FROM',
-    lc_kw_to          TYPE string VALUE 'TO',
 
     lc_sym_colon      TYPE string VALUE ':',
     lc_sym_comma      TYPE string VALUE ',',
-    lc_sym_equal      TYPE string VALUE '=',
-    lc_sym_star       TYPE string VALUE '*',
-    lc_sym_lbracket   TYPE string VALUE '[',
-    lc_sym_rbracket   TYPE string VALUE ']'.
+    lc_sym_equal      TYPE string VALUE '='.
 
   "============================================================
   " Local data
   "============================================================
   DATA:
-    lt_scan_tokens TYPE STANDARD TABLE OF stokex,
-    lt_scan_stmt   TYPE STANDARD TABLE OF sstmnt,
-    lt_stmt        TYPE lty_t_stmt,
-    lt_type_meta   TYPE lty_t_name_kind,
-    lt_itab_meta   TYPE lty_t_name_kind,
+    lt_stmt        TYPE gty_t_perf_stmt,
+    lt_itab_meta   TYPE gty_t_perf_name_kind,
     lt_guard       TYPE lty_t_guard,
     lt_loop_stack  TYPE lty_t_loop_ctx,
+    lt_sort_state  TYPE lty_t_sort_state,
 
-    ls_stmt        TYPE lty_stmt,
+    ls_stmt        TYPE gty_perf_stmt,
     ls_error       TYPE zst_error,
+    ls_sort_state  TYPE lty_sort_state,
 
     lv_msg         TYPE string,
     lv_rule        TYPE string,
 
     lv_tok         TYPE string,
-    lv_prev        TYPE string,
     lv_next        TYPE string,
     lv_next2       TYPE string,
-    lv_next3       TYPE string,
-    lv_name        TYPE string,
     lv_kind        TYPE string,
     lv_idx         TYPE i,
     lv_idx2        TYPE i,
@@ -2908,17 +3008,15 @@ METHOD analyze_performance.
     lv_read_table  TYPE string,
     lv_loop_table  TYPE string,
     lv_sort_table  TYPE string,
+    lv_sort_keys   TYPE string,
+    lv_read_keys   TYPE string,
 
     lv_has_guard   TYPE abap_bool,
     lv_has_reduce  TYPE abap_bool,
     lv_exit_found  TYPE abap_bool,
     lv_else_found  TYPE abap_bool,
-    lv_nested_if   TYPE i.
-
-  FIELD-SYMBOLS:
-    <ls_scan_stmt> TYPE sstmnt,
-    <ls_scan_tok>  TYPE stokex,
-    <lv_token>     TYPE string.
+    lv_nested_if   TYPE i,
+    lv_sort_ok     TYPE abap_bool.
 
   "============================================================
   " Local macro: add performance error
@@ -2934,156 +3032,17 @@ METHOD analyze_performance.
   END-OF-DEFINITION.
 
   "============================================================
-  " Step 1: Scan ABAP source into tokens and statements
+  " Step 1: Parse ABAP source into normalized performance statements
   "============================================================
-  SCAN ABAP-SOURCE it_source
-    TOKENS     INTO lt_scan_tokens
-    STATEMENTS INTO lt_scan_stmt
-    WITH ANALYSIS.
-
-  LOOP AT lt_scan_stmt ASSIGNING <ls_scan_stmt>.
-
-    CLEAR ls_stmt.
-    ls_stmt-stmt_idx = sy-tabix.
-
-    LOOP AT lt_scan_tokens ASSIGNING <ls_scan_tok>
-      FROM <ls_scan_stmt>-from
-      TO   <ls_scan_stmt>-to.
-
-      lv_tok = <ls_scan_tok>-str.
-      TRANSLATE lv_tok TO UPPER CASE.
-
-      " Normalize escaped host variable: @lt_tab -> LT_TAB
-      IF lv_tok CP '@*'.
-        SHIFT lv_tok LEFT DELETING LEADING '@'.
-      ENDIF.
-
-      " Normalize table body notation if token is LT_TAB[]
-      REPLACE ALL OCCURRENCES OF '[]' IN lv_tok WITH ''.
-
-      APPEND lv_tok TO ls_stmt-tokens.
-
-      IF ls_stmt-line IS INITIAL
-         OR <ls_scan_tok>-row < ls_stmt-line.
-        ls_stmt-line = <ls_scan_tok>-row.
-      ENDIF.
-
-      IF ls_stmt-text IS INITIAL.
-        ls_stmt-text = lv_tok.
-      ELSE.
-        ls_stmt-text = |{ ls_stmt-text } { lv_tok }|.
-      ENDIF.
-
-    ENDLOOP.
-
-    READ TABLE ls_stmt-tokens INDEX 1 INTO ls_stmt-first_word.
-    APPEND ls_stmt TO lt_stmt.
-
-  ENDLOOP.
+  lt_stmt = me->perf_parse_source( it_source ).
 
   "============================================================
-  " Step 2: Collect local table/type metadata
+  " Step 2: Build local internal table metadata
   " Purpose:
   "   - STANDARD TABLE -> READ TABLE may need BINARY SEARCH
   "   - SORTED/HASHED TABLE -> do not suggest BINARY SEARCH
   "============================================================
-  LOOP AT lt_stmt INTO ls_stmt.
-
-    CHECK ls_stmt-first_word = lc_kw_types
-       OR ls_stmt-first_word = lc_kw_data
-       OR ls_stmt-first_word = lc_kw_class_data
-       OR ls_stmt-first_word = lc_kw_statics
-       OR ls_stmt-first_word = lc_kw_fs.
-
-    lv_lines = lines( ls_stmt-tokens ).
-
-    DO lv_lines TIMES.
-
-      lv_idx = sy-index.
-
-      CLEAR: lv_tok, lv_prev, lv_next, lv_next2, lv_kind, lv_name.
-
-      READ TABLE ls_stmt-tokens INDEX lv_idx INTO lv_tok.
-      IF sy-subrc <> 0.
-        CONTINUE.
-      ENDIF.
-
-      CHECK lv_tok = lc_kw_type OR lv_tok = lc_kw_like.
-
-      READ TABLE ls_stmt-tokens INDEX lv_idx - 1 INTO lv_prev.
-      READ TABLE ls_stmt-tokens INDEX lv_idx + 1 INTO lv_next.
-      READ TABLE ls_stmt-tokens INDEX lv_idx + 2 INTO lv_next2.
-
-      lv_name = lv_prev.
-
-      IF lv_name IS INITIAL
-         OR lv_name = lc_sym_colon
-         OR lv_name = lc_sym_comma.
-        CONTINUE.
-      ENDIF.
-
-      REPLACE ALL OCCURRENCES OF '@'  IN lv_name WITH ''.
-      REPLACE ALL OCCURRENCES OF '[]' IN lv_name WITH ''.
-
-      CLEAR lv_kind.
-
-      " Direct table declaration
-      IF lv_next = lc_kw_standard
-         AND lv_next2 = lc_kw_table.
-
-        lv_kind = lc_kind_standard.
-
-      ELSEIF lv_next = lc_kw_sorted
-         AND lv_next2 = lc_kw_table.
-
-        lv_kind = lc_kind_sorted.
-
-      ELSEIF lv_next = lc_kw_hashed
-         AND lv_next2 = lc_kw_table.
-
-        lv_kind = lc_kind_hashed.
-
-      ELSEIF lv_next = lc_kw_table
-         AND lv_next2 = lc_kw_of.
-
-        " TYPE TABLE OF ... means STANDARD TABLE by default
-        lv_kind = lc_kind_standard.
-
-      ELSE.
-
-        " Declaration by local table type:
-        "   TYPES ty_t_x TYPE STANDARD TABLE OF ...
-        "   DATA lt_x TYPE ty_t_x.
-        READ TABLE lt_type_meta INTO DATA(ls_type_meta)
-          WITH TABLE KEY name = lv_next.
-
-        IF sy-subrc = 0.
-          lv_kind = ls_type_meta-kind.
-        ENDIF.
-
-      ENDIF.
-
-      IF lv_kind IS INITIAL.
-        CONTINUE.
-      ENDIF.
-
-      IF ls_stmt-first_word = lc_kw_types.
-
-        DELETE TABLE lt_type_meta WITH TABLE KEY name = lv_name.
-        INSERT VALUE #( name = lv_name
-                        kind = lv_kind ) INTO TABLE lt_type_meta.
-
-      ELSE.
-
-        DELETE TABLE lt_itab_meta WITH TABLE KEY name = lv_name.
-        INSERT VALUE #( name = lv_name
-                        kind = lv_kind ) INTO TABLE lt_itab_meta.
-
-      ENDIF.
-
-    ENDDO.
-
-  ENDLOOP.
+  lt_itab_meta = me->perf_build_itab_metadata( lt_stmt ).
 
   "============================================================
   " Step 3: Analyze performance rules by statement context
@@ -3134,47 +3093,15 @@ METHOD analyze_performance.
         WHERE scope = lc_scope_block
           AND level = lv_block_level.
 
-      " ELSEIF lt_tab IS NOT INITIAL.
       IF ls_stmt-first_word = lc_kw_elseif.
 
-        CLEAR lv_guard_tab.
-
-        lv_lines = lines( ls_stmt-tokens ).
-
-        DO lv_lines TIMES.
-
-          READ TABLE ls_stmt-tokens INDEX sy-index INTO lv_tok.
-          IF sy-subrc <> 0.
-            CONTINUE.
-          ENDIF.
-
-          IF lv_tok = lc_kw_is.
-
-            READ TABLE ls_stmt-tokens INDEX sy-index - 1 INTO lv_prev.
-            READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
-            READ TABLE ls_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
-
-            IF lv_next = lc_kw_not
-               AND lv_next2 = lc_kw_initial.
-
-              lv_guard_tab = lv_prev.
-              EXIT.
-
-            ENDIF.
-
-          ENDIF.
-
-        ENDDO.
+        lv_guard_tab = me->perf_extract_guard_not_initial( ls_stmt ).
 
         IF lv_guard_tab IS NOT INITIAL.
-
-          REPLACE ALL OCCURRENCES OF '@'  IN lv_guard_tab WITH ''.
-          REPLACE ALL OCCURRENCES OF '[]' IN lv_guard_tab WITH ''.
-
-          APPEND VALUE #( table_name = lv_guard_tab
-                          scope      = lc_scope_block
-                          level      = lv_block_level ) TO lt_guard.
-
+          APPEND VALUE #(
+            table_name = lv_guard_tab
+            scope      = lc_scope_block
+            level      = lv_block_level ) TO lt_guard.
         ENDIF.
 
       ENDIF.
@@ -3197,67 +3124,31 @@ METHOD analyze_performance.
 
     "----------------------------------------------------------
     " 3.4 IF/CHECK/ASSERT guard detection for FOR ALL ENTRIES
-    " Supports:
-    "   CHECK lt_tab IS NOT INITIAL.
-    "   IF lt_tab IS NOT INITIAL. ... SELECT FAE ... ENDIF.
-    "   IF lt_tab IS INITIAL. RETURN/EXIT/CONTINUE/RAISE ... ENDIF.
     "----------------------------------------------------------
     IF ls_stmt-first_word = lc_kw_check
        OR ls_stmt-first_word = lc_kw_assert
        OR ls_stmt-first_word = lc_kw_if.
 
-      CLEAR lv_guard_tab.
-
-      lv_lines = lines( ls_stmt-tokens ).
-
-      DO lv_lines TIMES.
-
-        READ TABLE ls_stmt-tokens INDEX sy-index INTO lv_tok.
-        IF sy-subrc <> 0.
-          CONTINUE.
-        ENDIF.
-
-        IF lv_tok = lc_kw_is.
-
-          READ TABLE ls_stmt-tokens INDEX sy-index - 1 INTO lv_prev.
-          READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
-          READ TABLE ls_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
-
-          " lt_tab IS NOT INITIAL
-          IF lv_next = lc_kw_not
-             AND lv_next2 = lc_kw_initial.
-
-            lv_guard_tab = lv_prev.
-            EXIT.
-
-          ENDIF.
-
-        ENDIF.
-
-      ENDDO.
+      lv_guard_tab = me->perf_extract_guard_not_initial( ls_stmt ).
 
       IF lv_guard_tab IS NOT INITIAL.
 
-        REPLACE ALL OCCURRENCES OF '@'  IN lv_guard_tab WITH ''.
-        REPLACE ALL OCCURRENCES OF '[]' IN lv_guard_tab WITH ''.
-
         IF ls_stmt-first_word = lc_kw_if.
 
-          " Guard is valid only inside IF branch
-          APPEND VALUE #( table_name = lv_guard_tab
-                          scope      = lc_scope_block
-                          level      = lv_block_level ) TO lt_guard.
+          APPEND VALUE #(
+            table_name = lv_guard_tab
+            scope      = lc_scope_block
+            level      = lv_block_level ) TO lt_guard.
 
         ELSE.
 
-          " CHECK at top-level protects the following code.
-          " CHECK inside a block protects the following statements in that block.
-          APPEND VALUE #( table_name = lv_guard_tab
-                          scope      = COND string(
-                                         WHEN lv_block_level > 0
-                                         THEN lc_scope_block
-                                         ELSE lc_scope_global )
-                          level      = lv_block_level ) TO lt_guard.
+          APPEND VALUE #(
+            table_name = lv_guard_tab
+            scope      = COND string(
+                           WHEN lv_block_level > 0
+                           THEN lc_scope_block
+                           ELSE lc_scope_global )
+            level      = lv_block_level ) TO lt_guard.
 
         ENDIF.
 
@@ -3266,47 +3157,19 @@ METHOD analyze_performance.
     ENDIF.
 
     "----------------------------------------------------------
-    " 3.5 IF lt_tab IS INITIAL. RETURN/EXIT/CONTINUE/RAISE. ENDIF.
-    " This means code after the IF is guarded, even if SELECT is not
-    " directly wrapped by IF lt_tab IS NOT INITIAL.
+    " 3.5 IF lt_tab IS INITIAL. RETURN/EXIT/CONTINUE/RAISE.
+    " This means code after the IF is guarded.
     "----------------------------------------------------------
     IF ls_stmt-first_word = lc_kw_if.
 
-      CLEAR: lv_guard_tab,
-             lv_exit_found,
+      CLEAR: lv_exit_found,
              lv_else_found,
              lv_nested_if.
 
-      lv_lines = lines( ls_stmt-tokens ).
-
-      DO lv_lines TIMES.
-
-        READ TABLE ls_stmt-tokens INDEX sy-index INTO lv_tok.
-        IF sy-subrc <> 0.
-          CONTINUE.
-        ENDIF.
-
-        IF lv_tok = lc_kw_is.
-
-          READ TABLE ls_stmt-tokens INDEX sy-index - 1 INTO lv_prev.
-          READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
-
-          " lt_tab IS INITIAL
-          IF lv_next = lc_kw_initial.
-            lv_guard_tab = lv_prev.
-            EXIT.
-          ENDIF.
-
-        ENDIF.
-
-      ENDDO.
+      lv_guard_tab = me->perf_extract_guard_initial( ls_stmt ).
 
       IF lv_guard_tab IS NOT INITIAL.
 
-        REPLACE ALL OCCURRENCES OF '@'  IN lv_guard_tab WITH ''.
-        REPLACE ALL OCCURRENCES OF '[]' IN lv_guard_tab WITH ''.
-
-        " Look ahead until matching ENDIF
         lv_idx2 = lv_idx.
 
         WHILE lv_idx2 < lines( lt_stmt ).
@@ -3356,12 +3219,13 @@ METHOD analyze_performance.
         IF lv_exit_found = abap_true
            AND lv_else_found = abap_false.
 
-          APPEND VALUE #( table_name = lv_guard_tab
-                          scope      = COND string(
-                                         WHEN lv_block_level > 0
-                                         THEN lc_scope_block
-                                         ELSE lc_scope_global )
-                          level      = lv_block_level ) TO lt_guard.
+          APPEND VALUE #(
+            table_name = lv_guard_tab
+            scope      = COND string(
+                           WHEN lv_block_level > 0
+                           THEN lc_scope_block
+                           ELSE lc_scope_global )
+            level      = lv_block_level ) TO lt_guard.
 
         ENDIF.
 
@@ -3370,7 +3234,7 @@ METHOD analyze_performance.
     ENDIF.
 
     "----------------------------------------------------------
-    " 3.6 Invalidate FAE guards if table content may be reset
+    " 3.6 Invalidate FAE guards and SORT state if table changes
     "----------------------------------------------------------
     CLEAR lv_changed_tab.
 
@@ -3390,6 +3254,7 @@ METHOD analyze_performance.
         REPLACE ALL OCCURRENCES OF '[]' IN lv_changed_tab WITH ''.
 
         DELETE lt_guard WHERE table_name = lv_changed_tab.
+        DELETE TABLE lt_sort_state WITH TABLE KEY table_name = lv_changed_tab.
 
       ENDLOOP.
 
@@ -3397,7 +3262,7 @@ METHOD analyze_performance.
 
       READ TABLE ls_stmt-tokens INDEX 2 INTO lv_changed_tab.
 
-      IF lv_changed_tab = lc_kw_table.
+      IF lv_changed_tab = 'TABLE'.
         READ TABLE ls_stmt-tokens INDEX 3 INTO lv_changed_tab.
       ENDIF.
 
@@ -3407,6 +3272,7 @@ METHOD analyze_performance.
         REPLACE ALL OCCURRENCES OF '[]' IN lv_changed_tab WITH ''.
 
         DELETE lt_guard WHERE table_name = lv_changed_tab.
+        DELETE TABLE lt_sort_state WITH TABLE KEY table_name = lv_changed_tab.
 
       ENDIF.
 
@@ -3423,11 +3289,12 @@ METHOD analyze_performance.
         REPLACE ALL OCCURRENCES OF '[]' IN lv_changed_tab WITH ''.
 
         DELETE lt_guard WHERE table_name = lv_changed_tab.
+        DELETE TABLE lt_sort_state WITH TABLE KEY table_name = lv_changed_tab.
 
       ENDIF.
 
-      " SELECT ... INTO TABLE lt_tab resets/fills table, result may be empty
-      IF ls_stmt-first_word = lc_kw_select.
+      " SELECT ... INTO TABLE lt_tab resets/fills table; result may be empty
+      IF ls_stmt-stmt_type = gc_perf_stmt_type-select_stmt.
 
         lv_lines = lines( ls_stmt-tokens ).
 
@@ -3443,7 +3310,7 @@ METHOD analyze_performance.
             READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
             READ TABLE ls_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
 
-            IF lv_next = lc_kw_table
+            IF lv_next = 'TABLE'
                AND lv_next2 IS NOT INITIAL.
 
               lv_changed_tab = lv_next2.
@@ -3452,6 +3319,7 @@ METHOD analyze_performance.
               REPLACE ALL OCCURRENCES OF '[]' IN lv_changed_tab WITH ''.
 
               DELETE lt_guard WHERE table_name = lv_changed_tab.
+              DELETE TABLE lt_sort_state WITH TABLE KEY table_name = lv_changed_tab.
 
               EXIT.
 
@@ -3467,32 +3335,14 @@ METHOD analyze_performance.
 
     "----------------------------------------------------------
     " 3.7 LOOP AT handling + nested loop detection
-    " A nested loop means:
-    "   current LOOP AT starts while another LOOP AT has not ended yet.
     "----------------------------------------------------------
-    IF ls_stmt-first_word = lc_kw_loop
-       AND ls_stmt-text CS 'LOOP AT'.
+    IF ls_stmt-stmt_type = gc_perf_stmt_type-loop_at.
 
       CLEAR: lv_loop_table,
              lv_has_reduce.
 
-      READ TABLE ls_stmt-tokens INDEX 3 INTO lv_loop_table.
-
-      IF lv_loop_table IS INITIAL.
-        lv_loop_table = gc_obj_type-unknown.
-      ENDIF.
-
-      REPLACE ALL OCCURRENCES OF '@'  IN lv_loop_table WITH ''.
-      REPLACE ALL OCCURRENCES OF '[]' IN lv_loop_table WITH ''.
-
-      IF ls_stmt-text CS lc_kw_where
-         OR ls_stmt-text CS lc_kw_from
-         OR ls_stmt-text CS lc_kw_to
-         OR ls_stmt-text CS 'USING KEY'.
-
-        lv_has_reduce = abap_true.
-
-      ENDIF.
+      lv_loop_table = me->perf_extract_loop_table( ls_stmt ).
+      lv_has_reduce = me->perf_loop_has_reduction( ls_stmt ).
 
       IF lines( lt_loop_stack ) > 0.
 
@@ -3518,8 +3368,9 @@ METHOD analyze_performance.
 
       ENDIF.
 
-      APPEND VALUE #( table_name = lv_loop_table
-                      line       = ls_stmt-line ) TO lt_loop_stack.
+      APPEND VALUE #(
+        table_name = lv_loop_table
+        line       = ls_stmt-line ) TO lt_loop_stack.
 
       lv_block_level = lv_block_level + 1.
 
@@ -3531,10 +3382,7 @@ METHOD analyze_performance.
     " 3.8 SELECT * detection
     " Exclude COUNT(*), because it is not fetching all columns.
     "----------------------------------------------------------
-    IF ls_stmt-first_word = lc_kw_select
-       AND ls_stmt-text CS lc_sym_star
-       AND ls_stmt-text NS 'COUNT ( * )'
-       AND ls_stmt-text NS 'COUNT(*)'.
+    IF me->perf_select_fetches_all( ls_stmt ) = abap_true.
 
       lv_rule = gc_rule_perf-select_star.
 
@@ -3547,44 +3395,10 @@ METHOD analyze_performance.
 
     "----------------------------------------------------------
     " 3.9 FOR ALL ENTRIES guard check
-    " Does not require IF to directly wrap SELECT.
-    " It only requires that the FAE table was already proven non-empty
-    " and not reset before this SELECT.
     "----------------------------------------------------------
-    CLEAR lv_fae_table.
-
-    lv_lines = lines( ls_stmt-tokens ).
-
-    DO lv_lines TIMES.
-
-      READ TABLE ls_stmt-tokens INDEX sy-index INTO lv_tok.
-      IF sy-subrc <> 0.
-        CONTINUE.
-      ENDIF.
-
-      IF lv_tok = lc_kw_for.
-
-        READ TABLE ls_stmt-tokens INDEX sy-index + 1 INTO lv_next.
-        READ TABLE ls_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
-        READ TABLE ls_stmt-tokens INDEX sy-index + 3 INTO lv_next3.
-
-        IF lv_next  = lc_kw_all
-           AND lv_next2 = lc_kw_entries
-           AND lv_next3 = lc_kw_in.
-
-          READ TABLE ls_stmt-tokens INDEX sy-index + 4 INTO lv_fae_table.
-          EXIT.
-
-        ENDIF.
-
-      ENDIF.
-
-    ENDDO.
+    lv_fae_table = me->perf_extract_fae_table( ls_stmt ).
 
     IF lv_fae_table IS NOT INITIAL.
-
-      REPLACE ALL OCCURRENCES OF '@'  IN lv_fae_table WITH ''.
-      REPLACE ALL OCCURRENCES OF '[]' IN lv_fae_table WITH ''.
 
       lv_has_guard = abap_false.
 
@@ -3613,7 +3427,7 @@ METHOD analyze_performance.
     " 3.10 SELECT inside LOOP
     "----------------------------------------------------------
     IF lines( lt_loop_stack ) > 0
-       AND ls_stmt-first_word = lc_kw_select.
+       AND ls_stmt-stmt_type = gc_perf_stmt_type-select_stmt.
 
       lv_rule = gc_rule_perf-select_in_loop.
 
@@ -3625,20 +3439,38 @@ METHOD analyze_performance.
     ENDIF.
 
     "----------------------------------------------------------
-    " 3.11 SORT inside LOOP
+    " 3.11 Track SORT state for BINARY SEARCH validation
     "----------------------------------------------------------
-    IF lines( lt_loop_stack ) > 0
-       AND ls_stmt-first_word = lc_kw_sort.
+    IF ls_stmt-stmt_type = gc_perf_stmt_type-sort_stmt.
 
-      CLEAR lv_sort_table.
-      READ TABLE ls_stmt-tokens INDEX 2 INTO lv_sort_table.
+      lv_sort_table = me->perf_extract_sort_table( ls_stmt ).
+      lv_sort_keys  = me->perf_extract_sort_keys( ls_stmt ).
 
-      IF lv_sort_table IS INITIAL.
-        lv_sort_table = gc_obj_type-unknown.
+      IF lv_sort_table IS NOT INITIAL.
+
+        DELETE TABLE lt_sort_state
+          WITH TABLE KEY table_name = lv_sort_table.
+
+        IF lv_sort_keys IS NOT INITIAL.
+
+          INSERT VALUE #(
+            table_name = lv_sort_table
+            key_text   = lv_sort_keys
+            line       = ls_stmt-line ) INTO TABLE lt_sort_state.
+
+        ENDIF.
+
       ENDIF.
 
-      REPLACE ALL OCCURRENCES OF '@'  IN lv_sort_table WITH ''.
-      REPLACE ALL OCCURRENCES OF '[]' IN lv_sort_table WITH ''.
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.12 SORT inside LOOP
+    "----------------------------------------------------------
+    IF lines( lt_loop_stack ) > 0
+       AND ls_stmt-stmt_type = gc_perf_stmt_type-sort_stmt.
+
+      lv_sort_table = me->perf_extract_sort_table( ls_stmt ).
 
       lv_rule = gc_rule_perf-sort_in_loop.
 
@@ -3651,13 +3483,12 @@ METHOD analyze_performance.
     ENDIF.
 
     "----------------------------------------------------------
-    " 3.12 READ TABLE ... WITH KEY without BINARY SEARCH
+    " 3.13 READ TABLE ... WITH KEY without BINARY SEARCH
     " Important:
     "   Only report for STANDARD TABLE.
     "   Do not report for SORTED/HASHED TABLE.
     "----------------------------------------------------------
-    IF ls_stmt-first_word = lc_kw_read
-       AND ls_stmt-text CS 'READ TABLE'
+    IF ls_stmt-stmt_type = gc_perf_stmt_type-read_table
        AND ls_stmt-text CS 'WITH KEY'
        AND ls_stmt-text NS 'BINARY SEARCH'
        AND ls_stmt-text NS 'WITH TABLE KEY'
@@ -3666,13 +3497,9 @@ METHOD analyze_performance.
       CLEAR: lv_read_table,
              lv_kind.
 
-      " READ TABLE <itab> ...
-      READ TABLE ls_stmt-tokens INDEX 3 INTO lv_read_table.
+      lv_read_table = me->perf_extract_read_table( ls_stmt ).
 
       IF lv_read_table IS NOT INITIAL.
-
-        REPLACE ALL OCCURRENCES OF '@'  IN lv_read_table WITH ''.
-        REPLACE ALL OCCURRENCES OF '[]' IN lv_read_table WITH ''.
 
         READ TABLE lt_itab_meta INTO DATA(ls_itab_meta)
           WITH TABLE KEY name = lv_read_table.
@@ -3706,6 +3533,54 @@ METHOD analyze_performance.
             CONTINUE.
 
         ENDCASE.
+
+      ENDIF.
+
+    ENDIF.
+
+    "----------------------------------------------------------
+    " 3.14 READ TABLE ... BINARY SEARCH without proven SORT
+    "----------------------------------------------------------
+    IF ls_stmt-stmt_type = gc_perf_stmt_type-read_table
+       AND ls_stmt-text CS 'WITH KEY'
+       AND ls_stmt-text CS 'BINARY SEARCH'
+       AND ls_stmt-text NS 'WITH TABLE KEY'
+       AND ls_stmt-text NS 'USING KEY'.
+
+      CLEAR: lv_read_table,
+             lv_read_keys,
+             lv_sort_ok,
+             ls_sort_state.
+
+      lv_read_table = me->perf_extract_read_table( ls_stmt ).
+      lv_read_keys  = me->perf_extract_read_key_fields( ls_stmt ).
+
+      IF lv_read_table IS NOT INITIAL.
+
+        READ TABLE lt_sort_state INTO ls_sort_state
+          WITH TABLE KEY table_name = lv_read_table.
+
+        IF sy-subrc = 0.
+
+          lv_sort_ok = me->perf_sort_key_matches_read_key(
+                         iv_sort_keys = ls_sort_state-key_text
+                         iv_read_keys = lv_read_keys ).
+
+        ELSE.
+
+          lv_sort_ok = abap_false.
+
+        ENDIF.
+
+        IF lv_sort_ok = abap_false.
+
+          lv_rule = 'PERF_BINARY_SEARCH_NO_SORT'.
+
+          lv_msg = |READ TABLE on { lv_read_table } uses BINARY SEARCH, but no prior SORT BY matching key was found.|.
+
+          add_perf_error ls_stmt-line gc_severity-warning lv_msg lv_rule.
+
+        ENDIF.
 
       ENDIF.
 
@@ -9802,6 +9677,700 @@ METHOD nm_resolve_called_method_kind.
       RETURN.
     ENDIF.
 
+  ENDLOOP.
+
+ENDMETHOD.
+
+
+METHOD perf_build_itab_metadata.
+
+  "============================================================
+  " Purpose:
+  "   Build local internal table metadata for performance checks.
+  "
+  " It detects:
+  "   TYPES ty_t TYPE STANDARD TABLE OF ...
+  "   TYPES ty_t TYPE SORTED TABLE OF ...
+  "   TYPES ty_t TYPE HASHED TABLE OF ...
+  "   DATA lt_x TYPE STANDARD TABLE OF ...
+  "   DATA lt_x TYPE SORTED TABLE OF ...
+  "   DATA lt_x TYPE HASHED TABLE OF ...
+  "   DATA lt_x TYPE TABLE OF ...          "default STANDARD TABLE
+  "   DATA lt_x TYPE ty_t                  "resolve local type
+  "
+  " Output:
+  "   rt_itab_meta:
+  "     LT_X -> STANDARD / SORTED / HASHED
+  "============================================================
+
+  CONSTANTS:
+    lc_kind_standard TYPE string VALUE 'STANDARD',
+    lc_kind_sorted   TYPE string VALUE 'SORTED',
+    lc_kind_hashed   TYPE string VALUE 'HASHED',
+
+    lc_kw_data       TYPE string VALUE 'DATA',
+    lc_kw_class_data TYPE string VALUE 'CLASS-DATA',
+    lc_kw_statics    TYPE string VALUE 'STATICS',
+    lc_kw_types      TYPE string VALUE 'TYPES',
+    lc_kw_fs         TYPE string VALUE 'FIELD-SYMBOLS',
+
+    lc_kw_type       TYPE string VALUE 'TYPE',
+    lc_kw_like       TYPE string VALUE 'LIKE',
+    lc_kw_standard   TYPE string VALUE 'STANDARD',
+    lc_kw_sorted     TYPE string VALUE 'SORTED',
+    lc_kw_hashed     TYPE string VALUE 'HASHED',
+    lc_kw_table      TYPE string VALUE 'TABLE',
+    lc_kw_of         TYPE string VALUE 'OF',
+
+    lc_sym_colon     TYPE string VALUE ':',
+    lc_sym_comma     TYPE string VALUE ','.
+
+  DATA lt_type_meta TYPE gty_t_perf_name_kind.
+
+  DATA ls_stmt  TYPE gty_perf_stmt.
+  DATA lv_tok   TYPE string.
+  DATA lv_prev  TYPE string.
+  DATA lv_next  TYPE string.
+  DATA lv_next2 TYPE string.
+  DATA lv_name  TYPE string.
+  DATA lv_kind  TYPE string.
+  DATA lv_idx   TYPE i.
+  DATA lv_lines TYPE i.
+
+  CLEAR: rt_itab_meta,
+         lt_type_meta.
+
+  LOOP AT it_stmt INTO ls_stmt.
+
+    CHECK ls_stmt-first_word = lc_kw_types
+       OR ls_stmt-first_word = lc_kw_data
+       OR ls_stmt-first_word = lc_kw_class_data
+       OR ls_stmt-first_word = lc_kw_statics
+       OR ls_stmt-first_word = lc_kw_fs.
+
+    lv_lines = lines( ls_stmt-tokens ).
+
+    DO lv_lines TIMES.
+
+      lv_idx = sy-index.
+
+      CLEAR: lv_tok,
+             lv_prev,
+             lv_next,
+             lv_next2,
+             lv_kind,
+             lv_name.
+
+      READ TABLE ls_stmt-tokens INDEX lv_idx INTO lv_tok.
+      IF sy-subrc <> 0.
+        CONTINUE.
+      ENDIF.
+
+      CHECK lv_tok = lc_kw_type OR lv_tok = lc_kw_like.
+
+      READ TABLE ls_stmt-tokens INDEX lv_idx - 1 INTO lv_prev.
+      READ TABLE ls_stmt-tokens INDEX lv_idx + 1 INTO lv_next.
+      READ TABLE ls_stmt-tokens INDEX lv_idx + 2 INTO lv_next2.
+
+      lv_name = lv_prev.
+
+      IF lv_name IS INITIAL
+         OR lv_name = lc_sym_colon
+         OR lv_name = lc_sym_comma.
+        CONTINUE.
+      ENDIF.
+
+      REPLACE ALL OCCURRENCES OF '@'  IN lv_name WITH ''.
+      REPLACE ALL OCCURRENCES OF '[]' IN lv_name WITH ''.
+
+      CLEAR lv_kind.
+
+      "--------------------------------------------------------
+      " Direct table declaration
+      "--------------------------------------------------------
+      IF lv_next = lc_kw_standard
+         AND lv_next2 = lc_kw_table.
+
+        lv_kind = lc_kind_standard.
+
+      ELSEIF lv_next = lc_kw_sorted
+         AND lv_next2 = lc_kw_table.
+
+        lv_kind = lc_kind_sorted.
+
+      ELSEIF lv_next = lc_kw_hashed
+         AND lv_next2 = lc_kw_table.
+
+        lv_kind = lc_kind_hashed.
+
+      ELSEIF lv_next = lc_kw_table
+         AND lv_next2 = lc_kw_of.
+
+        " TYPE TABLE OF ... means STANDARD TABLE by default
+        lv_kind = lc_kind_standard.
+
+      ELSE.
+
+        "------------------------------------------------------
+        " Declaration by local table type:
+        "   TYPES ty_t_x TYPE STANDARD TABLE OF ...
+        "   DATA lt_x TYPE ty_t_x.
+        "------------------------------------------------------
+        READ TABLE lt_type_meta INTO DATA(ls_type_meta)
+          WITH TABLE KEY name = lv_next.
+
+        IF sy-subrc = 0.
+          lv_kind = ls_type_meta-kind.
+        ENDIF.
+
+      ENDIF.
+
+      IF lv_kind IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      IF ls_stmt-first_word = lc_kw_types.
+
+        DELETE TABLE lt_type_meta WITH TABLE KEY name = lv_name.
+
+        INSERT VALUE #(
+          name = lv_name
+          kind = lv_kind ) INTO TABLE lt_type_meta.
+
+      ELSE.
+
+        DELETE TABLE rt_itab_meta WITH TABLE KEY name = lv_name.
+
+        INSERT VALUE #(
+          name = lv_name
+          kind = lv_kind ) INTO TABLE rt_itab_meta.
+
+      ENDIF.
+
+    ENDDO.
+
+  ENDLOOP.
+
+ENDMETHOD.
+
+
+METHOD perf_classify_stmt.
+
+  rv_type = gc_perf_stmt_type-unknown.
+
+  CASE is_stmt-first_word.
+
+    WHEN 'SELECT'.
+      rv_type = gc_perf_stmt_type-select_stmt.
+
+    WHEN 'LOOP'.
+      IF is_stmt-text CS 'LOOP AT'.
+        rv_type = gc_perf_stmt_type-loop_at.
+      ENDIF.
+
+    WHEN 'ENDLOOP'.
+      rv_type = gc_perf_stmt_type-endloop.
+
+    WHEN 'READ'.
+      IF is_stmt-text CS 'READ TABLE'.
+        rv_type = gc_perf_stmt_type-read_table.
+      ENDIF.
+
+    WHEN 'SORT'.
+      rv_type = gc_perf_stmt_type-sort_stmt.
+
+    WHEN 'IF'.
+      rv_type = gc_perf_stmt_type-if_stmt.
+
+    WHEN 'ELSEIF'.
+      rv_type = gc_perf_stmt_type-elseif_stmt.
+
+    WHEN 'ELSE'.
+      rv_type = gc_perf_stmt_type-else_stmt.
+
+    WHEN 'ENDIF'.
+      rv_type = gc_perf_stmt_type-endif_stmt.
+
+    WHEN 'CHECK'.
+      rv_type = gc_perf_stmt_type-check_stmt.
+
+    WHEN 'ASSERT'.
+      rv_type = gc_perf_stmt_type-assert_stmt.
+
+    WHEN 'DATA' OR 'CLASS-DATA' OR 'STATICS' OR 'FIELD-SYMBOLS'.
+      rv_type = gc_perf_stmt_type-data_decl.
+
+    WHEN 'TYPES'.
+      rv_type = gc_perf_stmt_type-types_decl.
+
+    WHEN 'CLEAR'.
+      rv_type = gc_perf_stmt_type-clear_stmt.
+
+    WHEN 'REFRESH'.
+      rv_type = gc_perf_stmt_type-refresh_stmt.
+
+    WHEN 'FREE'.
+      rv_type = gc_perf_stmt_type-free_stmt.
+
+    WHEN 'DELETE'.
+      rv_type = gc_perf_stmt_type-delete_stmt.
+
+    WHEN 'RETURN'.
+      rv_type = gc_perf_stmt_type-return_stmt.
+
+    WHEN 'EXIT'.
+      rv_type = gc_perf_stmt_type-exit_stmt.
+
+    WHEN 'CONTINUE'.
+      rv_type = gc_perf_stmt_type-continue_stmt.
+
+    WHEN 'RAISE'.
+      rv_type = gc_perf_stmt_type-raise_stmt.
+
+    WHEN OTHERS.
+      rv_type = gc_perf_stmt_type-unknown.
+
+  ENDCASE.
+
+ENDMETHOD.
+
+
+METHOD perf_extract_fae_table.
+
+  DATA lv_tok   TYPE string.
+  DATA lv_next  TYPE string.
+  DATA lv_next2 TYPE string.
+  DATA lv_next3 TYPE string.
+  DATA lv_lines TYPE i.
+
+  CLEAR rv_table.
+
+  lv_lines = lines( is_stmt-tokens ).
+
+  DO lv_lines TIMES.
+
+    READ TABLE is_stmt-tokens INDEX sy-index INTO lv_tok.
+    IF sy-subrc <> 0.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_tok = 'FOR'.
+
+      READ TABLE is_stmt-tokens INDEX sy-index + 1 INTO lv_next.
+      READ TABLE is_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
+      READ TABLE is_stmt-tokens INDEX sy-index + 3 INTO lv_next3.
+
+      IF lv_next  = 'ALL'
+         AND lv_next2 = 'ENTRIES'
+         AND lv_next3 = 'IN'.
+
+        READ TABLE is_stmt-tokens INDEX sy-index + 4 INTO rv_table.
+
+        REPLACE ALL OCCURRENCES OF '@'  IN rv_table WITH ''.
+        REPLACE ALL OCCURRENCES OF '[]' IN rv_table WITH ''.
+
+        RETURN.
+
+      ENDIF.
+
+    ENDIF.
+
+  ENDDO.
+
+ENDMETHOD.
+
+
+METHOD perf_extract_guard_initial.
+
+  DATA lv_tok   TYPE string.
+  DATA lv_prev  TYPE string.
+  DATA lv_next  TYPE string.
+  DATA lv_lines TYPE i.
+
+  CLEAR rv_table.
+
+  lv_lines = lines( is_stmt-tokens ).
+
+  DO lv_lines TIMES.
+
+    READ TABLE is_stmt-tokens INDEX sy-index INTO lv_tok.
+    IF sy-subrc <> 0.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_tok = 'IS'.
+
+      READ TABLE is_stmt-tokens INDEX sy-index - 1 INTO lv_prev.
+      READ TABLE is_stmt-tokens INDEX sy-index + 1 INTO lv_next.
+
+      IF lv_next = 'INITIAL'.
+
+        rv_table = lv_prev.
+
+        REPLACE ALL OCCURRENCES OF '@'  IN rv_table WITH ''.
+        REPLACE ALL OCCURRENCES OF '[]' IN rv_table WITH ''.
+
+        RETURN.
+
+      ENDIF.
+
+    ENDIF.
+
+  ENDDO.
+
+ENDMETHOD.
+
+
+METHOD perf_extract_guard_not_initial.
+
+  DATA lv_tok   TYPE string.
+  DATA lv_prev  TYPE string.
+  DATA lv_next  TYPE string.
+  DATA lv_next2 TYPE string.
+  DATA lv_lines TYPE i.
+
+  CLEAR rv_table.
+
+  lv_lines = lines( is_stmt-tokens ).
+
+  DO lv_lines TIMES.
+
+    READ TABLE is_stmt-tokens INDEX sy-index INTO lv_tok.
+    IF sy-subrc <> 0.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_tok = 'IS'.
+
+      READ TABLE is_stmt-tokens INDEX sy-index - 1 INTO lv_prev.
+      READ TABLE is_stmt-tokens INDEX sy-index + 1 INTO lv_next.
+      READ TABLE is_stmt-tokens INDEX sy-index + 2 INTO lv_next2.
+
+      IF lv_next = 'NOT'
+         AND lv_next2 = 'INITIAL'.
+
+        rv_table = lv_prev.
+
+        REPLACE ALL OCCURRENCES OF '@'  IN rv_table WITH ''.
+        REPLACE ALL OCCURRENCES OF '[]' IN rv_table WITH ''.
+
+        RETURN.
+
+      ENDIF.
+
+    ENDIF.
+
+  ENDDO.
+
+ENDMETHOD.
+
+
+METHOD perf_extract_loop_table.
+
+  CLEAR rv_table.
+
+  READ TABLE is_stmt-tokens INDEX 3 INTO rv_table.
+
+  IF rv_table IS INITIAL.
+    rv_table = gc_obj_type-unknown.
+  ENDIF.
+
+  REPLACE ALL OCCURRENCES OF '@'  IN rv_table WITH ''.
+  REPLACE ALL OCCURRENCES OF '[]' IN rv_table WITH ''.
+
+ENDMETHOD.
+
+
+METHOD perf_extract_read_key_fields.
+
+  DATA lv_tok      TYPE string.
+  DATA lv_next     TYPE string.
+  DATA lv_key_text TYPE string.
+  DATA lv_after_key TYPE abap_bool.
+  DATA lv_lines    TYPE i.
+
+  CLEAR rv_keys.
+
+  lv_lines = lines( is_stmt-tokens ).
+
+  DO lv_lines TIMES.
+
+    READ TABLE is_stmt-tokens INDEX sy-index INTO lv_tok.
+    IF sy-subrc <> 0.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_tok = 'KEY'.
+      lv_after_key = abap_true.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_after_key = abap_false.
+      CONTINUE.
+    ENDIF.
+
+    " Stop when READ TABLE additions start.
+    IF lv_tok = 'BINARY'
+       OR lv_tok = 'INTO'
+       OR lv_tok = 'ASSIGNING'
+       OR lv_tok = 'REFERENCE'
+       OR lv_tok = 'TRANSPORTING'
+       OR lv_tok = 'COMPARING'
+       OR lv_tok = 'INDEX'.
+      EXIT.
+    ENDIF.
+
+    " Field name is the token before '='.
+    READ TABLE is_stmt-tokens INDEX sy-index + 1 INTO lv_next.
+    IF sy-subrc = 0 AND lv_next = '='.
+
+      IF lv_key_text IS INITIAL.
+        lv_key_text = lv_tok.
+      ELSE.
+        lv_key_text = |{ lv_key_text } { lv_tok }|.
+      ENDIF.
+
+    ENDIF.
+
+  ENDDO.
+
+  rv_keys = lv_key_text.
+
+ENDMETHOD.
+
+
+METHOD perf_extract_read_table.
+
+  CLEAR rv_table.
+
+  READ TABLE is_stmt-tokens INDEX 3 INTO rv_table.
+
+  REPLACE ALL OCCURRENCES OF '@'  IN rv_table WITH ''.
+  REPLACE ALL OCCURRENCES OF '[]' IN rv_table WITH ''.
+
+ENDMETHOD.
+
+
+METHOD perf_extract_sort_keys.
+
+  DATA lv_tok        TYPE string.
+  DATA lv_key_text   TYPE string.
+  DATA lv_after_by   TYPE abap_bool.
+  DATA lv_lines      TYPE i.
+
+  CLEAR rv_keys.
+
+  lv_lines = lines( is_stmt-tokens ).
+
+  DO lv_lines TIMES.
+
+    READ TABLE is_stmt-tokens INDEX sy-index INTO lv_tok.
+    IF sy-subrc <> 0.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_tok = 'BY'.
+      lv_after_by = abap_true.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_after_by = abap_false.
+      CONTINUE.
+    ENDIF.
+
+    " Skip SORT options, keep only field names.
+    IF lv_tok = 'ASCENDING'
+       OR lv_tok = 'DESCENDING'
+       OR lv_tok = 'AS'
+       OR lv_tok = 'TEXT'
+       OR lv_tok = 'STABLE'
+       OR lv_tok = ','.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_tok IS INITIAL.
+      CONTINUE.
+    ENDIF.
+
+    IF lv_key_text IS INITIAL.
+      lv_key_text = lv_tok.
+    ELSE.
+      lv_key_text = |{ lv_key_text } { lv_tok }|.
+    ENDIF.
+
+  ENDDO.
+
+  rv_keys = lv_key_text.
+
+ENDMETHOD.
+
+
+METHOD perf_extract_sort_table.
+
+  CLEAR rv_table.
+
+  READ TABLE is_stmt-tokens INDEX 2 INTO rv_table.
+
+  IF rv_table IS INITIAL.
+    rv_table = gc_obj_type-unknown.
+  ENDIF.
+
+  REPLACE ALL OCCURRENCES OF '@'  IN rv_table WITH ''.
+  REPLACE ALL OCCURRENCES OF '[]' IN rv_table WITH ''.
+
+ENDMETHOD.
+
+
+METHOD perf_loop_has_reduction.
+
+  rv_yes = abap_false.
+
+  IF is_stmt-text CS 'WHERE'
+     OR is_stmt-text CS 'FROM'
+     OR is_stmt-text CS 'TO'
+     OR is_stmt-text CS 'USING KEY'.
+
+    rv_yes = abap_true.
+
+  ENDIF.
+
+ENDMETHOD.
+
+
+METHOD perf_normalize_token.
+
+  rv_token = iv_token.
+
+  TRANSLATE rv_token TO UPPER CASE.
+
+  " Normalize escaped host variable: @lt_tab -> LT_TAB
+  IF rv_token CP '@*'.
+    SHIFT rv_token LEFT DELETING LEADING '@'.
+  ENDIF.
+
+  " Normalize table body notation: LT_TAB[] -> LT_TAB
+  REPLACE ALL OCCURRENCES OF '[]' IN rv_token WITH ''.
+
+ENDMETHOD.
+
+
+METHOD perf_parse_source.
+
+  DATA lt_scan_tokens TYPE STANDARD TABLE OF stokex.
+  DATA lt_scan_stmt   TYPE STANDARD TABLE OF sstmnt.
+
+  DATA ls_stmt TYPE gty_perf_stmt.
+  DATA lv_tok  TYPE string.
+
+  FIELD-SYMBOLS:
+    <ls_scan_stmt> TYPE sstmnt,
+    <ls_scan_tok>  TYPE stokex.
+
+  CLEAR rt_stmt.
+
+  SCAN ABAP-SOURCE it_source
+    TOKENS     INTO lt_scan_tokens
+    STATEMENTS INTO lt_scan_stmt
+    WITH ANALYSIS.
+
+  LOOP AT lt_scan_stmt ASSIGNING <ls_scan_stmt>.
+
+    CLEAR ls_stmt.
+    ls_stmt-stmt_idx = sy-tabix.
+
+    LOOP AT lt_scan_tokens ASSIGNING <ls_scan_tok>
+      FROM <ls_scan_stmt>-from
+      TO   <ls_scan_stmt>-to.
+
+      lv_tok = me->perf_normalize_token( <ls_scan_tok>-str ).
+
+      APPEND lv_tok TO ls_stmt-tokens.
+
+      IF ls_stmt-line IS INITIAL
+         OR <ls_scan_tok>-row < ls_stmt-line.
+        ls_stmt-line = <ls_scan_tok>-row.
+      ENDIF.
+
+      IF ls_stmt-line_to IS INITIAL
+         OR <ls_scan_tok>-row > ls_stmt-line_to.
+        ls_stmt-line_to = <ls_scan_tok>-row.
+      ENDIF.
+
+      IF ls_stmt-text IS INITIAL.
+        ls_stmt-text = lv_tok.
+      ELSE.
+        ls_stmt-text = |{ ls_stmt-text } { lv_tok }|.
+      ENDIF.
+
+    ENDLOOP.
+
+    READ TABLE ls_stmt-tokens INDEX 1 INTO ls_stmt-first_word.
+
+    ls_stmt-stmt_type = me->perf_classify_stmt( ls_stmt ).
+
+    APPEND ls_stmt TO rt_stmt.
+
+  ENDLOOP.
+
+ENDMETHOD.
+
+
+METHOD perf_select_fetches_all.
+
+  rv_yes = abap_false.
+
+  IF is_stmt-stmt_type = gc_perf_stmt_type-select_stmt
+     AND is_stmt-text CS '*'
+     AND is_stmt-text NS 'COUNT ( * )'
+     AND is_stmt-text NS 'COUNT(*)'.
+
+    rv_yes = abap_true.
+
+  ENDIF.
+
+ENDMETHOD.
+
+
+METHOD perf_sort_key_matches_read_key.
+
+  DATA lv_pattern TYPE string.
+
+  rv_yes = abap_false.
+
+  IF iv_sort_keys IS INITIAL
+     OR iv_read_keys IS INITIAL.
+    RETURN.
+  ENDIF.
+
+  IF iv_sort_keys = iv_read_keys.
+    rv_yes = abap_true.
+    RETURN.
+  ENDIF.
+
+  lv_pattern = |{ iv_read_keys } *|.
+
+  IF iv_sort_keys CP lv_pattern.
+    rv_yes = abap_true.
+  ENDIF.
+
+ENDMETHOD.
+
+
+METHOD perf_stmt_has_token.
+
+  DATA lv_token TYPE string.
+  DATA lv_find  TYPE string.
+
+  rv_has = abap_false.
+
+  lv_find = iv_token.
+  TRANSLATE lv_find TO UPPER CASE.
+
+  LOOP AT is_stmt-tokens INTO lv_token.
+    IF lv_token = lv_find.
+      rv_has = abap_true.
+      RETURN.
+    ENDIF.
   ENDLOOP.
 
 ENDMETHOD.
